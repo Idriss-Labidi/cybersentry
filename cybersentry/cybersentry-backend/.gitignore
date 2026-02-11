@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+env/
+venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+
+# Django & Databases
+*.sqlite3
+*.sqlite
+/media
+/static_root # often used for collected static files
+.env # environment variables file
+
+# IDEs and OS
+.idea/ # pycharm
+.vscode/ # VS Code (optional, if personal settings)
+.DS_Store # macOS
+Thumbs.db # Windows
