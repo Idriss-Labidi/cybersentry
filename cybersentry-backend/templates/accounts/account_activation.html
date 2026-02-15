@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Activate Account</title>
+</head>
+<body>
+  <h1>Set your password</h1>
+  <p>Choose a password to activate your account.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Activate account</button>
+  </form>
+</body>
+</html>

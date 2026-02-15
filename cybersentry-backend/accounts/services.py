@@ -1,0 +1,57 @@
+from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.db import transaction
+from django.http import HttpRequest
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.core.mail import send_mass_mail
+from .models import Organization, User
+
+user_model = get_user_model()
+token_generator = PasswordResetTokenGenerator()
+
+def create_organization_admins_and_notify(organization: Organization, admin_emails: list[str], request: HttpRequest) -> None:
+    '''
+        Create admin users for the organization
+        and send notification email to the admins.
+    '''
+    
+    with transaction.atomic():
+        
+        created_users = []
+        
+        for email in admin_emails:
+            user , created = user_model.objects.get_or_create(
+                email=email,
+                defaults={
+                    'username': email.split('@')[0],
+                    'role': user_model.Roles.ADMIN,
+                    'is_active': False,
+                    'organization': organization
+                }
+            )
+            if created:
+                created_users.append(user)
+                
+        transaction.on_commit(lambda: send_mass_mail(generate_activation_emails(created_users, request), fail_silently=True))
+        
+def generate_activation_link(user: User, request: HttpRequest) -> str:
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = token_generator.make_token(user)
+
+    return request.build_absolute_uri(
+        f"/activate/{uid}/{token}/"
+    )
+    
+def generate_activation_emails(users: list[User], request: HttpRequest):
+    email_set = []
+    for user in users:
+        activation_link = generate_activation_link(user, request)
+        
+        email_set.append((
+            "Activate Your Account",
+            f"Please click the following link to activate your account: {activation_link}",
+            "noreply@cybersentry.com",
+            [user.email],
+        ))
+    return tuple(email_set)
