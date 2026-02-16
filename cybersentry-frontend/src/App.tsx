@@ -1,9 +1,15 @@
 import { AuthProvider } from './context/AuthContext';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Login } from './components/Login';
-import  ProtectedRoute  from './components/ProtectedRoute';
+import ProtectedRoute from './components/ProtectedRoute';
+import DashboardLayout from './components/DashboardLayout';
 import { OAuthCallback } from './pages/OAuthCallback';
 import { Landing } from './pages/Landing';
+import { Dashboard } from './pages/Dashboard';
+import { Security } from './pages/Security';
+import { Alerts } from './pages/Alerts';
+import { Analytics } from './pages/Analytics';
+import { Settings } from './pages/Settings';
 import { useAuth } from './context/AuthContext';
 import { createTheme, MantineProvider } from '@mantine/core';
 import '@mantine/core/styles.css';
@@ -31,9 +37,14 @@ function AppContent() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
-        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} isLoading={isLoading} />} >
-          {/* Protected components go here */}
-          <Route path="/dashboard" element={<div>Dashboard - Protected Route</div>} />
+        <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} isLoading={isLoading} />}>
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/security" element={<Security />} />
+            <Route path="/dashboard/alerts" element={<Alerts />} />
+            <Route path="/dashboard/analytics" element={<Analytics />} />
+            <Route path="/dashboard/settings" element={<Settings />} />
+          </Route>
         </Route>
         {/* Add other routes here */}
       </Routes>
