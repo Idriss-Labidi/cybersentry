@@ -89,10 +89,6 @@ def jwks(request):
         cache.set(cache_key, jwks_dict, 3600)
     
     return JsonResponse(jwks_dict)
-
-
-@csrf_exempt
-def oauth_openid_configuration(request):
     """
     Override the default DOT discovery to advertise end_session_endpoint.
     """
@@ -191,6 +187,8 @@ def logout(request):
     """
     from django.contrib.auth import logout as django_logout
     from oauth2_provider.models import get_access_token_model, RefreshToken
+    
+    print("Logout endpoint called")
 
     redirect_uri = request.GET.get('post_logout_redirect_uri') or request.POST.get('post_logout_redirect_uri')
     state = request.GET.get('state') or request.POST.get('state')

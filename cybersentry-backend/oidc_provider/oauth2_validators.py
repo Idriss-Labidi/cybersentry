@@ -20,7 +20,7 @@ class OIDCValidator(OAuth2Validator):
             raise ValueError('OIDC_RSA_PRIVATE_KEY is not configured')
         try:
             return jwk.JWK.from_pem(private_key_pem.encode('utf-8'))
-        except Exception as exc:  # minimal logging to avoid leaking key material
+        except Exception as exc:
             logger.error(f'Failed to load signing key: {exc}')
             raise
 
@@ -31,6 +31,8 @@ class OIDCValidator(OAuth2Validator):
             "name": ' '.join([request.user.first_name, request.user.last_name]).strip(),
             "preferred_username": request.user.username,
             "email": request.user.email,
+            "role": getattr(request.user, 'role', 'user'),
+            "is_staff": request.user.is_staff,
         }
 
     def get_id_token(self, token, token_handler, request):

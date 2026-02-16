@@ -26,6 +26,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           client_id: import.meta.env.VITE_OIDC_CLIENT_ID,
           redirect_uri: import.meta.env.VITE_OIDC_REDIRECT_URI,
           response_type: 'code',
+          response_mode: 'query',
           scope: import.meta.env.VITE_OIDC_SCOPES,
           post_logout_redirect_uri: import.meta.env.VITE_OIDC_REDIRECT_URI,
           automaticSilentRenew: true,
@@ -35,10 +36,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const manager = new UserManager(settings);
         setUserManager(manager);
 
+        const currentUrl = new URL(window.location.href);
+        const queryState = currentUrl.searchParams.get('state');
+        const hashState = new URLSearchParams(currentUrl.hash.replace(/^#/, '')).get('state');
+        const hasState = queryState || hashState;
+
         // Check if we're returning from login callback
         if (window.location.pathname === '/oauth-callback') {
+          if (!hasState) {
+            console.warn('OIDC callback missing state; restarting login redirect');
+            await manager.clearStaleState();
+            await manager.signinRedirect();
+            return;
+          }
           try {
-            const user = await manager.signinRedirectCallback();
+            const user = await manager.signinRedirectCallback(currentUrl.href);
             setUser(user);
             // After processing the callback, send user to the main page
             window.location.replace('/');
@@ -78,13 +90,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
     } catch (error) {
       console.error('Error during logout:', error);
-      // Fallback when end_session_endpoint is missing: clear local session and return home
-      try {
-        await userManager.removeUser();
-      } catch (removeError) {
-        console.error('Failed to clear local user:', removeError);
-      }
-      setUser(null);
       window.location.replace('/');
     }
   };
