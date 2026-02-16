@@ -8,7 +8,7 @@ export const OAuthCallback = () => {
     // The AuthContext handles the callback processing
     // Redirect to home after processing
     const timer = setTimeout(() => {
-      navigate('/');
+      navigate('/dashboard');
     }, 2000);
 
     return () => clearTimeout(timer);

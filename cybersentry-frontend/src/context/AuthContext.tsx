@@ -76,7 +76,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async () => {
     if (!userManager) return;
     try {
-      await userManager.signinRedirect();
+      await userManager.signinRedirect().then(() => {
+        console.log('Login redirect initiated');
+      });
     } catch (error) {
       console.error('Error during login:', error);
       throw error;
