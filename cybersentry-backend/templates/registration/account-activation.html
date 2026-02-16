@@ -2,14 +2,200 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Activation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #4c6ef5 0%, #5c5adb 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .activation-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            width: 100%;
+            max-width: 400px;
+            padding: 48px 32px;
+        }
+
+        .activation-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .activation-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1b1e;
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .activation-header p {
+            color: #868e96;
+            font-size: 14px;
+            font-weight: 400;
+            line-height: 1.55;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #1a1b1e;
+            font-weight: 500;
+            font-size: 14px;
+            line-height: 1.55;
+        }
+
+        input[type="password"],
+        input[type="text"],
+        input[type="email"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.55;
+            color: #1a1b1e;
+            background-color: #fff;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            font-family: inherit;
+        }
+
+        input[type="password"]:focus,
+        input[type="text"]:focus,
+        input[type="email"]:focus {
+            outline: none;
+            border-color: #4c6ef5;
+            box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.1);
+        }
+
+        input[type="password"]::placeholder,
+        input[type="text"]::placeholder,
+        input[type="email"]::placeholder {
+            color: #adb5bd;
+        }
+
+        .form-group.error input {
+            border-color: #fa5252;
+        }
+
+        .form-group.error input:focus {
+            box-shadow: 0 0 0 3px rgba(250, 82, 82, 0.1);
+        }
+
+        .error-message {
+            background-color: #ffe0e0;
+            color: #7d3737;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border: 1px solid #ffdbdb;
+            line-height: 1.55;
+        }
+
+        .error-message strong {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .error-message ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .error-message li {
+            margin-bottom: 4px;
+        }
+
+        .error-message li:last-child {
+            margin-bottom: 0;
+        }
+
+        .success-message {
+            background-color: #d3f9d8;
+            color: #2b6137;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border: 1px solid #b2f2bb;
+            line-height: 1.55;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #4c6ef5 0%, #5c5adb 100%);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            line-height: 1.6;
+            font-family: inherit;
+            margin-top: 8px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(76, 110, 245, 0.3);
+            background: linear-gradient(135deg, #3d5af5 0%, #4c4adb 100%);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @media (max-width: 480px) {
+            .activation-container {
+                padding: 32px 24px;
+            }
+
+            .activation-header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Account Activation</h1>
-    <form method="post" action="/accounts/activate/{{ uidb64 }}/{{ token }}/">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Activate Account</button>
-    </form>
+    <div class="activation-container">
+        <div class="activation-header">
+            <h1>Activate Account</h1>
+            <p>Choose a password to activate your account.</p>
+        </div>
+
+        <form method="post" action="/accounts/activate/{{ uidb64 }}/{{ token }}/">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Activate Account</button>
+        </form>
+    </div>
 </body>
 </html>
