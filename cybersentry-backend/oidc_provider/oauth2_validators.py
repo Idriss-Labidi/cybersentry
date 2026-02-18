@@ -40,7 +40,7 @@ class OIDCValidator(OAuth2Validator):
 
         now = int(time.time())
         id_token_claims = {
-            'iss': settings.OAUTH2_PROVIDER.get('OIDC_ISSUER', 'http://localhost:8000/o'),
+            'iss': settings.OAUTH2_PROVIDER.get('OIDC_ISSUER', 'http://localhost:8000'),
             'sub': str(request.user.id),
             'aud': request.client.client_id,
             'exp': now + 3600,

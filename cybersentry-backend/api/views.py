@@ -1,8 +1,9 @@
-# api/views.py
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from .serializers import DNSLookupSerializer
+import dns.resolver
 
 
 @api_view(['GET'])
@@ -52,11 +53,11 @@ def create_resource(request):
     Requires 'write' scope.
     """
     # Check if user has write scope
-    if request.auth and 'write' not in request.auth.scope:
-        return Response(
-            {'error': 'Insufficient permissions. Requires write scope.'},
-            status=status.HTTP_403_FORBIDDEN
-        )
+    # if request.auth and 'write' not in request.auth.scope:
+    #     return Response(
+    #         {'error': 'Insufficient permissions. Requires write scope.'},
+    #         status=status.HTTP_403_FORBIDDEN
+    #     )
     
     # Your creation logic here
     data = request.data
@@ -76,6 +77,34 @@ def public_endpoint(request):
         'message': 'This is a public endpoint',
         'authenticated': request.user.is_authenticated,
     })
+ 
+@api_view(['POST'])   
+def dns_lookup(request):
+    serializer = DNSLookupSerializer(data=request.data)
+
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    validated_data = serializer.validated_data
+    domain_name = validated_data['domain_name']
+    r_types = validated_data['record_types']
+    
+    response = {}
+    
+    for r_type in r_types:
+        try:
+            result = dns.resolver.resolve(domain_name, r_type)
+        except dns.resolver.NoAnswer:
+            response[r_type] = f'No{r_type} record found for {domain_name}'
+        except dns.resolver.NXDOMAIN:
+            return Response({ 'message': 'the domain name does not exist'},status=status.HTTP_404_NOT_FOUND)
+        response[r_type] = [rr.to_text() for rr in result]
+    
+    return Response({
+        'domain': domain_name,
+        'result': response
+    }, status=status.HTTP_200_OK)
+    
 
 
 
