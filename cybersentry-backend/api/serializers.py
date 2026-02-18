@@ -16,3 +16,22 @@ class DNSLookupSerializer(serializers.Serializer):
         if not re.match(domain_regex, value):
             raise serializers.ValidationError("Invalid domain name format.")
         return value.lower()
+
+
+class DNSPropagationSerializer(DNSLookupSerializer):
+    regions = serializers.ListField(
+        child=serializers.CharField(max_length=32),
+        required=False,
+        allow_empty=True
+    )
+    timeout = serializers.FloatField(required=False, min_value=0.5, max_value=15)
+    lifetime = serializers.FloatField(required=False, min_value=0.5, max_value=30)
+    retries = serializers.IntegerField(required=False, min_value=0, max_value=3)
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        timeout = attrs.get('timeout')
+        lifetime = attrs.get('lifetime')
+        if timeout and lifetime and timeout > lifetime:
+            raise serializers.ValidationError("timeout cannot exceed lifetime")
+        return attrs
