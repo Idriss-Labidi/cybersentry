@@ -87,7 +87,3 @@ def dns_propagation(request):
         'retries': retries,
         'propagation': propagation
     }, status=status.HTTP_200_OK)
-    
-
-
-

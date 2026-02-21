@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     # local apps
     'oidc_provider',
     'accounts',
-    'api',
+    'dns_tools',
 ]
 
 MIDDLEWARE = [

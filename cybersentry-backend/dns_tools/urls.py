@@ -1,8 +1,7 @@
-# api/urls.py
 from django.urls import path
 from . import views
 
-app_name = 'api'
+app_name = 'dns_tools'
 
 urlpatterns = [
     path('protected/', views.protected_resource, name='protected'),
