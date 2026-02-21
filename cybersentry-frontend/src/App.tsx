@@ -1,4 +1,5 @@
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Login } from './components/Login';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -11,7 +12,6 @@ import { Alerts } from './pages/Alerts';
 import { Analytics } from './pages/Analytics';
 import { Settings } from './pages/Settings';
 import { useAuth } from './context/AuthContext';
-import { createTheme, MantineProvider } from '@mantine/core';
 import '@mantine/core/styles.css';
 
 // other css files are required only if
@@ -20,13 +20,6 @@ import '@mantine/core/styles.css';
 // import '@mantine/dropzone/styles.css';
 // import '@mantine/code-highlight/styles.css';
 // ...
-
-
-const theme = createTheme({
-  primaryColor: 'blue',
-  fontFamily: 'system-ui, -apple-system, sans-serif',
-  headings: { fontFamily: 'system-ui, -apple-system, sans-serif' },
-});
 
 function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -54,11 +47,11 @@ function AppContent() {
 
 function App() {
   return (
-     <MantineProvider theme={theme}>
+    <ThemeProvider>
       <AuthProvider>
         <AppContent />
       </AuthProvider>
-    </MantineProvider>
+    </ThemeProvider>
   );
 }
 

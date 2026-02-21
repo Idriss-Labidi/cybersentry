@@ -1,7 +1,8 @@
 import { AppShell, Group, ActionIcon, Avatar, Menu, Breadcrumbs, Burger, Text } from '@mantine/core';
-import { IconBell, IconLogout, IconUser, IconSettings } from '@tabler/icons-react';
+import { IconBell, IconLogout, IconUser, IconSettings, IconMoonFilled, IconSunFilled } from '@tabler/icons-react';
 import { useAuth } from '../context/AuthContext';
 import { useLocation } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 
 interface DashboardNavbarProps {
   mobileOpened: boolean;
@@ -10,6 +11,7 @@ interface DashboardNavbarProps {
 
 const DashboardNavbar = ({ mobileOpened, setMobileOpened }: DashboardNavbarProps) => {
   const { user, logout } = useAuth();
+  const { colorScheme, toggleColorScheme} = useTheme();
   const location = useLocation();
 
   // Generate breadcrumbs from the current path
@@ -55,13 +57,17 @@ const DashboardNavbar = ({ mobileOpened, setMobileOpened }: DashboardNavbarProps
 
         {/* Right side: Notifications and User Menu */}
         <Group gap="md">
-          <ActionIcon variant="subtle" color="gray" size="lg">
+          <ActionIcon variant="subtle" size="lg">
             <IconBell style={{ width: '70%', height: '70%' }} />
+          </ActionIcon>
+
+          <ActionIcon variant='subtle' onClick={toggleColorScheme}>
+            { colorScheme === 'light' ? <IconMoonFilled></IconMoonFilled> : <IconSunFilled></IconSunFilled>}
           </ActionIcon>
 
           <Menu shadow="md" position="bottom-end">
             <Menu.Target>
-              <Avatar color="blue" radius="xl" style={{ cursor: 'pointer' }}>
+              <Avatar radius="xl" style={{ cursor: 'pointer' }}>
                 {userInitials}
               </Avatar>
             </Menu.Target>
