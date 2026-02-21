@@ -13,6 +13,7 @@ import { Analytics } from './pages/Analytics';
 import { Settings } from './pages/Settings';
 import { useAuth } from './context/AuthContext';
 import '@mantine/core/styles.css';
+import LandingLayout from './components/LandingLayout';
 
 // other css files are required only if
 // you are using components from the corresponding package
@@ -27,7 +28,9 @@ function AppContent() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Landing />} />
+        <Route element={<LandingLayout />} >
+          <Route path='/' element={<Landing/>}></Route>
+        </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} isLoading={isLoading} />}>
