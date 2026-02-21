@@ -4,12 +4,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework import status
-from .serializers import DNSLookupSerializer, DNSPropagationSerializer, DnsServerSerializer
+from .serializers import DNSLookupSerializer, DNSPropagationSerializer, DnsServerSerializer, DNSHealthCheckSerializer
 from .models import DnsServer
 from .services import (
     DomainNotFoundError,
     check_dns_propagation,
     perform_dns_lookup,
+    dns_health_check
 )
 from collections import defaultdict
 
@@ -33,6 +34,7 @@ def protected_resource(request):
     })
 
 @api_view(['POST'])   
+@permission_classes([AllowAny])
 def dns_lookup(request):
     serializer = DNSLookupSerializer(data=request.data)
 
@@ -54,6 +56,7 @@ def dns_lookup(request):
     }, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def dns_propagation(request):
     serializer = DNSPropagationSerializer(data=request.data)
 
@@ -102,6 +105,21 @@ def dns_propagation(request):
         'retries': retries,
         'propagation': propagation
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def dns_health_check_(request):
+    serializer = DNSHealthCheckSerializer(data=request.data)
+
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    data = serializer.validated_data
+    domain_name = data['domain_name']
+    res = dns_health_check(domain_name)
+
+    return Response(res, status=status.HTTP_200_OK)
 
 class DnsServerList(APIView):
     '''

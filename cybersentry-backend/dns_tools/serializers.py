@@ -48,3 +48,13 @@ class DnsServerSerializer(serializers.ModelSerializer):
     class Meta:
         model = DnsServer
         fields = ['id', 'name', 'ip_address1', 'ip_address2', 'location', 'type', 'country', 'region']
+
+
+class DNSHealthCheckSerializer(serializers.Serializer):
+    domain_name = serializers.CharField(max_length=255)
+
+    def validate_domain_name(self, value):
+        domain_regex = r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$"
+        if not re.match(domain_regex, value):
+            raise serializers.ValidationError("Invalid domain name format.")
+        return value.lower()

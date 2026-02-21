@@ -136,3 +136,209 @@ def check_dns_propagation(
         propagation[region] = region_results
 
     return propagation
+
+def safe_resolve(domain, record_type):
+    try:
+        answers = dns.resolver.resolve(domain, record_type)
+        return [r.to_text() for r in answers], answers.rrset.ttl
+    except Exception:
+        return None, None
+
+#TODO:bug fix; cuurently this function return a score of 45 for any domain that doesn't exist
+def dns_health_check(domain: str):
+
+    score = 100
+    checks = {}
+    recommendations = []
+
+    # -------------------
+    # A RECORD CHECK
+    # -------------------
+    a_records, ttl = safe_resolve(domain, "A")
+
+    if not a_records:
+        score -= 20
+        checks["a_record"] = {
+            "status": "FAIL",
+            "severity": "CRITICAL",
+            "impact": "Domain does not resolve to an IPv4 address."
+        }
+        recommendations.append({
+            "priority": "HIGH",
+            "issue": "Missing A record",
+            "recommendation": "Add a valid A record pointing to your web server IP."
+        })
+    else:
+        checks["a_record"] = {
+            "status": "OK",
+            "ttl": ttl
+        }
+
+        if ttl and ttl < 60:
+            score -= 5
+            recommendations.append({
+                "priority": "MEDIUM",
+                "issue": "TTL too low",
+                "recommendation": "Increase TTL to at least 300 seconds to improve caching and reduce DNS load."
+            })
+
+        if ttl and ttl > 86400:
+            score -= 5
+            recommendations.append({
+                "priority": "LOW",
+                "issue": "TTL too high",
+                "recommendation": "Reduce TTL below 86400 seconds (24h) for better flexibility during DNS changes."
+            })
+
+    # -------------------
+    # NS RECORD CHECK
+    # -------------------
+    ns_records, _ = safe_resolve(domain, "NS")
+
+    if not ns_records:
+        score -= 15
+        checks["nameservers"] = {
+            "status": "FAIL",
+            "severity": "CRITICAL",
+            "impact": "No authoritative nameservers found."
+        }
+        recommendations.append({
+            "priority": "HIGH",
+            "issue": "Missing NS records",
+            "recommendation": "Configure at least two authoritative nameservers."
+        })
+    else:
+        checks["nameservers"] = {
+            "status": "OK",
+            "count": len(ns_records)
+        }
+
+        if len(ns_records) < 2:
+            score -= 5
+            recommendations.append({
+                "priority": "MEDIUM",
+                "issue": "Single nameserver",
+                "recommendation": "Use at least two nameservers for redundancy."
+            })
+
+    # -------------------
+    # MX CHECK
+    # -------------------
+    mx_records, _ = safe_resolve(domain, "MX")
+
+    if mx_records:
+        checks["mx"] = {
+            "status": "OK",
+            "records": mx_records
+        }
+    else:
+        checks["mx"] = {
+            "status": "NOT_FOUND",
+            "severity": "WARNING",
+            "impact": "Domain cannot receive emails."
+        }
+        recommendations.append({
+            "priority": "LOW",
+            "issue": "Missing MX record",
+            "recommendation": "Add MX records if the domain is intended to receive email."
+        })
+
+    # -------------------
+    # SPF CHECK
+    # -------------------
+    txt_records, _ = safe_resolve(domain, "TXT")
+    spf_records = []
+
+    if txt_records:
+        for record in txt_records:
+            if record.startswith('"v=spf1'):
+                spf_records.append(record)
+
+    if len(spf_records) == 0:
+        score -= 10
+        checks["spf"] = {
+            "status": "MISSING",
+            "severity": "HIGH",
+            "impact": "Domain is vulnerable to email spoofing."
+        }
+        recommendations.append({
+            "priority": "HIGH",
+            "issue": "Missing SPF record",
+            "recommendation": "Add an SPF record (v=spf1 ...) to prevent email spoofing."
+        })
+    elif len(spf_records) > 1:
+        score -= 10
+        checks["spf"] = {
+            "status": "MULTIPLE",
+            "severity": "HIGH",
+            "impact": "Multiple SPF records cause SPF validation failure."
+        }
+        recommendations.append({
+            "priority": "HIGH",
+            "issue": "Multiple SPF records",
+            "recommendation": "Merge SPF records into a single valid SPF entry."
+        })
+    else:
+        checks["spf"] = {
+            "status": "OK"
+        }
+
+    # -------------------
+    # DMARC CHECK
+    # -------------------
+    dmarc_domain = f"_dmarc.{domain}"
+    dmarc_records, _ = safe_resolve(dmarc_domain, "TXT")
+
+    if not dmarc_records:
+        score -= 10
+        checks["dmarc"] = {
+            "status": "MISSING",
+            "severity": "HIGH",
+            "impact": "No DMARC protection against spoofed emails."
+        }
+        recommendations.append({
+            "priority": "HIGH",
+            "issue": "Missing DMARC record",
+            "recommendation": "Add a DMARC record with policy 'p=reject' or 'p=quarantine'."
+        })
+    else:
+        dmarc_policy = None
+        for record in dmarc_records:
+            if "p=" in record:
+                dmarc_policy = record
+
+        if dmarc_policy and "p=none" in dmarc_policy:
+            score -= 5
+            recommendations.append({
+                "priority": "MEDIUM",
+                "issue": "Weak DMARC policy",
+                "recommendation": "Change DMARC policy from p=none to p=quarantine or p=reject."
+            })
+
+        checks["dmarc"] = {
+            "status": "OK",
+            "policy": dmarc_policy
+        }
+
+    return {
+        "domain": domain,
+        "score": max(score, 0),
+        "grade": calculate_grade(score),
+        "checks": checks,
+        "recommendations": sorted(
+            recommendations,
+            key=lambda x: {"HIGH": 1, "MEDIUM": 2, "LOW": 3}[x["priority"]]
+        )
+    }
+
+
+def calculate_grade(score):
+    if score >= 90:
+        return "A"
+    elif score >= 75:
+        return "B"
+    elif score >= 60:
+        return "C"
+    elif score >= 40:
+        return "D"
+    return "F"
