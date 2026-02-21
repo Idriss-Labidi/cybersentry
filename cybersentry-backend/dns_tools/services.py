@@ -1,6 +1,7 @@
 import time
 import dns.exception
 import dns.resolver
+from .models import DnsServer
 
 
 class DomainNotFoundError(Exception):
@@ -12,6 +13,7 @@ DEFAULT_RESOLVERS = {
     'na': ['8.8.8.8', '1.1.1.1'],
     'eu': ['8.8.4.4', '9.9.9.9'],
     'apac': ['1.0.0.1'],
+    'mea': [ '8.8.8.8']
 }
 
 
@@ -76,6 +78,11 @@ def check_dns_propagation(
     retries: int = 0,
     resolvers_by_region: dict | None = None,
 ) -> dict:
+    MAX_RESOLVERS_PER_REGION = 3
+
+    # Clamp lifetime so it never exceeds timeout-based budget.
+    lifetime = min(lifetime, max(timeout, 0.5))
+
     resolvers_source = resolvers_by_region or DEFAULT_RESOLVERS
     selected_regions = regions or list(resolvers_source.keys())
 
@@ -86,7 +93,26 @@ def check_dns_propagation(
     propagation: dict = {}
 
     for region in selected_regions:
-        resolver_ips = resolvers_source.get(region, [])
+        region_entries = resolvers_source.get(region, [])
+
+        # Normalize to a list of IP strings from either model instances or raw IPs.
+        resolver_ips: list[str] = []
+        for entry in region_entries:
+            if isinstance(entry, DnsServer):
+                for ip in [entry.ip_address1, entry.ip_address2]:
+                    if ip:
+                        resolver_ips.append(ip)
+            else:
+                resolver_ips.append(str(entry))
+
+        # Cap per-region resolver count to avoid long aggregate waits.
+        resolver_ips = resolver_ips[:MAX_RESOLVERS_PER_REGION]
+
+        # If no resolver IPs for the region, skip to avoid hanging on empty nameserver sets.
+        if not resolver_ips:
+            propagation[region] = {}
+            continue
+
         region_results = {}
 
         for resolver_ip in resolver_ips:
