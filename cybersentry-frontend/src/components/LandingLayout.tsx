@@ -8,10 +8,20 @@ import LandingNavbar from './LandingNavbar';
 export interface LandingNavLink {
     label: string;
     href: string;
+    children?: LandingNavLink[];
 }
 
-const navLinks = [
+const navLinks: LandingNavLink[] = [
 	{ label: 'Features', href: '#features' },
+	{
+		label: 'Tools',
+		href: '#tools',
+		children: [
+			{ label: 'DNS Lookup', href: '/tools/dns-lookup' },
+			{ label: 'DNS Propagation', href: '/tools/dns-propagation' },
+			{ label: 'DNS Health Check', href: '/tools/dns-health-check' },
+		],
+	},
 	{ label: 'Pricing', href: '#pricing' },
 	{ label: 'About', href: '#about' },
 	{ label: 'Contact', href: '#contact' },

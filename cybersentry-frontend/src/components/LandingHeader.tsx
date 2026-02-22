@@ -1,8 +1,10 @@
 
 import type { FC } from 'react';
-import { Anchor, Burger, Button, Container, Group, Text, ThemeIcon } from '@mantine/core';
+import { ActionIcon, Anchor, Burger, Button, Container, Group, HoverCard, Stack, Text, ThemeIcon, UnstyledButton } from '@mantine/core';
+import { IconSunFilled, IconMoonFilled } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { type LandingNavLink } from './LandingLayout';
+import { useTheme } from '../context/ThemeContext';
 
 
 interface LandingHeaderProps {
@@ -12,6 +14,8 @@ interface LandingHeaderProps {
 }
 
 export const LandingHeader: FC<LandingHeaderProps> = ({ mobileOpened, setMobileOpened, links }) => {
+    const { colorScheme, toggleColorScheme } = useTheme();
+
     return (
         <Container size="lg" style={{ height: '100%' }}>
             <Group justify="space-between" align="center" h="100%">
@@ -23,11 +27,38 @@ export const LandingHeader: FC<LandingHeaderProps> = ({ mobileOpened, setMobileO
                 </Group>
 
                 <Group gap="lg" visibleFrom="sm">
-                    {links.map((link) => (
-                        <Anchor key={link.label} href={link.href} c="dimmed" fz="sm">
-                            {link.label}
-                        </Anchor>
-                    ))}
+                    {links.map((link) =>
+                        link.children ? (
+                            <HoverCard key={link.label} width={220} shadow="md" withArrow openDelay={100} closeDelay={200}>
+                                <HoverCard.Target>
+                                    <UnstyledButton fz="sm" c="dimmed" style={{ cursor: 'pointer' }}>
+                                        {link.label}
+                                    </UnstyledButton>
+                                </HoverCard.Target>
+                                <HoverCard.Dropdown>
+                                    <Stack gap="xs">
+                                        {link.children.map((child) => (
+                                            <Anchor key={child.label} component={Link} to={child.href} fz="sm" c="dimmed">
+                                                {child.label}
+                                            </Anchor>
+                                        ))}
+                                    </Stack>
+                                </HoverCard.Dropdown>
+                            </HoverCard>
+                        ) : (
+                            <Anchor key={link.label} href={link.href} c="dimmed" fz="sm">
+                                {link.label}
+                            </Anchor>
+                        )
+                    )}
+                    <ActionIcon
+                        variant="subtle"
+                        size="lg"
+                        onClick={toggleColorScheme}
+                        aria-label="Toggle color scheme"
+                    >
+                        { colorScheme === 'light' ? <IconMoonFilled></IconMoonFilled> : <IconSunFilled></IconSunFilled>}
+                    </ActionIcon>
                     <Button component={Link} to="/login" variant="light">
                         Sign in
                     </Button>
