@@ -1,0 +1,258 @@
+from django.shortcuts import render
+
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.utils import timezone
+from datetime import timedelta
+import re
+
+from .models import GithubRepository, RepositoryCheckResult
+from .serializers import (
+    GitHubRepositorySerializer,
+    CheckResultDetailSerializer,
+    CheckResultSummarySerializer,
+    CheckRepositoryInputSerializer,
+)
+from .github_health_service import (
+    Level1Service,
+    Level2Service,
+    Level3Service,
+    RiskScoringEngine,
+)
+
+
+# ============= Private method =============
+def _run_checks(owner: str, repo: str, levels: list, token: str = None) -> dict:
+    """
+    Run requested check levels
+    ~ Equivalent to Spring Boot service method calling multiple repositories
+    """
+    result = {}
+
+    try:
+        if 1 in levels:
+            level1_service = Level1Service(token=token)
+            result['level1'] = level1_service.check_repository(owner, repo)
+
+            # If Level 1 errors out, return early
+            if "error" in result['level1']:
+                return result
+
+        if 2 in levels:
+            level2_service = Level2Service(token=token)
+            result['level2'] = level2_service.check_files(owner, repo)
+
+        if 3 in levels:
+            level3_service = Level3Service(token=token)
+            result['level3'] = level3_service.check_security_alerts(owner, repo)
+
+    except Exception as e:
+        return {"error": f"Unexpected error during checks: {str(e)}"}
+
+    return result
+
+
+class GitHubRepositoryCheckViewSet(viewsets.ViewSet):
+    #permission_classes = [IsAuthenticated]
+
+    permission_classes = [AllowAny]
+
+    @action(detail=False, methods=['post'])
+    def check_repository(self, request):
+        """
+        POST /github-health/check-repository/
+
+        Check a GitHub repository health and return risk score.
+
+        Body: {
+            "url": "https://github.com/owner/repo",
+            "levels": ["1", "2", "3"],  # Optional
+            "use_cache": true,
+            "github_token": "ghp_..."  # Optional
+        }
+        """
+        serializer = CheckRepositoryInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        url = serializer.validated_data['url']
+        levels = [int(l) for l in serializer.validated_data.get('levels', ['1', '2', '3'])]
+        use_cache = serializer.validated_data.get('use_cache', True)
+        user_token = serializer.validated_data.get('github_token')
+
+        # Parse owner and repo from URL
+        github_pattern = r'^https://github\.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_.-]+)/?$'
+        match = re.match(github_pattern, url)
+
+        if not match:
+            return Response(
+                {"error": "Invalid GitHub URL format"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        owner, repo = match.groups()
+
+        # Get or create repository record
+        try:
+            github_repo, created = GithubRepository.objects.get_or_create(
+                url=url,
+                owner=owner,
+                name=repo,
+                organization=request.user.organization
+            )
+        except GithubRepository.MultipleObjectsReturned:
+            github_repo = GithubRepository.objects.filter(url=url, organization=request.user.organization).first()
+
+        # Check cache if requested
+        if use_cache:
+            recent_result = github_repo.check_results.filter(
+                check_timestamp__gte=timezone.now() - timedelta(hours=1)
+            ).first()
+
+            if recent_result:
+                return Response(
+                    {
+                        "message": "Using cached result (less than 1 hour old)",
+                        "result": CheckResultDetailSerializer(recent_result).data
+                    },
+                    status=status.HTTP_200_OK
+                )
+
+        # Perform checks
+        result_data = _run_checks(owner, repo, levels, user_token)
+
+        if "error" in result_data and "Repository not found" in result_data["error"]:
+            return Response(result_data, status=status.HTTP_404_NOT_FOUND)
+
+        if "error" in result_data:
+            return Response(result_data, status=status.HTTP_400_BAD_REQUEST)
+
+        # Calculate risk score
+        level1_data = result_data.get('level1', {})
+        level2_data = result_data.get('level2', {})
+        level3_data = result_data.get('level3', {})
+
+        risk_score, score_breakdown = RiskScoringEngine.calculate_score(
+            level1_data, level2_data, level3_data
+        )
+
+        risk_category = RiskScoringEngine.generate_risk_category(risk_score)
+        warnings = RiskScoringEngine.generate_warnings(level1_data, level2_data, level3_data)
+        recommendations = RiskScoringEngine.generate_recommendations(level1_data, level2_data, level3_data)
+
+        # Create check result
+        check_result = RepositoryCheckResult.objects.create(
+            repository=github_repo,
+            checked_by=request.user,
+            risk_score=risk_score,
+            level1_data=level1_data,
+            level2_data=level2_data,
+            level3_data=level3_data,
+            summary=f"{risk_category} - Score: {risk_score}/100",
+            warnings=warnings,
+            recommendations=recommendations,
+        )
+
+        # Update repository last check time
+        github_repo.last_check_at = timezone.now()
+        github_repo.save(update_fields=['last_check_at'])
+
+        return Response(
+            {
+                "result": CheckResultDetailSerializer(check_result).data,
+                "score_breakdown": score_breakdown,
+                "risk_category": risk_category,
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+    @action(detail=False, methods=['get'])
+    def list_repositories(self, request):
+        """
+        GET /github-health/list-repositories/
+
+        List all repositories checked by user's organization with their latest scores.
+        """
+        if not request.user.organization:
+            return Response(
+                {"error": "User does not belong to any organization"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        repositories = GithubRepository.objects.filter(
+            organization=request.user.organization
+        ).prefetch_related('check_results')
+
+        results = []
+        for repo in repositories:
+            latest_check = repo.check_results.first()  # Already ordered by -check_timestamp
+
+            results.append({
+                "repository": GitHubRepositorySerializer(repo).data,
+                "latest_check": CheckResultSummarySerializer(latest_check).data if latest_check else None,
+            })
+
+        return Response(results, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'])
+    def get_check_result(self, request):
+        """
+        GET /github-health/get-check-result/?result_id=<id>
+
+        Retrieve a specific check result by ID.
+        """
+        result_id = request.query_params.get('result_id')
+
+        if not result_id:
+            return Response(
+                {"error": "result_id query parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            check_result = RepositoryCheckResult.objects.get(
+                id=result_id,
+                repository__organization=request.user.organization
+            )
+        except RepositoryCheckResult.DoesNotExist:
+            return Response(
+                {"error": "Check result not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        return Response(
+            CheckResultDetailSerializer(check_result).data,
+            status=status.HTTP_200_OK
+        )
+
+    @action(detail=False, methods=['get'])
+    def repository_history(self, request):
+        """
+        GET /github-health/repository-history/?url=<url>
+
+        Get all check results for a specific repository.
+        """
+        url = request.query_params.get('url')
+
+        if not url:
+            return Response(
+                {"error": "url query parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            repository = GithubRepository.objects.get(
+                url=url,
+                organization=request.user.organization
+            )
+        except GithubRepository.DoesNotExist:
+            return Response(
+                {"error": "Repository not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        results = repository.check_results.all()
+        serializer = CheckResultSummarySerializer(results, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)

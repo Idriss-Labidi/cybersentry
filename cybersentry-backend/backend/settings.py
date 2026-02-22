@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'oidc_provider',
     'accounts',
     'api',
+    'github_health_check',
 ]
 
 MIDDLEWARE = [
@@ -277,3 +278,21 @@ EMAIL_HOST_PASSWORD = ''
 EMAIL_USE_TLS = False
 EMAIL_USE_SSL = False
 DEFAULT_FROM_EMAIL = 'admin@localhost'
+
+# GitHub Health Check Configuration
+GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', '')  # Optional GitHub API token for higher rate limits
+GITHUB_API_BASE_URL = 'https://api.github.com'
+GITHUB_RAW_URL = 'https://raw.githubusercontent.com'
+
+# Risk scoring weights (sum must equal 1.0)
+GITHUB_RISK_SCORING_WEIGHTS = {
+    'level1_maintenance': 0.15,
+    'level1_community': 0.10,
+    'level1_security_basics': 0.15,
+    'level1_documentation': 0.10,
+    'level1_releases': 0.05,
+    'level1_branch_protection': 0.10,
+    'level2_dependencies': 0.10,
+    'level2_code_quality': 0.10,
+    'level3_security': 0.05,
+}
