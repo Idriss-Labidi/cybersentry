@@ -1,9 +1,14 @@
 import { useState, type FC } from 'react';
 import { AppShell, Divider } from '@mantine/core';
 import { Outlet } from 'react-router-dom';
-import { LandingNavbar } from './LandingNavbar';
+import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
+import LandingNavbar from './LandingNavbar';
 
+export interface LandingNavLink {
+    label: string;
+    href: string;
+}
 
 const navLinks = [
 	{ label: 'Features', href: '#features' },
@@ -19,13 +24,17 @@ const LandingLayout: FC = () => {
 		<AppShell
 			padding="0"
 			header={{ height: 72 }}
+			navbar={{ width: 300, breakpoint: 'sm', collapsed: { desktop: true, mobile: !mobileOpened } }}
 			footer={{ height: 110 }}
 		>
 			<AppShell.Header>
-				<LandingNavbar mobileOpened={mobileOpened} setMobileOpened={setMobileOpened} links={navLinks} />
+				<LandingHeader mobileOpened={mobileOpened} setMobileOpened={setMobileOpened} links={navLinks} />
 				<Divider />
 			</AppShell.Header>
 
+			<AppShell.Navbar>
+				<LandingNavbar links={navLinks}></LandingNavbar>
+			</AppShell.Navbar>
 
 			<AppShell.Main>
 				<Outlet></Outlet>

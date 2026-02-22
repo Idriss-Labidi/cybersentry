@@ -1,52 +1,20 @@
+import {type FC} from "react"
+import { type LandingNavLink } from "./LandingLayout";
+import { NavLink, ScrollArea, Stack } from "@mantine/core";
+import { Link } from "react-router-dom";
 
-import type { FC } from 'react';
-import { Anchor, Burger, Button, Container, Group, Text, ThemeIcon } from '@mantine/core';
-import { Link } from 'react-router-dom';
-
-interface LandingNavLink {
-    label: string;
-    href: string;
-}
-
-interface LandingNavbarProps {
-    mobileOpened: boolean;
-    setMobileOpened: (value: boolean) => void;
-    links: LandingNavLink[];
-}
-
-export const LandingNavbar: FC<LandingNavbarProps> = ({ mobileOpened, setMobileOpened, links }) => {
-    return (
-        <Container size="lg" style={{ height: '100%' }}>
-            <Group justify="space-between" align="center" h="100%">
-                <Group gap="xs">
-                    <ThemeIcon size={36} radius="xl" variant="gradient" gradient={{ from: 'blue', to: 'cyan' }}>
-                        CS
-                    </ThemeIcon>
-                    <Text fw={700}>CyberSentry</Text>
-                </Group>
-
-                <Group gap="lg" visibleFrom="sm">
-                    {links.map((link) => (
-                        <Anchor key={link.label} href={link.href} c="dimmed" fz="sm">
-                            {link.label}
-                        </Anchor>
-                    ))}
-                    <Button component={Link} to="/login" variant="light" color="blue">
-                        Sign in
-                    </Button>
-                    <Button component={Link} to="/oauth-callback" color="blue">
-                        Start free
-                    </Button>
-                </Group>
-
-                <Burger
-                    opened={mobileOpened}
-                    onClick={() => setMobileOpened(!mobileOpened)}
-                    hiddenFrom="sm"
-                    size="sm"
-                    aria-label="Toggle navigation menu"
-                />
-            </Group>
-        </Container>
+const LandingNavbar: FC<{ links : LandingNavLink[]}> = ({ links }) => {
+    return ( 
+        <ScrollArea>
+            <Stack>
+                { links.map( link => <NavLink
+                    component={Link}
+                    to={link.href}
+                    label={link.label}
+                />)}
+            </Stack>
+        </ScrollArea>
     );
-};
+}
+
+export default LandingNavbar;

@@ -13,7 +13,6 @@ import {
     Group,
 } from '@mantine/core';
 import { IconCheck } from '@tabler/icons-react';
-
 import type { FC } from 'react';
 
 export const Landing: FC = () => {
@@ -22,7 +21,7 @@ export const Landing: FC = () => {
             <Container size="lg" py="xl">
                 <Grid gutter="xl" align="center">
                     <Grid.Col span={{ base: 12, md: 6 }}>
-                        <Badge size="lg" variant="gradient" gradient={{ from: 'blue', to: 'cyan' }}>
+                        <Badge size="lg" variant="gradient" gradient={{ from: 'cyan', to: 'green' }}>
                             New: Live threat feed
                         </Badge>
                         <Title order={1} mt="md">
@@ -33,10 +32,10 @@ export const Landing: FC = () => {
                             with prioritized insights and collaborative workflows.
                         </Text>
                         <Group mt="xl" gap="md">
-                            <Button size="md" color="blue">
+                            <Button size="md">
                                 Start free
                             </Button>
-                            <Button size="md" variant="light" color="blue">
+                            <Button size="md" variant="light">
                                 Book a demo
                             </Button>
                         </Group>
@@ -44,7 +43,7 @@ export const Landing: FC = () => {
                             mt="xl"
                             spacing="md"
                             icon={
-                                <ThemeIcon color="blue" size={24} radius="xl">
+                                <ThemeIcon size={24} radius="xl">
                                     <IconCheck size={16} />
                                 </ThemeIcon>
                             }
@@ -148,7 +147,7 @@ export const Landing: FC = () => {
                             mt="md"
                             spacing="sm"
                             icon={
-                                <ThemeIcon color="blue" size={20} radius="xl">
+                                <ThemeIcon size={20} radius="xl">
                                     <IconCheck size={14} />
                                 </ThemeIcon>
                             }
@@ -157,7 +156,7 @@ export const Landing: FC = () => {
                             <List.Item>5 team members</List.Item>
                             <List.Item>Email support</List.Item>
                         </List>
-                        <Button fullWidth mt="lg" variant="light" color="blue">
+                        <Button fullWidth mt="lg" variant="light" >
                             Choose Starter
                         </Button>
                     </Card>
@@ -169,7 +168,7 @@ export const Landing: FC = () => {
                             mt="md"
                             spacing="sm"
                             icon={
-                                <ThemeIcon color="blue" size={20} radius="xl">
+                                <ThemeIcon size={20} radius="xl">
                                     <IconCheck size={14} />
                                 </ThemeIcon>
                             }
@@ -178,7 +177,7 @@ export const Landing: FC = () => {
                             <List.Item>Unlimited investigations</List.Item>
                             <List.Item>Role-based access</List.Item>
                         </List>
-                        <Button fullWidth mt="lg" color="blue">
+                        <Button fullWidth mt="lg">
                             Choose Growth
                         </Button>
                     </Card>
@@ -190,7 +189,7 @@ export const Landing: FC = () => {
                             mt="md"
                             spacing="sm"
                             icon={
-                                <ThemeIcon color="blue" size={20} radius="xl">
+                                <ThemeIcon size={20} radius="xl">
                                     <IconCheck size={14} />
                                 </ThemeIcon>
                             }
@@ -199,7 +198,7 @@ export const Landing: FC = () => {
                             <List.Item>24/7 support and SLAs</List.Item>
                             <List.Item>Dedicated CSM</List.Item>
                         </List>
-                        <Button fullWidth mt="lg" variant="light" color="blue">
+                        <Button fullWidth mt="lg" variant="light">
                             Talk to sales
                         </Button>
                     </Card>
@@ -224,7 +223,7 @@ export const Landing: FC = () => {
                                 mt="md"
                                 spacing="sm"
                                 icon={
-                                    <ThemeIcon color="blue" size={20} radius="xl">
+                                    <ThemeIcon size={20} radius="xl">
                                         <IconCheck size={14} />
                                     </ThemeIcon>
                                 }
@@ -247,8 +246,8 @@ export const Landing: FC = () => {
                         Talk with our team or jump into the product. We will tailor a walkthrough to your stack and priorities.
                     </Text>
                     <Group mt="lg" gap="md">
-                        <Button color="blue">Book time</Button>
-                        <Button variant="light" color="blue">Explore docs</Button>
+                        <Button>Book time</Button>
+                        <Button variant="light">Explore docs</Button>
                     </Group>
                 </Card>
             </Container>
