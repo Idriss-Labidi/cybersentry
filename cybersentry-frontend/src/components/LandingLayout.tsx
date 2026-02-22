@@ -1,12 +1,27 @@
 import { useState, type FC } from 'react';
 import { AppShell, Divider } from '@mantine/core';
 import { Outlet } from 'react-router-dom';
-import { LandingNavbar } from './LandingNavbar';
+import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
+import LandingNavbar from './LandingNavbar';
 
+export interface LandingNavLink {
+    label: string;
+    href: string;
+    children?: LandingNavLink[];
+}
 
-const navLinks = [
+const navLinks: LandingNavLink[] = [
 	{ label: 'Features', href: '#features' },
+	{
+		label: 'Tools',
+		href: '#tools',
+		children: [
+			{ label: 'DNS Lookup', href: '/tools/dns-lookup' },
+			{ label: 'DNS Propagation', href: '/tools/dns-propagation' },
+			{ label: 'DNS Health Check', href: '/tools/dns-health-check' },
+		],
+	},
 	{ label: 'Pricing', href: '#pricing' },
 	{ label: 'About', href: '#about' },
 	{ label: 'Contact', href: '#contact' },
@@ -19,13 +34,17 @@ const LandingLayout: FC = () => {
 		<AppShell
 			padding="0"
 			header={{ height: 72 }}
+			navbar={{ width: 300, breakpoint: 'sm', collapsed: { desktop: true, mobile: !mobileOpened } }}
 			footer={{ height: 110 }}
 		>
 			<AppShell.Header>
-				<LandingNavbar mobileOpened={mobileOpened} setMobileOpened={setMobileOpened} links={navLinks} />
+				<LandingHeader mobileOpened={mobileOpened} setMobileOpened={setMobileOpened} links={navLinks} />
 				<Divider />
 			</AppShell.Header>
 
+			<AppShell.Navbar>
+				<LandingNavbar links={navLinks}></LandingNavbar>
+			</AppShell.Navbar>
 
 			<AppShell.Main>
 				<Outlet></Outlet>

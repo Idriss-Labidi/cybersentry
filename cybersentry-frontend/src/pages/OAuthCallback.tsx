@@ -1,29 +1,34 @@
-import { useEffect } from 'react';
-import { useNavigate } from '../hooks/useNavigate';
+import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Center, Text } from '@mantine/core';
+import { useAuth } from "../context/AuthContext";
 
 export const OAuthCallback = () => {
   const navigate = useNavigate();
+  const { handleCallback, isLoading } = useAuth();
+  const hasRun = useRef(false);
 
   useEffect(() => {
-    // The AuthContext handles the callback processing
-    // Redirect to home after processing
-    const timer = setTimeout(() => {
-      navigate('/dashboard');
-    }, 2000);
+    if (isLoading) return; // Wait for userManager to be initialized
+    if (hasRun.current) return;
+    hasRun.current = true;
 
-    return () => clearTimeout(timer);
-  }, [navigate]);
+    const run = async () => {
+      try {
+        await handleCallback();
+        navigate('/dashboard', { replace: true });
+      } catch (err) {
+        console.error('OAuth callback error:', err);
+        navigate('/', { replace: true });
+      }
+    };
+
+    run();
+  }, [isLoading, handleCallback, navigate]);
 
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: '100vh',
-      fontSize: '18px',
-      color: '#666',
-    }}>
-      <p>Processing login... Redirecting to dashboard...</p>
-    </div>
+    <Center>
+      <Text>Redirecting to dashboard. Please wait...</Text>
+    </Center>
   );
 };

@@ -1,52 +1,59 @@
+import {type FC} from "react"
+import { type LandingNavLink } from "./LandingLayout";
+import { ActionIcon, Button, Divider, Group, NavLink, ScrollArea, Stack } from "@mantine/core";
+import { IconMoonFilled, IconSunFilled } from "@tabler/icons-react";
+import { Link } from "react-router-dom";
+import { useTheme } from "../context/ThemeContext";
 
-import type { FC } from 'react';
-import { Anchor, Burger, Button, Container, Group, Text, ThemeIcon } from '@mantine/core';
-import { Link } from 'react-router-dom';
+const LandingNavbar: FC<{ links : LandingNavLink[]}> = ({ links }) => {
+    const { colorScheme, toggleColorScheme } = useTheme();
 
-interface LandingNavLink {
-    label: string;
-    href: string;
-}
-
-interface LandingNavbarProps {
-    mobileOpened: boolean;
-    setMobileOpened: (value: boolean) => void;
-    links: LandingNavLink[];
-}
-
-export const LandingNavbar: FC<LandingNavbarProps> = ({ mobileOpened, setMobileOpened, links }) => {
-    return (
-        <Container size="lg" style={{ height: '100%' }}>
-            <Group justify="space-between" align="center" h="100%">
-                <Group gap="xs">
-                    <ThemeIcon size={36} radius="xl" variant="gradient" gradient={{ from: 'blue', to: 'cyan' }}>
-                        CS
-                    </ThemeIcon>
-                    <Text fw={700}>CyberSentry</Text>
+    return ( 
+        <ScrollArea p="md">
+            <Stack>
+                { links.map( link => 
+                    link.children ? (
+                        <NavLink key={link.label} label={link.label}>
+                            {link.children.map(child => (
+                                <NavLink
+                                    key={child.label}
+                                    component={Link}
+                                    to={child.href}
+                                    label={child.label}
+                                />
+                            ))}
+                        </NavLink>
+                    ) : (
+                        <NavLink
+                            key={link.label}
+                            component={Link}
+                            to={link.href}
+                            label={link.label}
+                        />
+                    )
+                )}
+                <Divider my="xs" />
+                <Group justify="space-between" px="sm">
+                    <ActionIcon
+                        variant="subtle"
+                        size="lg"
+                        onClick={toggleColorScheme}
+                        aria-label="Toggle color scheme"
+                    >
+                        { colorScheme === 'light' ? <IconMoonFilled></IconMoonFilled> : <IconSunFilled></IconSunFilled>}
+                    </ActionIcon>
+                    <Group gap="xs">
+                        <Button component={Link} to="/login" variant="light" size="xs">
+                            Sign in
+                        </Button>
+                        <Button component={Link} to="/book-demo" size="xs">
+                            Get started
+                        </Button>
+                    </Group>
                 </Group>
-
-                <Group gap="lg" visibleFrom="sm">
-                    {links.map((link) => (
-                        <Anchor key={link.label} href={link.href} c="dimmed" fz="sm">
-                            {link.label}
-                        </Anchor>
-                    ))}
-                    <Button component={Link} to="/login" variant="light" color="blue">
-                        Sign in
-                    </Button>
-                    <Button component={Link} to="/oauth-callback" color="blue">
-                        Start free
-                    </Button>
-                </Group>
-
-                <Burger
-                    opened={mobileOpened}
-                    onClick={() => setMobileOpened(!mobileOpened)}
-                    hiddenFrom="sm"
-                    size="sm"
-                    aria-label="Toggle navigation menu"
-                />
-            </Group>
-        </Container>
+            </Stack>
+        </ScrollArea>
     );
-};
+}
+
+export default LandingNavbar;
