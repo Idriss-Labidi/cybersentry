@@ -39,13 +39,13 @@ import {useAuth} from "../context/AuthContext.tsx";
 type WarningLevel = 'critical' | 'high' | 'medium' | 'low' | 'warning' | 'info';
 
 interface RepositoryInfo {
-  id: number;
-  owner: string;
-  name: string;
-  url: string;
+  id?: number;
+  owner?: string;
+  name?: string;
+  url?: string;
   organization?: number | null;
-  created_at: string;
-  last_check_at: string;
+  created_at?: string;
+  last_check_at?: string;
 }
 
 interface Level1Releases {
@@ -147,7 +147,9 @@ interface WarningItem {
 
 interface RepositoryCheckResult {
   id: number;
-  repository: RepositoryInfo;
+  repository?: RepositoryInfo;
+  repository_url?: string;
+  repository_name?: string;
   risk_score: number;
   level1_data?: Level1Data;
   level2_data?: Level2Data;
@@ -166,6 +168,32 @@ const getResultsFromResponse = (data: CheckResultsResponse | null | undefined): 
   if ('results' in data && Array.isArray(data.results)) return data.results;
   return [];
 };
+
+const parseRepositoryUrl = (url?: string) => {
+  if (!url) return { owner: '', name: '' };
+  const match = url.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)/i);
+  if (!match) return { owner: '', name: '' };
+  return { owner: match[1], name: match[2].replace(/\.git$/, '') };
+};
+
+const normalizeCheckResult = (result: RepositoryCheckResult): RepositoryCheckResult => {
+  const url = result.repository?.url || result.repository_url || '';
+  const parsed = parseRepositoryUrl(url);
+  const owner = result.repository?.owner || parsed.owner || 'Unknown';
+  const name = result.repository?.name || result.repository_name || parsed.name || 'Unknown';
+
+  const repository: RepositoryInfo = {
+    ...(result.repository ?? {}),
+    owner,
+    name,
+    url,
+  };
+
+  return { ...result, repository };
+};
+
+const normalizeResults = (data: CheckResultsResponse | null | undefined): RepositoryCheckResult[] =>
+  getResultsFromResponse(data).map(normalizeCheckResult);
 
 const GitHubHealthCheckHistory = () => {
   const { user } = useAuth();
@@ -205,7 +233,7 @@ const GitHubHealthCheckHistory = () => {
           }
         }
       );
-      setResults(getResultsFromResponse(response.data));
+      setResults(normalizeResults(response.data));
     } catch (err: unknown) {
       const axiosError = err as AxiosError<{ error?: string }>;
       setError(axiosError.response?.data?.error ?? 'Failed to fetch results');
@@ -224,11 +252,13 @@ const GitHubHealthCheckHistory = () => {
     }
   };
 
-  const filteredResults = results.filter(
-    (result) =>
-      result.repository.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      result.repository.owner.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredResults = results.filter((result) => {
+    const term = searchTerm.toLowerCase();
+    const owner = result.repository?.owner?.toLowerCase() ?? '';
+    const name = result.repository?.name?.toLowerCase() ?? '';
+    const url = result.repository?.url?.toLowerCase() ?? '';
+    return owner.includes(term) || name.includes(term) || url.includes(term);
+  });
 
   const handleViewDetails = (result: RepositoryCheckResult) => {
     setSelectedResult(result);
@@ -358,10 +388,10 @@ const GitHubHealthCheckHistory = () => {
                     <Table.Td>
                       <div>
                         <Text fw={700} size="sm">
-                          {result.repository.owner}/{result.repository.name}
+                          {(result.repository?.owner ?? 'Unknown') + '/' + (result.repository?.name ?? 'Unknown')}
                         </Text>
                         <Text size="xs" c="dimmed">
-                          {result.repository.url}
+                          {result.repository?.url ?? 'Repository URL unavailable'}
                         </Text>
                       </div>
                     </Table.Td>
@@ -451,7 +481,7 @@ const GitHubHealthCheckHistory = () => {
       <Modal
         opened={detailsModalOpen}
         onClose={() => setDetailsModalOpen(false)}
-        title={selectedResult && `${selectedResult.repository.owner}/${selectedResult.repository.name}`}
+        title={selectedResult && `${selectedResult.repository?.owner ?? 'Unknown'}/${selectedResult.repository?.name ?? 'Unknown'}`}
         size="xl"
         scrollAreaComponent={undefined}
       >
@@ -462,7 +492,7 @@ const GitHubHealthCheckHistory = () => {
               <Paper p="md" radius="md" bg="gray.0">
                 <Group justify="space-between" mb="md">
                   <div>
-                    <Text fw={700}>{selectedResult.repository.url}</Text>
+                    <Text fw={700}>{selectedResult.repository?.url ?? 'Repository URL unavailable'}</Text>
                   </div>
                   <Badge color={getRiskColor(selectedResult.risk_score)} size="lg">
                     {getRiskLabel(selectedResult.risk_score)}
