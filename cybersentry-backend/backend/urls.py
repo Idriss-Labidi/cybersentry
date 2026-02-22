@@ -24,6 +24,5 @@ urlpatterns = [
     path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('oidc/', include('oidc_provider.urls', namespace='oidc_provider')),
     path('dns-tools/', include('dns_tools.urls', namespace='dns_tools')),
-    path('api/', include('api.urls')),
     path('github-health/', include('github_health_check.urls')),
 ]
