@@ -11,6 +11,9 @@ import { Security } from './pages/Security';
 import { Alerts } from './pages/Alerts';
 import { Analytics } from './pages/Analytics';
 import { Settings } from './pages/Settings';
+import { DnsLookup } from './pages/DnsLookup';
+import { DnsHealthCheck } from './pages/DnsHealthCheck';
+import { DnsPropagation } from './pages/DnsPropagation';
 import { useAuth } from './context/AuthContext';
 import '@mantine/core/styles.css';
 import LandingLayout from './components/LandingLayout';
@@ -30,6 +33,9 @@ function AppContent() {
       <Routes>
         <Route element={<LandingLayout />} >
           <Route path='/' element={<Landing/>}></Route>
+          <Route path="/tools/dns-lookup" element={<DnsLookup />} />
+          <Route path="/tools/dns-propagation" element={<DnsPropagation />} />
+          <Route path="/tools/dns-health-check" element={<DnsHealthCheck />} />
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
