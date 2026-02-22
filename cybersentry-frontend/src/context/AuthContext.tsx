@@ -9,6 +9,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: () => Promise<void>;
   logout: () => Promise<void>;
+  handleCallback: () =>  Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,36 +32,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           post_logout_redirect_uri: import.meta.env.VITE_OIDC_REDIRECT_URI,
           automaticSilentRenew: true,
           loadUserInfo: true,
+          monitorSession: false,
         };
 
         const manager = new UserManager(settings);
-        setUserManager(manager);
-
-        const currentUrl = new URL(window.location.href);
-        const queryState = currentUrl.searchParams.get('state');
-        const hashState = new URLSearchParams(currentUrl.hash.replace(/^#/, '')).get('state');
-        const hasState = queryState || hashState;
-
-        // Check if we're returning from login callback
-        if (window.location.pathname === '/oauth-callback') {
-          if (!hasState) {
-            console.warn('OIDC callback missing state; restarting login redirect');
-            await manager.clearStaleState();
-            await manager.signinRedirect();
-            return;
-          }
-          try {
-            const user = await manager.signinRedirectCallback(currentUrl.href);
-            setUser(user);
-            // After processing the callback, send user to the main page
-            window.location.replace('/');
-            return;
-          } catch (error) {
-            console.error('Error processing login callback:', error);
-          }
-        }
-
-        // Try to restore user from session when not on the callback path
+        setUserManager(manager)
         const user = await manager.getUser();
         setUser(user);
       } catch (error) {
@@ -96,12 +72,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const handleCallback = async () => {
+    if (!userManager) {
+      throw new Error('UserManager not initialized');
+    }
+
+    try {
+      const user = await userManager.signinRedirectCallback();
+      setUser(user);
+    } catch (error) {
+      console.error('Error during signin callback:', error);
+      throw error;
+    }
+  };
+
   const value: AuthContextType = {
     user,
     isLoading,
     isAuthenticated: !!user && !user.expired,
     login,
     logout,
+    handleCallback
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

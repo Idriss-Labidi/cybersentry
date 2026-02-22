@@ -1,4 +1,4 @@
-import { AppShell, Group, ActionIcon, Avatar, Menu, Breadcrumbs, Burger, Text } from '@mantine/core';
+import { Group, ActionIcon, Avatar, Menu, Breadcrumbs, Burger, Text } from '@mantine/core';
 import { IconBell, IconLogout, IconUser, IconSettings, IconMoonFilled, IconSunFilled } from '@tabler/icons-react';
 import { useAuth } from '../context/AuthContext';
 import { useLocation } from 'react-router-dom';
