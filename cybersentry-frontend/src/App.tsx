@@ -11,6 +11,8 @@ import { Security } from './pages/Security';
 import { Alerts } from './pages/Alerts';
 import { Analytics } from './pages/Analytics';
 import { Settings } from './pages/Settings';
+import GitHubHealthCheck from './pages/GitHubHealthCheck';
+import GitHubHealthCheckHistory from './pages/GitHubHealthCheckHistory';
 import { useAuth } from './context/AuthContext';
 import '@mantine/core/styles.css';
 import LandingLayout from './components/LandingLayout';
@@ -40,6 +42,8 @@ function AppContent() {
             <Route path="/dashboard/alerts" element={<Alerts />} />
             <Route path="/dashboard/analytics" element={<Analytics />} />
             <Route path="/dashboard/settings" element={<Settings />} />
+            <Route path="/dashboard/github" element={<GitHubHealthCheck />} />
+            <Route path="/dashboard/github/history" element={<GitHubHealthCheckHistory />} />
           </Route>
         </Route>
         {/* Add other routes here */}

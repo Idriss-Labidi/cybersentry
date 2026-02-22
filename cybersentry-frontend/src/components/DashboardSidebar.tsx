@@ -1,9 +1,13 @@
 import { AppShell, Stack, NavLink, ScrollArea } from '@mantine/core';
-import { IconDashboard, IconShield, IconAlertTriangle, IconSettings, IconAnalyze } from '@tabler/icons-react';
+import { IconDashboard, IconShield, IconAlertTriangle, IconSettings, IconAnalyze, IconGitBranch } from '@tabler/icons-react';
 import { Link, useLocation } from 'react-router-dom';
+import { useState } from 'react';
 
 const DashboardSidebar = () => {
   const location = useLocation();
+  const [githubOpen, setGithubOpen] = useState(
+    location.pathname.startsWith('/dashboard/github')
+  );
 
   const navItems = [
     {
@@ -52,6 +56,29 @@ const DashboardSidebar = () => {
             />
           );
         })}
+
+          {/* GitHub Parent Item with Children */}
+          <NavLink
+            label="GitHub"
+            leftSection={<IconGitBranch size="1rem" />}
+            defaultOpened={githubOpen}
+            opened={githubOpen}
+            onChange={setGithubOpen}
+            childrenOffset={28}
+          >
+            <NavLink
+              component={Link}
+              to="/dashboard/github"
+              label="Health Check"
+              active={location.pathname === '/dashboard/github'}
+            />
+            <NavLink
+              component={Link}
+              to="/dashboard/github/history"
+              label="History"
+              active={location.pathname === '/dashboard/github/history'}
+            />
+          </NavLink>
         </Stack>
       </ScrollArea>
     </AppShell.Navbar>
