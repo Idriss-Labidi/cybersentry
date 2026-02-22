@@ -57,30 +57,17 @@ class CheckResultDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'check_timestamp']
 
 
-def get_risk_category(obj) -> str:
-    #Convert risk score to category
-    if obj.risk_score < 25:
-        return "Low Risk"
-    elif obj.risk_score < 50:
-        return "Medium Risk"
-    elif obj.risk_score < 75:
-        return "High Risk"
-    else:
-        return "Critical Risk"
-
-
 class CheckResultSummarySerializer(serializers.ModelSerializer):
 
     # Summary serializer for RepositoryCheckResult (lightweight)
     repository_url = serializers.CharField(source='repository.url', read_only=True)
     repository_name = serializers.CharField(source='repository.name', read_only=True)
-    risk_category = serializers.SerializerMethodField()
 
     class Meta:
         model = RepositoryCheckResult
         fields = [
             'id', 'repository_url', 'repository_name', 'risk_score',
-            'risk_category', 'summary', 'check_timestamp'
+            'summary', 'check_timestamp'
         ]
 
 
