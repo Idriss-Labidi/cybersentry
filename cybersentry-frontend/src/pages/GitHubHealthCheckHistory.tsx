@@ -32,9 +32,10 @@ import {
   IconUsers,
   IconAlertCircle,
 } from '@tabler/icons-react';
-import axios, { AxiosError } from 'axios';
+import type { AxiosError } from 'axios';
 import { getRiskColor, getRiskLabel } from '../utils/githubHealthUtils';
 import {useAuth} from "../context/AuthContext.tsx";
+import { deleteRepositoryCheckResult, getRepositoryHistory } from '../services/github-tools';
 
 type WarningLevel = 'critical' | 'high' | 'medium' | 'low' | 'warning' | 'info';
 
@@ -222,17 +223,7 @@ const GitHubHealthCheckHistory = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get<CheckResultsResponse>(
-        'http://localhost:8000/github-health/repository_history/',
-        {
-          params: {
-            url: urlToUse
-          },
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          }
-        }
-      );
+      const response = await getRepositoryHistory<CheckResultsResponse>({ url: urlToUse });
       setResults(normalizeResults(response.data));
     } catch (err: unknown) {
       const axiosError = err as AxiosError<{ error?: string }>;
@@ -245,7 +236,7 @@ const GitHubHealthCheckHistory = () => {
 
   const deleteResult = async (id: number) => {
     try {
-      await axios.delete(`http://localhost:8000/api/github-health/check-results/${id}/`);
+      await deleteRepositoryCheckResult(id);
       setResults((prev) => prev.filter((r) => r.id !== id));
     } catch {
       setError('Failed to delete result');

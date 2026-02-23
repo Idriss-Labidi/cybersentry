@@ -38,9 +38,10 @@ import {
   IconStar,
   IconBug,
 } from '@tabler/icons-react';
-import axios, { AxiosError } from 'axios';
+import type { AxiosError } from 'axios';
 import { getRiskColor, getRiskLabel } from '../utils/githubHealthUtils';
 import { useAuth } from '../context/AuthContext';
+import { checkRepositoryHealth } from '../services/github-tools';
 
 type WarningLevel = 'critical' | 'high' | 'medium' | 'low' | 'warning' | 'info';
 
@@ -194,19 +195,11 @@ const GitHubHealthCheck = () => {
     setError(null);
 
     try {
-      const response = await axios.post<CheckResult>(
-        'http://localhost:8000/github-health/check_repository/',
-        {
-          url: url.trim(),
-          levels,
-          use_cache: useCache,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      const response = await checkRepositoryHealth<CheckResult>({
+        url: url.trim(),
+        levels,
+        use_cache: useCache,
+      });
       setResult(response.data);
     } catch (err: unknown) {
       const axiosError = err as AxiosError<{ error?: string }>;
@@ -807,7 +800,7 @@ const GitHubHealthCheck = () => {
               <Divider my="md" />
 
               <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md" mb="md">
-                <Paper p="sm" radius="sm" bg="gray.0">
+                <Paper p="sm" radius="sm">
                   <Text size="xs" c="dimmed" mb={4}>
                     Repository Created
                   </Text>
@@ -816,7 +809,7 @@ const GitHubHealthCheck = () => {
                   </Text>
                 </Paper>
 
-                <Paper p="sm" radius="sm" bg="gray.0">
+                <Paper p="sm" radius="sm">
                   <Text size="xs" c="dimmed" mb={4}>
                     Last Check
                   </Text>
@@ -825,7 +818,7 @@ const GitHubHealthCheck = () => {
                   </Text>
                 </Paper>
 
-                <Paper p="sm" radius="sm" bg="gray.0">
+                <Paper p="sm" radius="sm">
                   <Text size="xs" c="dimmed" mb={4}>
                     Risk Assessment
                   </Text>
