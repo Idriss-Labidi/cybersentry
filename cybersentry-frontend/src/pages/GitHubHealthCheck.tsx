@@ -712,7 +712,7 @@ const GitHubHealthCheck = () => {
         </div>
 
         {/* Input Form */}
-        <Card withBorder radius="md" padding="lg" bg="var(--mantine-color-gray-0)">
+        <Card withBorder radius="md" padding="lg">
           <form onSubmit={handleCheck}>
             <Stack gap="md">
               <TextInput
