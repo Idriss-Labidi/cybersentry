@@ -16,6 +16,9 @@ import { DnsHealthCheck } from './pages/DnsHealthCheck';
 import { DnsPropagation } from './pages/DnsPropagation';
 import GitHubHealthCheck from './pages/GitHubHealthCheck';
 import GitHubHealthCheckHistory from './pages/GitHubHealthCheckHistory';
+import { WhoisLookup } from './pages/WhoisLookup';
+import { IpReputation } from './pages/IpReputation';
+import { ReverseIp } from './pages/ReverseIp';
 import { useAuth } from './context/AuthContext';
 import '@mantine/core/styles.css';
 import LandingLayout from './components/LandingLayout';
@@ -38,6 +41,9 @@ function AppContent() {
           <Route path="/tools/dns-lookup" element={<DnsLookup />} />
           <Route path="/tools/dns-propagation" element={<DnsPropagation />} />
           <Route path="/tools/dns-health-check" element={<DnsHealthCheck />} />
+          <Route path="/tools/whois-lookup" element={<WhoisLookup />} />
+          <Route path="/tools/ip-reputation" element={<IpReputation />} />
+          <Route path="/tools/reverse-ip" element={<ReverseIp />} />
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
