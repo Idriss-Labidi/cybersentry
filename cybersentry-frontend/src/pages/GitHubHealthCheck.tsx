@@ -796,8 +796,8 @@ const GitHubHealthCheck = () => {
 
               <Divider my="md" />
 
-              <Group align="center" justify="space-between" wrap="nowrap">
-                <Stack gap="sm" style={{ flex: 1 }}>
+              <Group align="stretch" wrap="nowrap" gap="md">
+                <Stack gap="sm" style={{ flex: 2 }}>
                   <Paper p="sm" radius="sm" style={{ background: 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))' }}>
                     <Text size="xs" c="dimmed" mb={4}>
                       Repository Created
@@ -827,7 +827,7 @@ const GitHubHealthCheck = () => {
                 </Stack>
 
                 {/* Risk Score Visualization */}
-                <Center>
+                <Center style={{ flex: 1 }}>
                   <RingProgress
                     sections={[
                       {
@@ -837,7 +837,7 @@ const GitHubHealthCheck = () => {
                     ]}
                     label={
                       <div>
-                        <Text fw={700} ta="center" size="xl">
+                        <Text fw={900} ta="center" size="xl">
                           {result.result.risk_score}%
                         </Text>
                         <Text size="xs" ta="center" c="dimmed">
@@ -845,7 +845,8 @@ const GitHubHealthCheck = () => {
                         </Text>
                       </div>
                     }
-                    size={140}
+                    size={240}
+                    thickness={16}
                   />
                 </Center>
               </Group>
