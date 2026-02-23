@@ -791,65 +791,64 @@ const GitHubHealthCheck = () => {
                   <Badge size="lg" color={getRiskColor(result.result.risk_score)}>
                     {getRiskLabel(result.result.risk_score)}
                   </Badge>
-                  <Text size="sm" c="dimmed" mt={8}>
-                    Score: {result.result.risk_score}/100
-                  </Text>
                 </Stack>
               </Group>
 
               <Divider my="md" />
 
-              <SimpleGrid cols={{ base: 1, md: 3 }} spacing="md" mb="md">
-                <Paper p="sm" radius="sm">
-                  <Text size="xs" c="dimmed" mb={4}>
-                    Repository Created
-                  </Text>
-                  <Text size="sm" fw={700}>
-                    {new Date(result.result.repository.created_at).toLocaleDateString()}
-                  </Text>
-                </Paper>
+              <Group align="center" justify="space-between" wrap="nowrap">
+                <Stack gap="sm" style={{ flex: 1 }}>
+                  <Paper p="sm" radius="sm" style={{ background: 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))' }}>
+                    <Text size="xs" c="dimmed" mb={4}>
+                      Repository Created
+                    </Text>
+                    <Text size="sm" fw={700}>
+                      {new Date(result.result.repository.created_at).toLocaleDateString()}
+                    </Text>
+                  </Paper>
 
-                <Paper p="sm" radius="sm">
-                  <Text size="xs" c="dimmed" mb={4}>
-                    Last Check
-                  </Text>
-                  <Text size="sm" fw={700}>
-                    {new Date(result.result.check_timestamp).toLocaleString()}
-                  </Text>
-                </Paper>
+                  <Paper p="sm" radius="sm" style={{ background: 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))' }}>
+                    <Text size="xs" c="dimmed" mb={4}>
+                      Last Check
+                    </Text>
+                    <Text size="sm" fw={700}>
+                      {new Date(result.result.check_timestamp).toLocaleString()}
+                    </Text>
+                  </Paper>
 
-                <Paper p="sm" radius="sm">
-                  <Text size="xs" c="dimmed" mb={4}>
-                    Risk Assessment
-                  </Text>
-                  <Text size="sm" fw={700}>
-                    {result.result.summary}
-                  </Text>
-                </Paper>
-              </SimpleGrid>
+                  <Paper p="sm" radius="sm" style={{ background: 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))' }}>
+                    <Text size="xs" c="dimmed" mb={4}>
+                      Risk Assessment
+                    </Text>
+                    <Text size="sm" fw={700}>
+                      {result.result.summary}
+                    </Text>
+                  </Paper>
+                </Stack>
 
-              {/* Risk Score Visualization */}
-              <Center my="lg">
-                <RingProgress
-                  sections={[
-                    {
-                      value: result.result.risk_score,
-                      color: getRiskColor(result.result.risk_score),
-                    },
-                  ]}
-                  label={
-                    <div>
-                      <Text fw={700} ta="center" size="xl">
-                        {result.result.risk_score}%
-                      </Text>
-                      <Text size="xs" ta="center" c="dimmed">
-                        Risk Score
-                      </Text>
-                    </div>
-                  }
-                  size={140}
-                />
-              </Center>
+                {/* Risk Score Visualization */}
+                <Center>
+                  <RingProgress
+                    sections={[
+                      {
+                        value: result.result.risk_score,
+                        color: getRiskColor(result.result.risk_score),
+                      },
+                    ]}
+                    label={
+                      <div>
+                        <Text fw={700} ta="center" size="xl">
+                          {result.result.risk_score}%
+                        </Text>
+                        <Text size="xs" ta="center" c="dimmed">
+                          Risk Score
+                        </Text>
+                      </div>
+                    }
+                    size={140}
+                  />
+                </Center>
+              </Group>
             </Paper>
 
             {/* Warnings */}
