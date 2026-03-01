@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'github_health_check',
     'dns_tools',
     'ip_tools',
+    'email_tools',
 ]
 
 MIDDLEWARE = [

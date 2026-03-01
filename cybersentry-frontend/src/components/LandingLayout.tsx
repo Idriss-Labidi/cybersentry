@@ -23,6 +23,7 @@ const navLinks: LandingNavLink[] = [
 			{ label: 'WHOIS Lookup', href: '/tools/whois-lookup' },
 			{ label: 'IP Reputation', href: '/tools/ip-reputation' },
 			{ label: 'Reverse IP', href: '/tools/reverse-ip' },
+			{ label: 'Email Security', href: '/tools/email-security' },
 		],
 	},
 	{ label: 'Pricing', href: '#pricing' },
