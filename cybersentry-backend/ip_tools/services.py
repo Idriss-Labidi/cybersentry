@@ -267,42 +267,57 @@ def check_domain_exists(domain: str) -> dict:
     """
     Vérifie rapidement si un domaine existe via DNS uniquement.
     Version optimisée sans WHOIS pour éviter les timeouts.
+    Utilise threading pour ne pas affecter les autres connexions socket.
     """
-    try:
-        # Tenter une résolution DNS avec timeout court
-        socket.setdefaulttimeout(1)  # 1 seconde timeout seulement
-        ip = socket.gethostbyname(domain)
-        socket.setdefaulttimeout(None)
+    import threading
 
-        return {
-            'domain': domain,
-            'exists': True,
-            'ip': ip,
-            'is_suspicious': True,
-        }
-    except socket.gaierror:
-        # Le domaine n'existe pas
-        socket.setdefaulttimeout(None)
-        return {
-            'domain': domain,
-            'exists': False,
-            'is_suspicious': False,
-        }
-    except socket.timeout:
-        # Timeout - considérer comme non existant
-        socket.setdefaulttimeout(None)
+    result_container = {'result': None, 'error': None}
+
+    def resolve_dns():
+        try:
+            # Cette fonction s'exécute dans un thread séparé
+            ip = socket.gethostbyname(domain)
+            result_container['result'] = ip
+        except socket.gaierror:
+            result_container['error'] = 'gaierror'
+        except Exception as e:
+            result_container['error'] = str(e)[:50]
+
+    # Lancer la résolution DNS dans un thread avec timeout
+    thread = threading.Thread(target=resolve_dns, daemon=True)
+    thread.start()
+    thread.join(timeout=1.0)  # Attendre max 1 seconde
+
+    if thread.is_alive():
+        # Le thread est encore en cours, timeout atteint
         return {
             'domain': domain,
             'exists': False,
             'error': 'timeout',
             'is_suspicious': False,
         }
-    except Exception as e:
-        socket.setdefaulttimeout(None)
+
+    if result_container['result']:
+        # DNS résolu avec succès
+        return {
+            'domain': domain,
+            'exists': True,
+            'ip': result_container['result'],
+            'is_suspicious': True,
+        }
+    elif result_container['error'] == 'gaierror':
+        # Le domaine n'existe pas
         return {
             'domain': domain,
             'exists': False,
-            'error': str(e)[:50],
+            'is_suspicious': False,
+        }
+    else:
+        # Autre erreur
+        return {
+            'domain': domain,
+            'exists': False,
+            'error': result_container['error'],
             'is_suspicious': False,
         }
 
