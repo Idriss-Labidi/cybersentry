@@ -6,6 +6,7 @@ import {
   IconSettings,
   IconAnalyze,
   IconBrandGithub,
+  IconShieldCheck,
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
 import { Link, useLocation } from 'react-router-dom';
@@ -38,6 +39,15 @@ const navItems: NavItem[] = [
     children: [
       { id: 'github-health', label: 'Health Check', href: '/dashboard/github' },
       { id: 'github-history', label: 'History', href: '/dashboard/github/history' },
+    ],
+  },
+  {
+    id: 'advanced-security',
+    icon: IconShieldCheck,
+    label: 'Advanced Security',
+    children: [
+      { id: 'advanced-scanner', label: 'Scanner', href: '/dashboard/advanced-scanner' },
+      { id: 'scan-history', label: 'Scan History', href: '/dashboard/scan-history' },
     ],
   },
 ];

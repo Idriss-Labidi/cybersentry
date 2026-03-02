@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from .models import IPReputationScan, DomainTyposquattingScan
 import re
 
 
@@ -47,3 +48,42 @@ class ReverseIpSerializer(serializers.Serializer):
         if not _is_valid_ip(value):
             raise serializers.ValidationError("Invalid IP address format.")
         return value
+
+
+class TyposquattingDetectionSerializer(serializers.Serializer):
+    domain = serializers.CharField(max_length=255)
+
+    def validate_domain(self, value):
+        value = value.strip().lower()
+        # Retirer les protocoles si présents
+        if value.startswith('http://') or value.startswith('https://'):
+            value = value.split('://', 1)[1]
+        # Retirer le chemin si présent
+        if '/' in value:
+            value = value.split('/')[0]
+
+        if not _is_valid_domain(value):
+            raise serializers.ValidationError("Invalid domain name format.")
+        return value
+
+
+class IPReputationScanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IPReputationScan
+        fields = [
+            'id', 'ip_address', 'reputation_score', 'risk_level',
+            'is_proxy', 'is_hosting', 'is_mobile', 'risk_factors',
+            'geolocation', 'network', 'scanned_at'
+        ]
+        read_only_fields = fields
+
+
+class DomainTyposquattingScanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DomainTyposquattingScan
+        fields = [
+            'id', 'original_domain', 'threat_count', 'total_variants',
+            'similar_domains', 'scanned_at'
+        ]
+        read_only_fields = fields
+

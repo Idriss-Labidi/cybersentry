@@ -64,6 +64,59 @@ export interface ReverseIpResponse {
   domains: string[];
 }
 
+// Typosquatting Detection
+export interface TyposquattingRequest {
+  domain: string;
+}
+
+export interface DomainVariant {
+  domain: string;
+  exists: boolean;
+  registrar?: string | null;
+  creation_date?: string | null;
+  is_suspicious: boolean;
+  error?: string;
+}
+
+export interface TyposquattingResponse {
+  scan_id: number;
+  original_domain: string;
+  total_variants_generated: number;
+  variants_checked: number;
+  similar_domains: DomainVariant[];
+  threat_count: number;
+  scanned_at: string;
+}
+
+// History
+export interface IPReputationScanHistory {
+  id: number;
+  ip_address: string;
+  reputation_score: number;
+  risk_level: 'low' | 'medium' | 'high';
+  is_proxy: boolean;
+  is_hosting: boolean;
+  is_mobile: boolean;
+  risk_factors: string[];
+  geolocation: IpGeolocation;
+  network: IpNetwork;
+  scanned_at: string;
+}
+
+export interface DomainTyposquattingScanHistory {
+  id: number;
+  original_domain: string;
+  threat_count: number;
+  total_variants: number;
+  similar_domains: DomainVariant[];
+  scanned_at: string;
+}
+
+export interface ScanHistoryResponse {
+  ip_scans: IPReputationScanHistory[];
+  typosquatting_scans: DomainTyposquattingScanHistory[];
+}
+
 /* ------------------------------------------------------------------ */
 /*  API calls                                                          */
 /* ------------------------------------------------------------------ */
@@ -76,3 +129,16 @@ export const ipReputation = (data: IpReputationRequest) =>
 
 export const reverseIp = (data: ReverseIpRequest) =>
   axiosInstance.post<ReverseIpResponse>('/ip-tools/reverse/', data);
+
+// Advanced endpoints (require authentication)
+export const advancedIpReputation = (data: IpReputationRequest) =>
+  axiosInstance.post<IpReputationResponse>('/ip-tools/advanced/reputation/', data);
+
+export const detectTyposquatting = (data: TyposquattingRequest) =>
+  axiosInstance.post<TyposquattingResponse>('/ip-tools/typosquatting/', data);
+
+export const getScanHistory = (limit?: number) =>
+  axiosInstance.get<ScanHistoryResponse>('/ip-tools/history/', {
+    params: { limit: limit || 50 }
+  });
+
