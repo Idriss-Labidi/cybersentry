@@ -21,6 +21,7 @@ import {
   Box,
   ScrollArea,
   Modal,
+  Card,
 } from '@mantine/core';
 import {
   IconSearch,
@@ -31,6 +32,7 @@ import {
   IconAlertTriangle,
   IconHistory,
   IconEye,
+  IconFingerprint,
 } from '@tabler/icons-react';
 import {
   advancedIpReputation,
@@ -322,6 +324,40 @@ export const AdvancedSecurityScanner = () => {
           </Text>
         </div>
 
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
+          <Card withBorder padding="lg" radius="md">
+            <Group justify="space-between">
+              <div>
+                <Text fz="xs" c="dimmed" tt="uppercase" fw={700}>
+                  Total Scans
+                </Text>
+                <Text fz="xl" fw={700}>
+                  {scans.length}
+                </Text>
+              </div>
+              <ThemeIcon size="lg" variant="light" color="blue">
+                <IconFingerprint size={20} />
+              </ThemeIcon>
+            </Group>
+          </Card>
+
+          <Card withBorder padding="lg" radius="md">
+            <Group justify="space-between">
+              <div>
+                <Text fz="xs" c="dimmed" tt="uppercase" fw={700}>
+                  High Risk IPs
+                </Text>
+                <Text fz="xl" fw={700}>
+                  {scans.filter((s) => s.risk_level === 'high').length}
+                </Text>
+              </div>
+              <ThemeIcon size="lg" variant="light" color="red">
+                <IconAlertTriangle size={20} />
+              </ThemeIcon>
+            </Group>
+          </Card>
+        </SimpleGrid>
+
         <Paper withBorder p="lg" radius="md" pos="relative">
           <LoadingOverlay visible={historyLoading} />
 
@@ -517,7 +553,7 @@ export const AdvancedSecurityScanner = () => {
             </Paper>
 
             {/* Scan Date */}
-            <Paper withBorder p="lg" radius="md" bg="gray.0">
+            <Paper withBorder p="lg" radius="md">
               <Text fz="sm" c="dimmed">
                 Scanned at: {formatDate(selectedScan.scanned_at)}
               </Text>

@@ -22,7 +22,6 @@ import { ReverseIp } from './pages/ReverseIp';
 import { EmailSecurityAnalyzer } from './pages/EmailSecurityAnalyzer';
 import { TyposquattingDetection } from './pages/TyposquattingDetection';
 import { AdvancedSecurityScanner } from './pages/AdvancedSecurityScanner';
-import { ScanHistory } from './pages/ScanHistory';
 import { useAuth } from './context/AuthContext';
 import '@mantine/core/styles.css';
 import LandingLayout from './components/LandingLayout';
@@ -63,7 +62,6 @@ function AppContent() {
             <Route path="/dashboard/github" element={<GitHubHealthCheck />} />
             <Route path="/dashboard/github/history" element={<GitHubHealthCheckHistory />} />
             <Route path="/dashboard/advanced-scanner" element={<AdvancedSecurityScanner />} />
-            <Route path="/dashboard/scan-history" element={<ScanHistory />} />
           </Route>
         </Route>
         {/* Add other routes here */}

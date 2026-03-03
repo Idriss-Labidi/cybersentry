@@ -45,10 +45,7 @@ const navItems: NavItem[] = [
     id: 'advanced-security',
     icon: IconShieldCheck,
     label: 'Advanced Security',
-    children: [
-      { id: 'advanced-scanner', label: 'Scanner', href: '/dashboard/advanced-scanner' },
-      { id: 'scan-history', label: 'Scan History', href: '/dashboard/scan-history' },
-    ],
+    href: '/dashboard/advanced-scanner',
   },
 ];
 
