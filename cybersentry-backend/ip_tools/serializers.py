@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import IPReputationScan, DomainTyposquattingScan
+from .models import IPReputationScan
 import re
 
 
@@ -77,13 +77,4 @@ class IPReputationScanSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-
-class DomainTyposquattingScanSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DomainTyposquattingScan
-        fields = [
-            'id', 'original_domain', 'threat_count', 'total_variants',
-            'similar_domains', 'scanned_at'
-        ]
-        read_only_fields = fields
 

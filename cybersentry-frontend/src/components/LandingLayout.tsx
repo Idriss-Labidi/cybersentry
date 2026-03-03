@@ -24,6 +24,7 @@ const navLinks: LandingNavLink[] = [
 			{ label: 'IP Reputation', href: '/tools/ip-reputation' },
 			{ label: 'Reverse IP', href: '/tools/reverse-ip' },
 			{ label: 'Email Security', href: '/tools/email-security' },
+			{ label: 'Typosquatting Detection', href: '/tools/typosquatting' },
 		],
 	},
 	{ label: 'Pricing', href: '#pricing' },

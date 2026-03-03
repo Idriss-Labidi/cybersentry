@@ -9,7 +9,6 @@ from .serializers import (
     ReverseIpSerializer,
     TyposquattingDetectionSerializer,
     IPReputationScanSerializer,
-    DomainTyposquattingScanSerializer,
 )
 from .services import (
     WhoisLookupError,
@@ -18,9 +17,8 @@ from .services import (
     get_ip_reputation,
     reverse_ip_lookup,
     check_ip_reputation_with_history,
-    detect_typosquatting_with_history,
+    detect_typosquatting,
     get_user_ip_scan_history,
-    get_user_typosquatting_scan_history,
 )
 
 
@@ -99,11 +97,11 @@ def advanced_ip_reputation(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def typosquatting_detection(request):
     """
     Détection de typosquatting pour un domaine donné.
-    Nécessite l'authentification et sauvegarde dans l'historique.
+    Endpoint PUBLIC - pas de persistance de données.
     """
     serializer = TyposquattingDetectionSerializer(data=request.data)
     if not serializer.is_valid():
@@ -112,7 +110,7 @@ def typosquatting_detection(request):
     domain = serializer.validated_data['domain']
 
     try:
-        result = detect_typosquatting_with_history(domain, user=request.user)
+        result = detect_typosquatting(domain)
     except Exception as exc:
         return Response(
             {'message': f'Error detecting typosquatting: {str(exc)}'},
@@ -126,16 +124,14 @@ def typosquatting_detection(request):
 @permission_classes([IsAuthenticated])
 def scan_history(request):
     """
-    Récupère l'historique complet des scans (IP reputation + typosquatting).
+    Récupère l'historique complet des scans de réputation IP.
     Nécessite l'authentification.
     """
     limit = int(request.query_params.get('limit', 50))
 
     ip_scans = get_user_ip_scan_history(request.user, limit=limit)
-    typosquatting_scans = get_user_typosquatting_scan_history(request.user, limit=limit)
 
     return Response({
         'ip_scans': IPReputationScanSerializer(ip_scans, many=True).data,
-        'typosquatting_scans': DomainTyposquattingScanSerializer(typosquatting_scans, many=True).data,
     }, status=status.HTTP_200_OK)
 

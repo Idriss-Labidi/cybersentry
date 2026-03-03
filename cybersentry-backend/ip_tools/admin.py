@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import IPReputationScan, DomainTyposquattingScan
+from .models import IPReputationScan
 
 
 @admin.register(IPReputationScan)
@@ -26,20 +26,3 @@ class IPReputationScanAdmin(admin.ModelAdmin):
         }),
     )
 
-
-@admin.register(DomainTyposquattingScan)
-class DomainTyposquattingScanAdmin(admin.ModelAdmin):
-    list_display = ['original_domain', 'user', 'threat_count', 'total_variants', 'scanned_at']
-    list_filter = ['scanned_at']
-    search_fields = ['original_domain', 'user__username']
-    readonly_fields = ['scanned_at']
-    ordering = ['-scanned_at']
-
-    fieldsets = (
-        ('Basic Information', {
-            'fields': ('user', 'original_domain', 'scanned_at')
-        }),
-        ('Results', {
-            'fields': ('threat_count', 'total_variants', 'similar_domains')
-        }),
-    )

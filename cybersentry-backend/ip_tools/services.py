@@ -3,7 +3,7 @@ import whois
 import requests
 from typing import Optional
 from django.contrib.auth.models import User
-from .models import IPReputationScan, DomainTyposquattingScan
+from .models import IPReputationScan
 
 
 class WhoisLookupError(Exception):
@@ -322,9 +322,9 @@ def check_domain_exists(domain: str) -> dict:
         }
 
 
-def detect_typosquatting_with_history(domain: str, user: User) -> dict:
+def detect_typosquatting(domain: str) -> dict:
     """
-    Détecte le typosquatting pour un domaine donné et sauvegarde l'historique.
+    Détecte le typosquatting pour un domaine donné (Public - sans persistence).
     Version optimisée pour éviter les timeouts.
     """
     try:
@@ -363,23 +363,12 @@ def detect_typosquatting_with_history(domain: str, user: User) -> dict:
                 print(f"Error checking {variant}: {str(e)}")
                 continue
 
-        # Sauvegarder dans la base de données
-        scan = DomainTyposquattingScan.objects.create(
-            user=user,
-            original_domain=domain,
-            similar_domains=similar_domains,
-            threat_count=threat_count,
-            total_variants=len(variants)
-        )
-
         return {
-            'scan_id': scan.id,
             'original_domain': domain,
             'total_variants_generated': len(variants),
             'variants_checked': len(variants),
             'similar_domains': similar_domains,
             'threat_count': threat_count,
-            'scanned_at': scan.scanned_at.isoformat(),
         }
     except Exception as e:
         # Log l'erreur et la relancer avec plus de détails
@@ -394,14 +383,6 @@ def get_user_ip_scan_history(user: User, limit: int = 50):
     Récupère l'historique des scans de réputation IP pour un utilisateur.
     """
     scans = IPReputationScan.objects.filter(user=user)[:limit]
-    return list(scans)
-
-
-def get_user_typosquatting_scan_history(user: User, limit: int = 50):
-    """
-    Récupère l'historique des scans de typosquatting pour un utilisateur.
-    """
-    scans = DomainTyposquattingScan.objects.filter(user=user)[:limit]
     return list(scans)
 
 

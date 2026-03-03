@@ -79,13 +79,11 @@ export interface DomainVariant {
 }
 
 export interface TyposquattingResponse {
-  scan_id: number;
   original_domain: string;
   total_variants_generated: number;
   variants_checked: number;
   similar_domains: DomainVariant[];
   threat_count: number;
-  scanned_at: string;
 }
 
 // History
@@ -103,18 +101,8 @@ export interface IPReputationScanHistory {
   scanned_at: string;
 }
 
-export interface DomainTyposquattingScanHistory {
-  id: number;
-  original_domain: string;
-  threat_count: number;
-  total_variants: number;
-  similar_domains: DomainVariant[];
-  scanned_at: string;
-}
-
 export interface ScanHistoryResponse {
   ip_scans: IPReputationScanHistory[];
-  typosquatting_scans: DomainTyposquattingScanHistory[];
 }
 
 /* ------------------------------------------------------------------ */

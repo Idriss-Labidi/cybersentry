@@ -10,10 +10,8 @@ import {
   Table,
   LoadingOverlay,
   Alert,
-  Tabs,
   Card,
   ThemeIcon,
-  Tooltip,
   ScrollArea,
   SimpleGrid,
   Box,
@@ -22,7 +20,6 @@ import {
   IconHistory,
   IconAlertCircle,
   IconFingerprint,
-  IconWorldWww,
   IconCalendar,
   IconShieldCheck,
   IconAlertTriangle,
@@ -30,7 +27,6 @@ import {
 import {
   getScanHistory,
   type IPReputationScanHistory,
-  type DomainTyposquattingScanHistory,
 } from '../services/ip-tools';
 
 const riskColor = (level: string) => {
@@ -48,10 +44,8 @@ const riskColor = (level: string) => {
 
 export const ScanHistory = () => {
   const [ipScans, setIpScans] = useState<IPReputationScanHistory[]>([]);
-  const [typoScans, setTypoScans] = useState<DomainTyposquattingScanHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<string | null>('ip');
 
   useEffect(() => {
     loadHistory();
@@ -64,7 +58,6 @@ export const ScanHistory = () => {
     try {
       const response = await getScanHistory();
       setIpScans(response.data.ip_scans);
-      setTypoScans(response.data.typosquatting_scans);
     } catch (err: any) {
       const message =
         err.response?.data?.message || 'Failed to load scan history. Please try again.';
@@ -91,20 +84,19 @@ export const ScanHistory = () => {
         <div>
           <Group gap="xs" mb={4}>
             <IconHistory size={28} />
-            <Title order={2}>Scan History</Title>
+            <Title order={2}>IP Reputation Scan History</Title>
           </Group>
           <Text c="dimmed" fz="sm">
-            View your previous IP reputation and typosquatting scans.
+            View your previous IP reputation scans.
           </Text>
         </div>
 
-        {/* Statistics Cards */}
-        <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }}>
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
           <Card withBorder padding="lg" radius="md">
             <Group justify="space-between">
               <div>
                 <Text fz="xs" c="dimmed" tt="uppercase" fw={700}>
-                  IP Scans
+                  Total Scans
                 </Text>
                 <Text fz="xl" fw={700}>
                   {ipScans.length}
@@ -112,22 +104,6 @@ export const ScanHistory = () => {
               </div>
               <ThemeIcon size="lg" variant="light" color="blue">
                 <IconFingerprint size={20} />
-              </ThemeIcon>
-            </Group>
-          </Card>
-
-          <Card withBorder padding="lg" radius="md">
-            <Group justify="space-between">
-              <div>
-                <Text fz="xs" c="dimmed" tt="uppercase" fw={700}>
-                  Typosquatting Scans
-                </Text>
-                <Text fz="xl" fw={700}>
-                  {typoScans.length}
-                </Text>
-              </div>
-              <ThemeIcon size="lg" variant="light" color="violet">
-                <IconWorldWww size={20} />
               </ThemeIcon>
             </Group>
           </Card>
@@ -147,22 +123,6 @@ export const ScanHistory = () => {
               </ThemeIcon>
             </Group>
           </Card>
-
-          <Card withBorder padding="lg" radius="md">
-            <Group justify="space-between">
-              <div>
-                <Text fz="xs" c="dimmed" tt="uppercase" fw={700}>
-                  Total Threats
-                </Text>
-                <Text fz="xl" fw={700}>
-                  {typoScans.reduce((sum, scan) => sum + scan.threat_count, 0)}
-                </Text>
-              </div>
-              <ThemeIcon size="lg" variant="light" color="orange">
-                <IconShieldCheck size={20} />
-              </ThemeIcon>
-            </Group>
-          </Card>
         </SimpleGrid>
 
         {error && (
@@ -171,166 +131,85 @@ export const ScanHistory = () => {
           </Alert>
         )}
 
-        <Tabs value={activeTab} onChange={setActiveTab}>
-          <Tabs.List>
-            <Tabs.Tab value="ip" leftSection={<IconFingerprint size={16} />}>
-              IP Reputation Scans ({ipScans.length})
-            </Tabs.Tab>
-            <Tabs.Tab value="typosquatting" leftSection={<IconWorldWww size={16} />}>
-              Typosquatting Scans ({typoScans.length})
-            </Tabs.Tab>
-          </Tabs.List>
-
-          <Tabs.Panel value="ip" pt="lg">
-            <Paper withBorder radius="md" pos="relative">
-              <LoadingOverlay visible={loading} />
-              {ipScans.length === 0 ? (
-                <Box p="xl">
-                  <Text ta="center" c="dimmed">
-                    No IP reputation scans found. Start scanning IPs to see them here.
-                  </Text>
-                </Box>
-              ) : (
-                <ScrollArea>
-                  <Table striped highlightOnHover>
-                    <Table.Thead>
-                      <Table.Tr>
-                        <Table.Th>IP Address</Table.Th>
-                        <Table.Th>Score</Table.Th>
-                        <Table.Th>Risk Level</Table.Th>
-                        <Table.Th>Flags</Table.Th>
-                        <Table.Th>Location</Table.Th>
-                        <Table.Th>Scanned At</Table.Th>
-                      </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                      {ipScans.map((scan) => (
-                        <Table.Tr key={scan.id}>
-                          <Table.Td>
-                            <Text ff="monospace" fw={500}>
-                              {scan.ip_address}
-                            </Text>
-                          </Table.Td>
-                          <Table.Td>
-                            <Badge variant="light" color={riskColor(scan.risk_level)}>
-                              {scan.reputation_score}
+        <Paper withBorder radius="md" pos="relative">
+          <LoadingOverlay visible={loading} />
+          {ipScans.length === 0 ? (
+            <Box p="xl">
+              <Text ta="center" c="dimmed">
+                No IP reputation scans found. Start scanning IPs to see them here.
+              </Text>
+            </Box>
+          ) : (
+            <ScrollArea>
+              <Table striped highlightOnHover>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>IP Address</Table.Th>
+                    <Table.Th>Score</Table.Th>
+                    <Table.Th>Risk Level</Table.Th>
+                    <Table.Th>Flags</Table.Th>
+                    <Table.Th>Location</Table.Th>
+                    <Table.Th>Scanned At</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {ipScans.map((scan) => (
+                    <Table.Tr key={scan.id}>
+                      <Table.Td>
+                        <Text ff="monospace" fw={500}>
+                          {scan.ip_address}
+                        </Text>
+                      </Table.Td>
+                      <Table.Td>
+                        <Badge variant="light" color={riskColor(scan.risk_level)}>
+                          {scan.reputation_score}
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td>
+                        <Badge variant="filled" color={riskColor(scan.risk_level)}>
+                          {scan.risk_level.toUpperCase()}
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td>
+                        <Group gap="xs">
+                          {scan.is_proxy && (
+                            <Badge size="sm" variant="light" color="red">
+                              Proxy
                             </Badge>
-                          </Table.Td>
-                          <Table.Td>
-                            <Badge variant="filled" color={riskColor(scan.risk_level)}>
-                              {scan.risk_level.toUpperCase()}
+                          )}
+                          {scan.is_hosting && (
+                            <Badge size="sm" variant="light" color="orange">
+                              Host
                             </Badge>
-                          </Table.Td>
-                          <Table.Td>
-                            <Group gap="xs">
-                              {scan.is_proxy && (
-                                <Tooltip label="Proxy/VPN">
-                                  <Badge size="sm" variant="light" color="red">
-                                    Proxy
-                                  </Badge>
-                                </Tooltip>
-                              )}
-                              {scan.is_hosting && (
-                                <Tooltip label="Hosting Provider">
-                                  <Badge size="sm" variant="light" color="orange">
-                                    Host
-                                  </Badge>
-                                </Tooltip>
-                              )}
-                              {scan.is_mobile && (
-                                <Tooltip label="Mobile Network">
-                                  <Badge size="sm" variant="light" color="blue">
-                                    Mobile
-                                  </Badge>
-                                </Tooltip>
-                              )}
-                            </Group>
-                          </Table.Td>
-                          <Table.Td>
-                            <Text fz="sm">
-                              {scan.geolocation.city && scan.geolocation.country
-                                ? `${scan.geolocation.city}, ${scan.geolocation.country}`
-                                : scan.geolocation.country || '—'}
-                            </Text>
-                          </Table.Td>
-                          <Table.Td>
-                            <Group gap="xs">
-                              <IconCalendar size={14} />
-                              <Text fz="sm">{formatDate(scan.scanned_at)}</Text>
-                            </Group>
-                          </Table.Td>
-                        </Table.Tr>
-                      ))}
-                    </Table.Tbody>
-                  </Table>
-                </ScrollArea>
-              )}
-            </Paper>
-          </Tabs.Panel>
-
-          <Tabs.Panel value="typosquatting" pt="lg">
-            <Paper withBorder radius="md" pos="relative">
-              <LoadingOverlay visible={loading} />
-              {typoScans.length === 0 ? (
-                <Box p="xl">
-                  <Text ta="center" c="dimmed">
-                    No typosquatting scans found. Start detecting typosquatting to see results here.
-                  </Text>
-                </Box>
-              ) : (
-                <ScrollArea>
-                  <Table striped highlightOnHover>
-                    <Table.Thead>
-                      <Table.Tr>
-                        <Table.Th>Domain</Table.Th>
-                        <Table.Th>Variants Checked</Table.Th>
-                        <Table.Th>Similar Domains</Table.Th>
-                        <Table.Th>Threats</Table.Th>
-                        <Table.Th>Scanned At</Table.Th>
-                      </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
-                      {typoScans.map((scan) => (
-                        <Table.Tr key={scan.id}>
-                          <Table.Td>
-                            <Text ff="monospace" fw={500}>
-                              {scan.original_domain}
-                            </Text>
-                          </Table.Td>
-                          <Table.Td>
-                            <Text fz="sm">{scan.total_variants}</Text>
-                          </Table.Td>
-                          <Table.Td>
-                            <Badge variant="light" color="blue">
-                              {scan.similar_domains.length}
+                          )}
+                          {scan.is_mobile && (
+                            <Badge size="sm" variant="light" color="blue">
+                              Mobile
                             </Badge>
-                          </Table.Td>
-                          <Table.Td>
-                            <Badge
-                              variant="filled"
-                              color={scan.threat_count > 0 ? 'red' : 'green'}
-                            >
-                              {scan.threat_count}
-                            </Badge>
-                          </Table.Td>
-                          <Table.Td>
-                            <Group gap="xs">
-                              <IconCalendar size={14} />
-                              <Text fz="sm">{formatDate(scan.scanned_at)}</Text>
-                            </Group>
-                          </Table.Td>
-                        </Table.Tr>
-                      ))}
-                    </Table.Tbody>
-                  </Table>
-                </ScrollArea>
-              )}
-            </Paper>
-          </Tabs.Panel>
-        </Tabs>
+                          )}
+                        </Group>
+                      </Table.Td>
+                      <Table.Td>
+                        <Text fz="sm">
+                          {scan.geolocation.city && scan.geolocation.country
+                            ? `${scan.geolocation.city}, ${scan.geolocation.country}`
+                            : scan.geolocation.country || '—'}
+                        </Text>
+                      </Table.Td>
+                      <Table.Td>
+                        <Group gap="xs">
+                          <IconCalendar size={14} />
+                          <Text fz="sm">{formatDate(scan.scanned_at)}</Text>
+                        </Group>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </ScrollArea>
+          )}
+        </Paper>
       </Stack>
     </Container>
   );
 };
-
-

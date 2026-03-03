@@ -20,6 +20,7 @@ import { WhoisLookup } from './pages/WhoisLookup';
 import { IpReputation } from './pages/IpReputation';
 import { ReverseIp } from './pages/ReverseIp';
 import { EmailSecurityAnalyzer } from './pages/EmailSecurityAnalyzer';
+import { TyposquattingDetection } from './pages/TyposquattingDetection';
 import { AdvancedSecurityScanner } from './pages/AdvancedSecurityScanner';
 import { ScanHistory } from './pages/ScanHistory';
 import { useAuth } from './context/AuthContext';
@@ -48,6 +49,7 @@ function AppContent() {
           <Route path="/tools/ip-reputation" element={<IpReputation />} />
           <Route path="/tools/reverse-ip" element={<ReverseIp />} />
           <Route path="/tools/email-security" element={<EmailSecurityAnalyzer />} />
+          <Route path="/tools/typosquatting" element={<TyposquattingDetection />} />
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
