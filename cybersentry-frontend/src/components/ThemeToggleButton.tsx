@@ -1,6 +1,6 @@
 import { ActionIcon, Tooltip } from '@mantine/core';
 import { IconMoonFilled, IconSunFilled } from '@tabler/icons-react';
-import { useTheme } from '../context/useTheme';
+import { useTheme } from '../context/theme/useTheme';
 
 export default function ThemeToggleButton() {
   const { colorScheme, toggleColorScheme } = useTheme();
