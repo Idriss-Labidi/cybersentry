@@ -1,70 +1,106 @@
-import { Group, ActionIcon, Avatar, Menu, Breadcrumbs, Burger, Text } from '@mantine/core';
-import { IconBell, IconLogout, IconUser, IconSettings, IconMoonFilled, IconSunFilled } from '@tabler/icons-react';
-import { useAuth } from '../context/AuthContext';
-import { useLocation } from 'react-router-dom';
-import { useTheme } from '../context/ThemeContext';
+import { Avatar, Badge, Breadcrumbs, Burger, Group, Menu, Paper, Text } from '@mantine/core';
+import {
+  IconBell,
+  IconChevronRight,
+  IconLogout,
+  IconSettings,
+  IconShieldLock,
+  IconUser,
+} from '@tabler/icons-react';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/useAuth';
+import ThemeToggleButton from './ThemeToggleButton';
 
-interface DashboardNavbarProps {
+interface DashboardHeaderProps {
   mobileOpened: boolean;
   setMobileOpened: (value: boolean) => void;
 }
 
-const DashboardNavbar = ({ mobileOpened, setMobileOpened }: DashboardNavbarProps) => {
+const labelMap: Record<string, string> = {
+  dashboard: 'Overview',
+  security: 'Security',
+  alerts: 'Alerts',
+  analytics: 'Analytics',
+  settings: 'Settings',
+  github: 'GitHub Health',
+  history: 'History',
+  'advanced-scanner': 'Advanced Scanner',
+};
+
+const DashboardHeader = ({ mobileOpened, setMobileOpened }: DashboardHeaderProps) => {
   const { user, logout } = useAuth();
-  const { colorScheme, toggleColorScheme} = useTheme();
   const location = useLocation();
 
-  // Generate breadcrumbs from the current path
-  const pathSegments = location.pathname
-    .split('/')
-    .filter((segment) => segment !== '')
-    .map((segment) => ({
-      title: segment.charAt(0).toUpperCase() + segment.slice(1),
-      href: '/' + segment,
-    }));
+  const pathSegments = location.pathname.split('/').filter(Boolean);
+  const breadcrumbItems = pathSegments.map((segment, index) => {
+    const href = `/${pathSegments.slice(0, index + 1).join('/')}`;
+    const label = labelMap[segment] || segment.replace(/-/g, ' ');
+    const isLast = index === pathSegments.length - 1;
+
+    return isLast ? (
+      <Text key={href} size="sm" fw={700}>
+        {label}
+      </Text>
+    ) : (
+      <Text
+        key={href}
+        component={Link}
+        to={href}
+        size="sm"
+        c="dimmed"
+        style={{ textDecoration: 'none' }}
+      >
+        {label}
+      </Text>
+    );
+  });
 
   const userInitials = user?.profile?.name
     ? user.profile.name
         .split(' ')
-        .map((n) => n[0])
+        .map((name) => name[0])
         .join('')
         .toUpperCase()
     : user?.profile?.preferred_username?.substring(0, 2).toUpperCase() || 'U';
 
-  const handleLogout = async () => {
-    await logout();
-  };
-
   return (
-    <Group justify="space-between" style={{ height: '100%' }}>
-      {/* Left side: Burger, Logo placeholder, and Breadcrumbs */}
+    <Group justify="space-between" h="100%" py="md">
       <Group gap="sm">
-        <Burger opened={mobileOpened} onClick={() => setMobileOpened(!mobileOpened)} hiddenFrom="sm" size="sm" />
-        <Text fw={700} size="lg">
-          CyberSentry
-        </Text>
-        {pathSegments.length > 0 && (
-          <Breadcrumbs>
-            {pathSegments.map((segment) => (
-              <Text key={segment.href} size="sm" c="gray">
-                {segment.title}
-              </Text>
-            ))}
-          </Breadcrumbs>
-        )}
+        <Burger
+          opened={mobileOpened}
+          onClick={() => setMobileOpened(!mobileOpened)}
+          hiddenFrom="md"
+          size="sm"
+          aria-label="Toggle navigation menu"
+        />
+
+        <Paper
+          px="sm"
+          py={8}
+          radius="xl"
+          style={{ background: 'var(--app-surface-soft)', borderColor: 'var(--app-border)' }}
+        >
+          <Group gap="xs">
+            <IconShieldLock size={18} />
+            <Text fw={800} size="sm">
+              Mission control
+            </Text>
+          </Group>
+        </Paper>
+
+        {breadcrumbItems.length > 0 ? (
+          <Breadcrumbs separator={<IconChevronRight size={14} />}>{breadcrumbItems}</Breadcrumbs>
+        ) : null}
       </Group>
 
-      {/* Right side: Notifications and User Menu */}
       <Group gap="md">
-        <ActionIcon variant="subtle" size="lg">
-          <IconBell style={{ width: '70%', height: '70%' }} />
-        </ActionIcon>
+        <Badge size="lg" variant="light" color="brand">
+          System secure
+        </Badge>
 
-        <ActionIcon variant='subtle' onClick={toggleColorScheme}>
-          { colorScheme === 'light' ? <IconMoonFilled></IconMoonFilled> : <IconSunFilled></IconSunFilled>}
-        </ActionIcon>
+        <ThemeToggleButton />
 
-        <Menu shadow="md" position="bottom-end">
+        <Menu shadow="md" width={220} position="bottom-end">
           <Menu.Target>
             <Avatar radius="xl" style={{ cursor: 'pointer' }}>
               {userInitials}
@@ -72,29 +108,13 @@ const DashboardNavbar = ({ mobileOpened, setMobileOpened }: DashboardNavbarProps
           </Menu.Target>
 
           <Menu.Dropdown>
-            <Menu.Item disabled>
-              <Text fw={500} size="sm">
-                {user?.profile?.name || user?.profile?.preferred_username}
-              </Text>
-            </Menu.Item>
-
+            <Menu.Label>{user?.profile?.name || user?.profile?.preferred_username}</Menu.Label>
             <Menu.Divider />
-
-            <Menu.Item leftSection={<IconUser style={{ width: '70%', height: '70%' }} />}>
-              Profile
-            </Menu.Item>
-
-            <Menu.Item leftSection={<IconSettings style={{ width: '70%', height: '70%' }} />}>
-              Settings
-            </Menu.Item>
-
+            <Menu.Item leftSection={<IconBell size={15} />}>Notifications</Menu.Item>
+            <Menu.Item leftSection={<IconUser size={15} />}>Profile</Menu.Item>
+            <Menu.Item leftSection={<IconSettings size={15} />}>Settings</Menu.Item>
             <Menu.Divider />
-
-            <Menu.Item
-              color="red"
-              leftSection={<IconLogout style={{ width: '70%', height: '70%' }} />}
-              onClick={handleLogout}
-            >
+            <Menu.Item color="red" leftSection={<IconLogout size={15} />} onClick={() => void logout()}>
               Logout
             </Menu.Item>
           </Menu.Dropdown>
@@ -104,8 +124,4 @@ const DashboardNavbar = ({ mobileOpened, setMobileOpened }: DashboardNavbarProps
   );
 };
 
-export default DashboardNavbar;
-
-
-
-
+export default DashboardHeader;

@@ -22,8 +22,7 @@ import { ReverseIp } from './pages/ReverseIp';
 import { EmailSecurityAnalyzer } from './pages/EmailSecurityAnalyzer';
 import { TyposquattingDetection } from './pages/TyposquattingDetection';
 import { AdvancedSecurityScanner } from './pages/AdvancedSecurityScanner';
-import { useAuth } from './context/AuthContext';
-import '@mantine/core/styles.css';
+import { useAuth } from './context/useAuth';
 import LandingLayout from './components/LandingLayout';
 
 // other css files are required only if

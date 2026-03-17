@@ -1,18 +1,8 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import type {ReactNode} from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { User } from 'oidc-client-ts';
+import { AuthContext, type AuthContextValue } from './authContextBase';
 import userManager from '../utils/user-manager';
-
-interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-  login: () => Promise<void>;
-  logout: () => Promise<void>;
-  handleCallback: () =>  Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -30,7 +20,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    initializeUser();
+    void initializeUser();
   }, []);
 
   const login = async () => {
@@ -55,30 +45,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const handleCallback = async () => {
     try {
-      const user = await userManager.signinRedirectCallback();
-      setUser(user);
+      const callbackUser = await userManager.signinRedirectCallback();
+      setUser(callbackUser);
     } catch (error) {
       console.error('Error during signin callback:', error);
       throw error;
     }
   };
 
-  const value: AuthContextType = {
+  const value: AuthContextValue = {
     user,
     isLoading,
     isAuthenticated: !!user && !user.expired,
     login,
     logout,
-    handleCallback
+    handleCallback,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };

@@ -40,6 +40,7 @@ import {
   type IpReputationResponse,
   type IPReputationScanHistory,
 } from '../services/ip-tools';
+import { getApiErrorMessage } from '../utils/api-error';
 
 const riskColor = (level: string) => {
   switch (level) {
@@ -73,8 +74,8 @@ export const AdvancedSecurityScanner = () => {
     try {
       const response = await getScanHistory();
       setScans(response.data.ip_scans);
-    } catch (err: any) {
-      console.error('Failed to load history:', err);
+    } catch (error: unknown) {
+      console.error('Failed to load history:', error);
     } finally {
       setHistoryLoading(false);
     }
@@ -92,11 +93,12 @@ export const AdvancedSecurityScanner = () => {
       setIpResult(response.data);
       // Reload history after a new scan
       loadHistory();
-    } catch (err: any) {
-      const message =
-        err.response?.data?.message ||
-        err.response?.data?.ip_address?.[0] ||
-        'An error occurred while checking IP reputation.';
+    } catch (error: unknown) {
+      const message = getApiErrorMessage(
+        error,
+        ['ip_address'],
+        'An error occurred while checking IP reputation.'
+      );
       setError(message);
     } finally {
       setLoading(false);

@@ -34,7 +34,7 @@ import {
 } from '@tabler/icons-react';
 import type { AxiosError } from 'axios';
 import { getRiskColor, getRiskLabel } from '../utils/githubHealthUtils';
-import {useAuth} from "../context/AuthContext.tsx";
+import { useAuth } from '../context/useAuth';
 import { deleteRepositoryCheckResult, getRepositoryHistory } from '../services/github-tools';
 
 type WarningLevel = 'critical' | 'high' | 'medium' | 'low' | 'warning' | 'info';

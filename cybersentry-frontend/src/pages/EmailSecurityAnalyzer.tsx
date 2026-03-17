@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  Container, Title, Text, TextInput, Button, Paper, Stack, Group,
+  Title, Text, TextInput, Button, Paper, Stack, Group,
   LoadingOverlay, Alert, Badge, Divider, Progress, ThemeIcon,
   RingProgress, Accordion, List, Center, Tabs, Code, Table,
   Tooltip, CopyButton, ActionIcon,
@@ -18,6 +18,8 @@ import {
   type DMARCResult,
   type Recommendation,
 } from '../services/email-tools';
+import ToolPageLayout from '../components/ToolPageLayout';
+import { getApiErrorMessage } from '../utils/api-error';
 
 const gradeColor = (grade: string) => {
   switch (grade) {
@@ -351,11 +353,12 @@ export const EmailSecurityAnalyzer = () => {
     try {
       const response = await emailSecurityAnalysis({ domain_name: d });
       setResult(response.data);
-    } catch (err: any) {
-      const message =
-        err.response?.data?.message ??
-        err.response?.data?.domain_name?.[0] ??
-        'An error occurred while performing the analysis.';
+    } catch (error: unknown) {
+      const message = getApiErrorMessage(
+        error,
+        ['domain_name'],
+        'An error occurred while performing the analysis.'
+      );
       setError(message);
     } finally {
       setLoading(false);
@@ -363,21 +366,36 @@ export const EmailSecurityAnalyzer = () => {
   };
 
   return (
-    <Container size="lg" py="xl">
+    <ToolPageLayout
+      icon={<IconMailCheck size={26} />}
+      eyebrow="Public tool"
+      title="Email security analyzer"
+      description="Analyze SPF, DKIM, and DMARC posture, then review a scored breakdown with actionable recommendations."
+      metrics={[
+        { label: 'Target domain', value: domain.trim() || 'None', hint: 'Domain under review' },
+        {
+          label: 'Security score',
+          value: result ? `${result.score}/100` : loading ? 'Running' : 'Ready',
+          hint: result ? `Grade ${result.grade}` : 'Awaiting analysis',
+        },
+        {
+          label: 'Recommendations',
+          value: result ? String(result.recommendations.length) : '0',
+          hint: 'Suggested next actions',
+        },
+      ]}
+      workflow={[
+        'Submit the domain to inspect SPF, DKIM, and DMARC together.',
+        'Use the score card to judge overall posture before drilling into each protocol.',
+        'Prioritize recommendations by severity and missing controls.',
+      ]}
+      notes={[
+        'SPF and DMARC often explain spoofing risk fastest, but DKIM completeness still matters for alignment.',
+        'This page works well as a posture review before a deeper incident or deliverability investigation.',
+      ]}
+      examples={['example.com', 'openai.com', 'github.com']}
+    >
       <Stack gap="lg">
-        {/* Header */}
-        <div>
-          <Group gap="xs" mb={4}>
-            <IconMailCheck size={28} />
-            <Title order={2}>Email Security Analyzer</Title>
-          </Group>
-          <Text c="dimmed" fz="sm">
-            Analyze SPF, DKIM &amp; DMARC records for any domain. Get a security score,
-            detailed breakdowns and actionable recommendations.
-          </Text>
-        </div>
-
-        {/* Search */}
         <Paper withBorder p="lg" radius="md" pos="relative">
           <LoadingOverlay visible={loading} />
           <Group align="end">
@@ -486,6 +504,6 @@ export const EmailSecurityAnalyzer = () => {
           </Stack>
         )}
       </Stack>
-    </Container>
+    </ToolPageLayout>
   );
 };

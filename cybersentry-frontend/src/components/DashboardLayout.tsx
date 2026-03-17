@@ -9,11 +9,11 @@ const DashboardLayout = () => {
 
   return (
     <AppShell
-      header={{ height: 60 }}
-      navbar={{ width: 300, breakpoint: 'sm', collapsed: { mobile: !mobileOpened } }}
-      padding="md"
+      header={{ height: 76 }}
+      navbar={{ width: 312, breakpoint: 'md', collapsed: { mobile: !mobileOpened } }}
+      padding={0}
     >
-      <AppShell.Header p="md">
+      <AppShell.Header px="md">
         <DashboardHeader mobileOpened={mobileOpened} setMobileOpened={setMobileOpened} />
       </AppShell.Header>
 
@@ -22,13 +22,12 @@ const DashboardLayout = () => {
       </AppShell.Navbar>
 
       <AppShell.Main>
-        <Outlet />
+        <div style={{ minHeight: 'calc(100vh - 76px)', padding: '0.5rem 0 2rem' }}>
+          <Outlet />
+        </div>
       </AppShell.Main>
     </AppShell>
   );
 };
 
 export default DashboardLayout;
-
-
-

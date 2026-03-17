@@ -1,16 +1,17 @@
-import { AppShell, Stack, NavLink, ScrollArea } from '@mantine/core';
+import { Divider, NavLink, Paper, ScrollArea, Stack, Text } from '@mantine/core';
 import {
-  IconDashboard,
-  IconShield,
   IconAlertTriangle,
-  IconSettings,
   IconAnalyze,
   IconBrandGithub,
+  IconDashboard,
+  IconSettings,
+  IconShield,
   IconShieldCheck,
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
 import { Link, useLocation } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import BrandMark from './BrandMark';
 
 type NavChild = {
   id: string;
@@ -65,43 +66,38 @@ const DashboardNavBar = () => {
     return initial;
   });
 
-  useEffect(() => {
-    setOpenedSections((prev) => {
-      const next = { ...prev };
-      let changed = false;
-
-      navItems.forEach((item) => {
-        if (!item.children) {
-          return;
-        }
-
-        const shouldBeOpen = item.children.some((child) =>
-          location.pathname.startsWith(child.href)
-        );
-
-        if (shouldBeOpen && !next[item.id]) {
-          next[item.id] = true;
-          changed = true;
-        }
-      });
-
-      return changed ? next : prev;
-    });
-  }, [location.pathname]);
-
   const handleSectionToggle = (id: string, value: boolean) => {
     setOpenedSections((prev) => ({ ...prev, [id]: value }));
   };
 
   return (
-    <AppShell.Navbar p="md">
-      <ScrollArea>
+    <Stack h="100%" gap="md">
+      <BrandMark compact />
+
+      <Paper p="md" radius="xl" style={{ background: 'var(--app-surface-soft)' }}>
+        <Text size="xs" tt="uppercase" fw={800} c="dimmed" style={{ letterSpacing: '0.08em' }}>
+          Workspace status
+        </Text>
+        <Text mt="sm" fw={800} size="lg">
+          Active
+        </Text>
+        <Text size="sm" c="dimmed" mt={4}>
+          Routes, auth, and tool workflows stay intact while this branch upgrades the visual layer.
+        </Text>
+      </Paper>
+
+      <Divider />
+
+      <ScrollArea style={{ flex: 1 }}>
         <Stack gap="xs">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActiveParent = item.href
               ? location.pathname === item.href
               : item.children?.some((child) => location.pathname === child.href);
+            const isOpen = item.children
+              ? openedSections[item.id] ?? item.children.some((child) => location.pathname.startsWith(child.href))
+              : false;
 
             if (item.children) {
               return (
@@ -110,10 +106,15 @@ const DashboardNavBar = () => {
                   label={item.label}
                   leftSection={Icon ? <Icon size="1rem" /> : undefined}
                   childrenOffset={28}
-                  defaultOpened={openedSections[item.id]}
-                  opened={openedSections[item.id]}
+                  opened={isOpen}
                   onChange={(value) => handleSectionToggle(item.id, value)}
                   active={!!isActiveParent}
+                  styles={{
+                    root: {
+                      background: isActiveParent ? 'var(--app-active-fill)' : 'transparent',
+                      borderColor: isActiveParent ? 'var(--app-border-strong)' : 'transparent',
+                    },
+                  }}
                 >
                   {item.children.map((child) => (
                     <NavLink
@@ -122,6 +123,14 @@ const DashboardNavBar = () => {
                       to={child.href}
                       label={child.label}
                       active={location.pathname === child.href}
+                      styles={{
+                        root: {
+                          background:
+                            location.pathname === child.href ? 'var(--app-active-fill)' : 'transparent',
+                          borderColor:
+                            location.pathname === child.href ? 'var(--app-border-strong)' : 'transparent',
+                        },
+                      }}
                     />
                   ))}
                 </NavLink>
@@ -140,12 +149,18 @@ const DashboardNavBar = () => {
                 label={item.label}
                 leftSection={Icon ? <Icon size="1rem" /> : undefined}
                 active={!!isActiveParent}
+                styles={{
+                  root: {
+                    background: isActiveParent ? 'var(--app-active-fill)' : 'transparent',
+                    borderColor: isActiveParent ? 'var(--app-border-strong)' : 'transparent',
+                  },
+                }}
               />
             );
           })}
         </Stack>
       </ScrollArea>
-    </AppShell.Navbar>
+    </Stack>
   );
 };
 

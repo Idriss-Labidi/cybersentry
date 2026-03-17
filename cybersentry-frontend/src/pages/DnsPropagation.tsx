@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import {
-  Container,
   Title,
   Text,
   TextInput,
@@ -35,6 +34,8 @@ import {
   type DnsServer,
   type ResolverResult,
 } from '../services/dns-tools';
+import ToolPageLayout from '../components/ToolPageLayout';
+import { getApiErrorMessage } from '../utils/api-error';
 
 const WORLD_GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
 
@@ -178,11 +179,12 @@ export const DnsPropagation = () => {
       });
       setResult(response.data);
       buildMarkers(response.data);
-    } catch (err: any) {
-      const message =
-        err.response?.data?.message ||
-        err.response?.data?.domain_name?.[0] ||
-        'An error occurred while checking DNS propagation.';
+    } catch (error: unknown) {
+      const message = getApiErrorMessage(
+        error,
+        ['domain_name'],
+        'An error occurred while checking DNS propagation.'
+      );
       setError(message);
     } finally {
       setLoading(false);
@@ -222,18 +224,29 @@ export const DnsPropagation = () => {
   const failCount = markers.filter((m) => m.status === 'fail').length;
 
   return (
-    <Container size="xl" py="xl">
+    <ToolPageLayout
+      icon={<IconWorldWww size={26} />}
+      eyebrow="Public tool"
+      title="DNS propagation checker"
+      description="Check record propagation across public resolver regions and inspect the result on an interactive map."
+      metrics={[
+        { label: 'Record types', value: String(selectedTypes.length), hint: selectedTypes.join(', ') },
+        { label: 'Regions', value: selectedRegions.length > 0 ? String(selectedRegions.length) : 'All', hint: 'Resolver groups in scope' },
+        { label: 'Healthy resolvers', value: result ? `${okCount}/${totalServers}` : 'Pending', hint: ipVersion },
+      ]}
+      workflow={[
+        'Select the domain, record types, and optional region subset.',
+        'Run the propagation check to populate the map and regional tables.',
+        'Use marker detail for resolver-level comparison before opening the full region table.',
+      ]}
+      notes={[
+        'Leaving regions empty checks the broadest available resolver set.',
+        'Propagation drift is easiest to spot when you compare the summary badges with the per-resolver detail panel.',
+      ]}
+      examples={['example.com', 'openai.com', 'cloudflare.com']}
+      mainSpan={9}
+    >
       <Stack gap="lg">
-        <div>
-          <Group gap="xs" mb={4}>
-            <IconWorldWww size={28} />
-            <Title order={2}>DNS Propagation Checker</Title>
-          </Group>
-          <Text c="dimmed" fz="sm">
-            Check how DNS records propagate across global DNS servers. See results on an interactive
-            map.
-          </Text>
-        </div>
 
         {/* Query form */}
         <Paper withBorder p="lg" radius="md" pos="relative">
@@ -542,6 +555,6 @@ export const DnsPropagation = () => {
           </Stack>
         )}
       </Stack>
-    </Container>
+    </ToolPageLayout>
   );
 };

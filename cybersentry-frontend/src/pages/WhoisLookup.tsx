@@ -1,22 +1,22 @@
 import { useState } from 'react';
 import {
-  Container,
-  Title,
-  Text,
-  TextInput,
-  Button,
-  Paper,
-  Stack,
-  Group,
-  LoadingOverlay,
   Alert,
   Badge,
+  Button,
   Divider,
-  Table,
+  Group,
+  LoadingOverlay,
+  Paper,
   ScrollArea,
+  Table,
+  Text,
+  TextInput,
+  Title,
 } from '@mantine/core';
-import { IconSearch, IconAlertCircle, IconFileText } from '@tabler/icons-react';
+import { IconAlertCircle, IconFileText, IconSearch } from '@tabler/icons-react';
+import ToolPageLayout from '../components/ToolPageLayout';
 import { whoisLookup, type WhoisLookupResponse } from '../services/ip-tools';
+import { getApiErrorMessage } from '../utils/api-error';
 
 const IMPORTANT_FIELDS = [
   'domain_name',
@@ -38,7 +38,7 @@ const IMPORTANT_FIELDS = [
 ];
 
 function formatValue(value: unknown): string {
-  if (value === null || value === undefined) return '—';
+  if (value === null || value === undefined) return '--';
   if (Array.isArray(value)) return value.map(String).join(', ');
   return String(value);
 }
@@ -59,31 +59,30 @@ export const WhoisLookup = () => {
     try {
       const response = await whoisLookup({ query: query.trim() });
       setResult(response.data);
-    } catch (err: any) {
-      const message =
-        err.response?.data?.message ||
-        err.response?.data?.query?.[0] ||
-        'An error occurred while performing the WHOIS lookup.';
+    } catch (error: unknown) {
+      const message = getApiErrorMessage(
+        error,
+        ['query'],
+        'An error occurred while performing the WHOIS lookup.'
+      );
       setError(message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Split result into important fields first, then the rest
   const getFieldRows = () => {
-    if (!result) return [];
-    const data = result.result;
-    const ordered: [string, unknown][] = [];
+    if (!result) return [] as [string, unknown][];
 
-    // Important fields first
+    const ordered: [string, unknown][] = [];
+    const data = result.result;
+
     for (const key of IMPORTANT_FIELDS) {
       if (key in data && data[key] !== null && data[key] !== undefined) {
         ordered.push([key, data[key]]);
       }
     }
 
-    // Remaining fields
     for (const [key, value] of Object.entries(data)) {
       if (!IMPORTANT_FIELDS.includes(key) && value !== null && value !== undefined) {
         ordered.push([key, value]);
@@ -93,87 +92,89 @@ export const WhoisLookup = () => {
     return ordered;
   };
 
+  const rows = getFieldRows();
+
   return (
-    <Container size="md" py="xl">
-      <Stack gap="lg">
-        <div>
-          <Group gap="xs" mb={4}>
-            <IconFileText size={28} />
-            <Title order={2}>WHOIS Lookup</Title>
+    <ToolPageLayout
+      icon={<IconFileText size={26} />}
+      eyebrow="Public tool"
+      title="WHOIS lookup"
+      description="Inspect registration, ownership, and registrar metadata for domains and IP addresses from a focused reporting surface."
+      metrics={[
+        { label: 'Current query', value: query.trim() || 'None', hint: 'Domain or IP target' },
+        { label: 'Rows returned', value: result ? String(rows.length) : '0', hint: 'Structured WHOIS fields' },
+        { label: 'Priority fields', value: String(IMPORTANT_FIELDS.length), hint: 'Fields surfaced first when present' },
+      ]}
+      workflow={[
+        'Submit the domain or IP you need to inspect.',
+        'Review registrar, lifecycle, and nameserver data before deeper analysis.',
+        'Use the remaining field list for ownership and operational context.',
+      ]}
+      notes={[
+        'WHOIS quality varies by TLD and registrar, so sparse output is not always an error.',
+        'Pair this with DNS lookup when investigating suspicious delegation or hosting changes.',
+      ]}
+      examples={['example.com', 'github.com', '8.8.8.8']}
+    >
+      <Paper p="lg" radius="xl" pos="relative">
+        <LoadingOverlay visible={loading} />
+        <Group align="end">
+          <TextInput
+            label="Domain or IP Address"
+            placeholder="example.com or 8.8.8.8"
+            value={query}
+            onChange={(event) => setQuery(event.currentTarget.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleLookup()}
+            style={{ flex: 1 }}
+          />
+          <Button leftSection={<IconSearch size={18} />} onClick={handleLookup} disabled={!query.trim()}>
+            Lookup WHOIS
+          </Button>
+        </Group>
+      </Paper>
+
+      {error ? (
+        <Alert icon={<IconAlertCircle size={18} />} color="red" title="Error" variant="light">
+          {error}
+        </Alert>
+      ) : null}
+
+      {result ? (
+        <Paper p="lg" radius="xl">
+          <Group gap="xs" mb="md">
+            <Title order={4}>WHOIS results for</Title>
+            <Badge size="lg">{result.query}</Badge>
           </Group>
-          <Text c="dimmed" fz="sm">
-            Look up registration and ownership information for any domain name or IP address.
-          </Text>
-        </div>
+          <Divider mb="md" />
 
-        <Paper withBorder p="lg" radius="md" pos="relative">
-          <LoadingOverlay visible={loading} />
-          <Group align="end">
-            <TextInput
-              label="Domain or IP Address"
-              placeholder="example.com or 8.8.8.8"
-              value={query}
-              onChange={(e) => setQuery(e.currentTarget.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleLookup()}
-              size="md"
-              style={{ flex: 1 }}
-            />
-            <Button
-              leftSection={<IconSearch size={18} />}
-              onClick={handleLookup}
-              disabled={!query.trim()}
-              size="md"
-            >
-              Lookup
-            </Button>
-          </Group>
-        </Paper>
-
-        {error && (
-          <Alert icon={<IconAlertCircle size={18} />} color="red" title="Error" variant="light">
-            {error}
-          </Alert>
-        )}
-
-        {result && (
-          <Paper withBorder p="lg" radius="md">
-            <Group gap="xs" mb="md">
-              <Title order={4}>WHOIS Results for</Title>
-              <Badge variant="light" size="lg">
-                {result.query}
-              </Badge>
-            </Group>
-            <Divider mb="md" />
-
-            <ScrollArea>
-              <Table striped highlightOnHover withTableBorder>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th w={200}>Field</Table.Th>
-                    <Table.Th>Value</Table.Th>
+          <ScrollArea>
+            <Table striped highlightOnHover withTableBorder>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th w={220}>Field</Table.Th>
+                  <Table.Th>Value</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {rows.map(([field, value]) => (
+                  <Table.Tr key={field}>
+                    <Table.Td>
+                      <Text fz="sm" fw={600} tt="capitalize">
+                        {field.replace(/_/g, ' ')}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text fz="sm" ff="monospace">
+                        {formatValue(value)}
+                      </Text>
+                    </Table.Td>
                   </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {getFieldRows().map(([field, value]) => (
-                    <Table.Tr key={field}>
-                      <Table.Td>
-                        <Text fz="sm" fw={500} tt="capitalize">
-                          {field.replace(/_/g, ' ')}
-                        </Text>
-                      </Table.Td>
-                      <Table.Td>
-                        <Text fz="sm" ff="monospace">
-                          {formatValue(value)}
-                        </Text>
-                      </Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            </ScrollArea>
-          </Paper>
-        )}
-      </Stack>
-    </Container>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </ScrollArea>
+        </Paper>
+      ) : null}
+    </ToolPageLayout>
   );
 };

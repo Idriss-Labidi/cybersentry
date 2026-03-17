@@ -1,43 +1,39 @@
-import { createTheme, MantineProvider } from "@mantine/core";
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { MantineProvider } from '@mantine/core';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { getMantineTheme } from '../theme';
+import { ThemeContext, type ThemeContextValue } from './themeContextBase';
+import { DEFAULT_COLOR_SCHEME, applyTheme, getStoredTheme, persistTheme } from './themeRuntime';
 
+export const ThemeProvider = ({ children }: { children: ReactNode }) => {
+  const [colorScheme, setColorScheme] = useState(() => getStoredTheme());
 
-interface ThemeContextType {
-    colorScheme: 'dark' | 'light';
-    toggleColorScheme: () => void;
-};
+  useEffect(() => {
+    applyTheme(colorScheme);
+    persistTheme(colorScheme);
+  }, [colorScheme]);
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+  const value = useMemo<ThemeContextValue>(
+    () => ({
+      colorScheme,
+      isDark: colorScheme === 'dark',
+      setColorScheme,
+      toggleColorScheme: () =>
+        setColorScheme((current) => (current === 'dark' ? 'light' : 'dark')),
+    }),
+    [colorScheme]
+  );
 
-export const ThemeProvider = ({ children } : { children: ReactNode }) => {
-    const [colorScheme, setColorScheme] = useState<'dark' | 'light'>('dark');
-    const mantineThemeOverrides = createTheme({  
-        primaryColor: 'green',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        headings: { fontFamily: 'system-ui, -apple-system, sans-serif' },
-    });
+  const mantineTheme = useMemo(() => getMantineTheme(colorScheme), [colorScheme]);
 
-    const toggleColorScheme = () => { 
-        colorScheme === 'light' ? setColorScheme('dark') : setColorScheme('light');
-    }
-
-
-    const value: ThemeContextType ={
-        colorScheme, 
-        toggleColorScheme
-    }
-
-    return (<ThemeContext.Provider value={value}>
-        <MantineProvider theme={mantineThemeOverrides} forceColorScheme={colorScheme}>
-            {children}
-        </MantineProvider>
-    </ThemeContext.Provider>);
-};
-
-export const useTheme = () => {
-    const context = useContext(ThemeContext);
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
+  return (
+    <ThemeContext.Provider value={value}>
+      <MantineProvider
+        defaultColorScheme={DEFAULT_COLOR_SCHEME}
+        forceColorScheme={colorScheme}
+        theme={mantineTheme}
+      >
+        {children}
+      </MantineProvider>
+    </ThemeContext.Provider>
+  );
 };

@@ -30,13 +30,17 @@ export const formatBytes = (bytes: number): string => {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 };
 
-export const calculateAverageScore = (results: any[]): number => {
+type RiskResult = {
+  risk_score: number;
+};
+
+export const calculateAverageScore = (results: RiskResult[]): number => {
   if (results.length === 0) return 0;
   const total = results.reduce((sum, r) => sum + r.risk_score, 0);
   return Math.round(total / results.length);
 };
 
-export const countRiskLevels = (results: any[]) => {
+export const countRiskLevels = (results: RiskResult[]) => {
   return {
     critical: results.filter((r) => r.risk_score >= 75).length,
     high: results.filter((r) => r.risk_score >= 50 && r.risk_score < 75).length,

@@ -1,256 +1,354 @@
-import {
-    Button,
-    Card,
-    Container,
-    Grid,
-    List,
-    Text,
-    ThemeIcon,
-    Title,
-    Badge,
-    SimpleGrid,
-    Divider,
-    Group,
-} from '@mantine/core';
-import { IconCheck } from '@tabler/icons-react';
 import type { FC } from 'react';
+import {
+  Badge,
+  Button,
+  Card,
+  Container,
+  Grid,
+  Group,
+  List,
+  Paper,
+  SimpleGrid,
+  Stack,
+  Text,
+  ThemeIcon,
+  Title,
+} from '@mantine/core';
+import {
+  IconArrowRight,
+  IconBinaryTree2,
+  IconBrandGithub,
+  IconCheck,
+  IconFingerprint,
+  IconMailCheck,
+  IconMapSearch,
+  IconRadar2,
+  IconShieldLock,
+  IconTimeline,
+  IconWorldSearch,
+} from '@tabler/icons-react';
+import { Link } from 'react-router-dom';
+
+const featureCards = [
+  {
+    title: 'Unified signal',
+    description: 'Correlate posture checks, DNS intelligence, email hygiene, and repository health in one interface.',
+    icon: IconRadar2,
+  },
+  {
+    title: 'Operator-focused UI',
+    description: 'Readable results, compact layouts, and fast visual scanning instead of decorative dashboard noise.',
+    icon: IconShieldLock,
+  },
+  {
+    title: 'Actionable output',
+    description: 'Every tool is designed to move from lookup to assessment to next step with minimal friction.',
+    icon: IconTimeline,
+  },
+];
+
+const toolCards = [
+  { title: 'DNS Lookup', href: '/tools/dns-lookup', icon: IconWorldSearch, description: 'Query records quickly with focused output and typed responses.' },
+  { title: 'DNS Propagation', href: '/tools/dns-propagation', icon: IconBinaryTree2, description: 'Trace record consistency across regions on an interactive map.' },
+  { title: 'Email Security', href: '/tools/email-security', icon: IconMailCheck, description: 'Review SPF, DKIM, and DMARC posture with scoring and recommendations.' },
+  { title: 'IP Reputation', href: '/tools/ip-reputation', icon: IconMapSearch, description: 'Assess risk, geolocation, network traits, and abuse indicators.' },
+  { title: 'Typosquatting', href: '/tools/typosquatting', icon: IconFingerprint, description: 'Detect suspicious domain variants that may support phishing campaigns.' },
+  { title: 'GitHub Health', href: '/login', icon: IconBrandGithub, description: 'Use the authenticated dashboard to inspect repository hygiene and exposure.' },
+];
+
+const planCards = [
+  {
+    name: 'Starter',
+    price: '$49 / month',
+    points: ['Core public tools', 'Basic posture checks', 'Email support'],
+    variant: 'light' as const,
+  },
+  {
+    name: 'Growth',
+    price: '$149 / month',
+    points: ['Shared dashboard workspace', 'Advanced GitHub and IP analysis', 'Investigation-ready reporting'],
+    variant: 'filled' as const,
+  },
+  {
+    name: 'Enterprise',
+    price: 'Custom',
+    points: ['Private workflows', 'Priority support', 'Custom rollout and enablement'],
+    variant: 'light' as const,
+  },
+];
 
 export const Landing: FC = () => {
-    return (
-        <>
-            <Container size="lg" py="xl">
-                <Grid gutter="xl" align="center">
-                    <Grid.Col span={{ base: 12, md: 6 }}>
-                        <Badge size="lg" variant="gradient" gradient={{ from: 'cyan', to: 'green' }}>
-                            New: Live threat feed
-                        </Badge>
-                        <Title order={1} mt="md">
-                            Security visibility that teams actually use
-                        </Title>
-                        <Text mt="sm" c="dimmed">
-                            CyberSentry unifies alerts, analytics, and posture checks in one fast interface. Stay ahead of incidents
-                            with prioritized insights and collaborative workflows.
-                        </Text>
-                        <Group mt="xl" gap="md">
-                            <Button size="md">
-                                Start free
-                            </Button>
-                            <Button size="md" variant="light">
-                                Book a demo
-                            </Button>
-                        </Group>
-                        <List
-                            mt="xl"
-                            spacing="md"
-                            icon={
-                                <ThemeIcon size={24} radius="xl">
-                                    <IconCheck size={16} />
-                                </ThemeIcon>
-                            }
-                        >
-                            <List.Item>Unified alert stream with smart grouping</List.Item>
-                            <List.Item>Analytics built for SOC and engineering teams</List.Item>
-                            <List.Item>Granular RBAC and audit-ready reporting</List.Item>
-                        </List>
-                    </Grid.Col>
-
-                    <Grid.Col span={{ base: 12, md: 6 }}>
-                        <Card shadow="sm" padding="lg" radius="md" withBorder>
-                            <Title order={3}>Operational overview</Title>
-                            <Text c="dimmed" fz="sm" mt="xs">
-                                Snapshot of your environment health, attack surface, and open investigations.
-                            </Text>
-                            <SimpleGrid cols={{ base: 1, sm: 2 }} mt="lg" spacing="md">
-                                <Card shadow="xs" padding="md" radius="md" withBorder>
-                                    <Text c="dimmed" fz="sm">
-                                        Active incidents
-                                    </Text>
-                                    <Title order={2}>12</Title>
-                                    <Text c="green" fz="sm">
-                                        -18% vs last week
-                                    </Text>
-                                </Card>
-                                <Card shadow="xs" padding="md" radius="md" withBorder>
-                                    <Text c="dimmed" fz="sm">
-                                        Coverage score
-                                    </Text>
-                                    <Title order={2}>92%</Title>
-                                    <Text c="dimmed" fz="sm">
-                                        Controls verified
-                                    </Text>
-                                </Card>
-                                <Card shadow="xs" padding="md" radius="md" withBorder>
-                                    <Text c="dimmed" fz="sm">
-                                        Mean response
-                                    </Text>
-                                    <Title order={2}>7m</Title>
-                                    <Text c="dimmed" fz="sm">
-                                        24/7 coverage
-                                    </Text>
-                                </Card>
-                                <Card shadow="xs" padding="md" radius="md" withBorder>
-                                    <Text c="dimmed" fz="sm">
-                                        Integrations
-                                    </Text>
-                                    <Title order={2}>30+</Title>
-                                    <Text c="dimmed" fz="sm">
-                                        Clouds, SIEM, EDR
-                                    </Text>
-                                </Card>
-                            </SimpleGrid>
-                        </Card>
-                    </Grid.Col>
-                </Grid>
-            </Container>
-
-            <Divider id="features" my="xl" />
-
-            <Container size="lg" py="xl">
-                <Title order={2}>Why teams choose CyberSentry</Title>
-                <Text c="dimmed" mt="xs">
-                    Fast setup, deep visibility, and automation ready out of the box.
+  return (
+    <>
+      <Container size="xl" className="landing-section">
+        <Grid gutter="xl" align="center">
+          <Grid.Col span={{ base: 12, lg: 6 }}>
+            <Stack gap="xl">
+              <div>
+                <Text className="app-page-eyebrow">Live threat feed enabled</Text>
+                <Title order={1} mt="lg" maw={620} style={{ fontSize: 'clamp(2.6rem, 5vw, 4.8rem)', letterSpacing: '-0.06em', lineHeight: 1 }}>
+                  Security tooling that feels deliberate, not improvised.
+                </Title>
+                <Text mt="lg" size="lg" c="dimmed" maw={560}>
+                  CyberSentry consolidates DNS, email, IP, and repository analysis into one cohesive surface so teams can move from lookup to decision without switching mental models.
                 </Text>
-                <SimpleGrid cols={{ base: 1, md: 3 }} mt="lg" spacing="lg">
-                    <Card withBorder shadow="sm" padding="lg">
-                        <Title order={4}>Unified signal</Title>
-                        <Text c="dimmed" mt="sm">
-                            Bring SIEM, cloud, and endpoint telemetry together with consistent triage and routing.
-                        </Text>
-                    </Card>
-                    <Card withBorder shadow="sm" padding="lg">
-                        <Title order={4}>Actionable analytics</Title>
-                        <Text c="dimmed" mt="sm">
-                            Prebuilt dashboards for posture, incident trends, and compliance-readiness.
-                        </Text>
-                    </Card>
-                    <Card withBorder shadow="sm" padding="lg">
-                        <Title order={4}>Collaboration-first</Title>
-                        <Text c="dimmed" mt="sm">
-                            Assign owners, track timelines, and keep stakeholders informed with clean audit trails.
-                        </Text>
-                    </Card>
-                </SimpleGrid>
-            </Container>
+              </div>
 
-            <Divider id="pricing" my="xl" />
+              <Group>
+                <Button component={Link} to="/login" size="lg" rightSection={<IconArrowRight size={18} />}>
+                  Open secure workspace
+                </Button>
+                <Button component="a" href="/#tools" size="lg" variant="light">
+                  Explore tools
+                </Button>
+              </Group>
 
-            <Container size="lg" py="xl">
-                <Title order={2}>Plans that scale with you</Title>
-                <Text c="dimmed" mt="xs">
-                    Simple pricing for modern security teams.
-                </Text>
-                <SimpleGrid cols={{ base: 1, md: 3 }} mt="lg" spacing="lg">
-                    <Card withBorder padding="lg" shadow="sm">
-                        <Title order={4}>Starter</Title>
-                        <Text mt="xs">$49 / month</Text>
-                        <List
-                            mt="md"
-                            spacing="sm"
-                            icon={
-                                <ThemeIcon size={20} radius="xl">
-                                    <IconCheck size={14} />
-                                </ThemeIcon>
-                            }
-                        >
-                            <List.Item>Unified alerting</List.Item>
-                            <List.Item>5 team members</List.Item>
-                            <List.Item>Email support</List.Item>
-                        </List>
-                        <Button fullWidth mt="lg" variant="light" >
-                            Choose Starter
-                        </Button>
-                    </Card>
+              <List
+                spacing="md"
+                icon={
+                  <ThemeIcon size={26} radius="xl" color="brand" variant="light">
+                    <IconCheck size={16} />
+                  </ThemeIcon>
+                }
+              >
+                <List.Item>Shared Mantine-first interface across public tools and authenticated workflows.</List.Item>
+                <List.Item>Fast analysis surfaces for DNS, email, IP, and GitHub posture.</List.Item>
+                <List.Item>Design tuned for visual scanning, not generic dashboard filler.</List.Item>
+              </List>
+            </Stack>
+          </Grid.Col>
 
-                    <Card withBorder padding="lg" shadow="md">
-                        <Title order={4}>Growth</Title>
-                        <Text mt="xs">$149 / month</Text>
-                        <List
-                            mt="md"
-                            spacing="sm"
-                            icon={
-                                <ThemeIcon size={20} radius="xl">
-                                    <IconCheck size={14} />
-                                </ThemeIcon>
-                            }
-                        >
-                            <List.Item>Advanced analytics</List.Item>
-                            <List.Item>Unlimited investigations</List.Item>
-                            <List.Item>Role-based access</List.Item>
-                        </List>
-                        <Button fullWidth mt="lg">
-                            Choose Growth
-                        </Button>
-                    </Card>
-
-                    <Card withBorder padding="lg" shadow="sm">
-                        <Title order={4}>Enterprise</Title>
-                        <Text mt="xs">Let&apos;s talk</Text>
-                        <List
-                            mt="md"
-                            spacing="sm"
-                            icon={
-                                <ThemeIcon size={20} radius="xl">
-                                    <IconCheck size={14} />
-                                </ThemeIcon>
-                            }
-                        >
-                            <List.Item>Custom integrations</List.Item>
-                            <List.Item>24/7 support and SLAs</List.Item>
-                            <List.Item>Dedicated CSM</List.Item>
-                        </List>
-                        <Button fullWidth mt="lg" variant="light">
-                            Talk to sales
-                        </Button>
-                    </Card>
-                </SimpleGrid>
-            </Container>
-
-            <Divider id="about" my="xl" />
-
-            <Container size="lg" py="xl">
-                <Grid gutter="xl" align="center">
-                    <Grid.Col span={{ base: 12, md: 6 }}>
-                        <Title order={2}>Built for modern incident response</Title>
-                        <Text c="dimmed" mt="sm">
-                            CyberSentry is crafted by operators and engineers who have run global detection and response programs. We
-                            prioritize clarity, speed, and automation so you can focus on impact.
-                        </Text>
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 12, md: 6 }}>
-                        <Card withBorder shadow="sm" padding="lg">
-                            <Title order={4}>What we believe</Title>
-                            <List
-                                mt="md"
-                                spacing="sm"
-                                icon={
-                                    <ThemeIcon size={20} radius="xl">
-                                        <IconCheck size={14} />
-                                    </ThemeIcon>
-                                }
-                            >
-                                <List.Item>Security tools should be fast and intuitive.</List.Item>
-                                <List.Item>Signals must be ranked by risk, not noise.</List.Item>
-                                <List.Item>Collaboration is core to every investigation.</List.Item>
-                            </List>
-                        </Card>
-                    </Grid.Col>
-                </Grid>
-            </Container>
-
-            <Divider id="contact" my="xl" />
-
-            <Container size="lg" py="xl">
-                <Card withBorder shadow="md" padding="xl" radius="md">
-                    <Title order={2}>Ready to see CyberSentry?</Title>
-                    <Text c="dimmed" mt="sm">
-                        Talk with our team or jump into the product. We will tailor a walkthrough to your stack and priorities.
+          <Grid.Col span={{ base: 12, lg: 6 }}>
+            <Paper className="app-hero-card" p={{ base: 'lg', sm: 'xl' }} radius="xl">
+              <Stack gap="lg">
+                <Group justify="space-between">
+                  <div>
+                    <Text size="sm" c="dimmed">
+                      Operations snapshot
                     </Text>
-                    <Group mt="lg" gap="md">
-                        <Button>Book time</Button>
-                        <Button variant="light">Explore docs</Button>
-                    </Group>
-                </Card>
-            </Container>
-        </>
-    );
+                    <Title order={3}>Command center overview</Title>
+                  </div>
+                  <Badge size="lg" color="brand">
+                    Live
+                  </Badge>
+                </Group>
+
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+                  <Card p="lg">
+                    <Text size="xs" tt="uppercase" fw={800} c="dimmed" style={{ letterSpacing: '0.08em' }}>
+                      Active incidents
+                    </Text>
+                    <Title order={2} mt="xs">
+                      12
+                    </Title>
+                    <Text c="dimmed" mt={4}>
+                      Prioritized from recent DNS, email, and auth anomalies.
+                    </Text>
+                  </Card>
+                  <Card p="lg">
+                    <Text size="xs" tt="uppercase" fw={800} c="dimmed" style={{ letterSpacing: '0.08em' }}>
+                      Coverage score
+                    </Text>
+                    <Title order={2} mt="xs">
+                      94%
+                    </Title>
+                    <Text c="dimmed" mt={4}>
+                      Verification across posture, routing, and monitoring controls.
+                    </Text>
+                  </Card>
+                </SimpleGrid>
+
+                <Paper p="lg" radius="xl" style={{ background: 'var(--app-surface-soft)' }}>
+                  <Group justify="space-between" mb="md">
+                    <Text fw={800}>Signal lanes</Text>
+                    <Text size="sm" c="dimmed">
+                      Last 24 hours
+                    </Text>
+                  </Group>
+                  <Stack gap="sm">
+                    {[
+                      { label: 'Email posture drift', value: 'High confidence', tone: 'var(--app-warning)' },
+                      { label: 'DNS resolver inconsistency', value: '5 regions impacted', tone: 'var(--app-info)' },
+                      { label: 'Repository hygiene check', value: '2 repos need action', tone: 'var(--app-danger)' },
+                    ].map((item) => (
+                      <Group key={item.label} justify="space-between">
+                        <Text>{item.label}</Text>
+                        <Text fw={700} style={{ color: item.tone }}>
+                          {item.value}
+                        </Text>
+                      </Group>
+                    ))}
+                  </Stack>
+                </Paper>
+              </Stack>
+            </Paper>
+          </Grid.Col>
+        </Grid>
+      </Container>
+
+      <Container id="features" size="xl" className="landing-section">
+        <Stack gap="lg" mb="xl">
+          <Text className="app-page-eyebrow">Why teams choose it</Text>
+          <Title order={2}>One product language across tools and workflows</Title>
+          <Text c="dimmed" maw={620}>
+            The public tools, protected dashboard, and analytical result views all share the same interaction model, visual rhythm, and technology stack.
+          </Text>
+        </Stack>
+
+        <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg">
+          {featureCards.map((feature) => (
+            <Card key={feature.title} p="xl">
+              <ThemeIcon size={48} radius="xl" variant="light" color="brand">
+                <feature.icon size={24} />
+              </ThemeIcon>
+              <Title order={4} mt="lg">
+                {feature.title}
+              </Title>
+              <Text c="dimmed" mt="sm">
+                {feature.description}
+              </Text>
+            </Card>
+          ))}
+        </SimpleGrid>
+      </Container>
+
+      <Container id="tools" size="xl" className="landing-section">
+        <Stack gap="lg" mb="xl">
+          <Text className="app-page-eyebrow">Tooling surface</Text>
+          <Title order={2}>Start with the public analysis suite</Title>
+          <Text c="dimmed" maw={620}>
+            Each tool keeps the current dynamics and API-backed workflow, but now lives inside a more coherent design system.
+          </Text>
+        </Stack>
+
+        <SimpleGrid cols={{ base: 1, md: 2, xl: 3 }} spacing="lg">
+          {toolCards.map((tool) => (
+            <Card
+              key={tool.title}
+              component={Link}
+              to={tool.href}
+              p="xl"
+              style={{ textDecoration: 'none' }}
+            >
+              <Group justify="space-between" align="flex-start">
+                <ThemeIcon size={52} radius="xl" variant="light" color="brand">
+                  <tool.icon size={26} />
+                </ThemeIcon>
+                <Badge color="brand">{tool.href === '/login' ? 'Authenticated' : 'Public'}</Badge>
+              </Group>
+              <Title order={4} mt="lg">
+                {tool.title}
+              </Title>
+              <Text c="dimmed" mt="sm">
+                {tool.description}
+              </Text>
+              <Group mt="lg" gap="xs">
+                <Text fw={700}>Open tool</Text>
+                <IconArrowRight size={16} />
+              </Group>
+            </Card>
+          ))}
+        </SimpleGrid>
+      </Container>
+
+      <Container id="pricing" size="xl" className="landing-section">
+        <Stack gap="lg" mb="xl">
+          <Text className="app-page-eyebrow">Pricing</Text>
+          <Title order={2}>Scale access as the investigation surface expands</Title>
+        </Stack>
+
+        <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="lg">
+          {planCards.map((plan) => (
+            <Card
+              key={plan.name}
+              p="xl"
+              style={{
+                background:
+                  plan.variant === 'filled' ? 'linear-gradient(145deg, rgba(22, 193, 160, 0.18), var(--app-panel-gradient))' : undefined,
+                borderColor:
+                  plan.variant === 'filled' ? 'var(--app-border-strong)' : undefined,
+              }}
+            >
+              <Text className="app-page-eyebrow">{plan.name}</Text>
+              <Title order={3} mt="lg">
+                {plan.price}
+              </Title>
+              <List
+                mt="lg"
+                spacing="sm"
+                icon={
+                  <ThemeIcon size={22} radius="xl" variant="light" color="brand">
+                    <IconCheck size={14} />
+                  </ThemeIcon>
+                }
+              >
+                {plan.points.map((point) => (
+                  <List.Item key={point}>{point}</List.Item>
+                ))}
+              </List>
+              <Button mt="xl" fullWidth variant={plan.variant === 'filled' ? 'filled' : 'light'}>
+                {plan.name === 'Enterprise' ? 'Talk to us' : `Choose ${plan.name}`}
+              </Button>
+            </Card>
+          ))}
+        </SimpleGrid>
+      </Container>
+
+      <Container id="about" size="xl" className="landing-section">
+        <Grid gutter="xl" align="center">
+          <Grid.Col span={{ base: 12, lg: 6 }}>
+            <Stack gap="lg">
+              <Text className="app-page-eyebrow">About the platform</Text>
+              <Title order={2}>Built for modern response teams that need clarity under pressure</Title>
+              <Text c="dimmed">
+                CyberSentry is structured around repeatable analysis tasks: investigate, compare, score, and act. The redesign keeps the existing workflows but makes the system feel more deliberate and cohesive.
+              </Text>
+            </Stack>
+          </Grid.Col>
+
+          <Grid.Col span={{ base: 12, lg: 6 }}>
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
+              {[
+                ['Fast read', 'Hierarchy, spacing, and contrast tuned for dense analytical output.'],
+                ['Consistent UI', 'Shared shells and tokens reduce visual drift across pages.'],
+                ['Mantine-native', 'No mixed design stack or parallel styling system.'],
+                ['Operational focus', 'The UI supports investigations instead of distracting from them.'],
+              ].map(([title, body]) => (
+                <Paper key={title} p="lg" radius="xl">
+                  <Text fw={800}>{title}</Text>
+                  <Text c="dimmed" mt="sm">
+                    {body}
+                  </Text>
+                </Paper>
+              ))}
+            </SimpleGrid>
+          </Grid.Col>
+        </Grid>
+      </Container>
+
+      <Container id="contact" size="xl" className="landing-section">
+        <Paper className="app-hero-card" p={{ base: 'lg', sm: 'xl' }} radius="xl">
+          <Group justify="space-between" align="center">
+            <div>
+              <Text className="app-page-eyebrow">Contact</Text>
+              <Title order={2} mt="lg">
+                Ready to review your attack surface in one place?
+              </Title>
+              <Text c="dimmed" mt="sm" maw={620}>
+                Walk through the current tools, the protected dashboard, and the redesigned theme system with your own priorities and workflows in mind.
+              </Text>
+            </div>
+            <Group>
+              <Button component={Link} to="/login">
+                Sign in
+              </Button>
+              <Button component="a" href="mailto:security@cybersentry.local" variant="light">
+                Contact team
+              </Button>
+            </Group>
+          </Group>
+        </Paper>
+      </Container>
+    </>
+  );
 };

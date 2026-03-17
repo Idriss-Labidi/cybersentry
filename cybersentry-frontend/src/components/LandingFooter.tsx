@@ -1,35 +1,33 @@
 import type { FC } from 'react';
-import { Anchor, Container, Group, Text } from '@mantine/core';
+import { Anchor, Box, Container, Group, Text } from '@mantine/core';
+import BrandMark from './BrandMark';
 
 export const LandingFooter: FC = () => {
-	const year = new Date().getFullYear();
+  const year = new Date().getFullYear();
 
-	return (
-		<Container size="lg" py="md">
-			<Group justify="space-between" align="center">
-				<Group gap="xs">
-					<Text fw={700}>CyberSentry</Text>
-					<Text c="dimmed" fz="sm">
-						Modern security insights for your stack.
-					</Text>
-				</Group>
+  return (
+    <Box component="footer" className="landing-footer">
+      <Container size="xl" py="md">
+        <Group justify="space-between" align="center" wrap="wrap" gap="md">
+          <BrandMark compact />
 
-				<Group gap="lg" c="dimmed" fz="sm">
-					<Anchor href="#about" c="dimmed">
-						About
-					</Anchor>
-					<Anchor href="#pricing" c="dimmed">
-						Pricing
-					</Anchor>
-					<Anchor href="#contact" c="dimmed">
-						Contact
-					</Anchor>
-				</Group>
-			</Group>
+          <Group gap="lg">
+            <Anchor href="/#features" c="dimmed" fz="sm" fw={700}>
+              Features
+            </Anchor>
+            <Anchor href="/#pricing" c="dimmed" fz="sm" fw={700}>
+              Pricing
+            </Anchor>
+            <Anchor href="/#contact" c="dimmed" fz="sm" fw={700}>
+              Contact
+            </Anchor>
+          </Group>
 
-			<Text c="dimmed" fz="xs" mt="sm">
-				© {year} CyberSentry. All rights reserved.
-			</Text>
-		</Container>
-	);
+          <Text c="dimmed" fz="xs">
+            (c) {year} CyberSentry. Built for modern security teams.
+          </Text>
+        </Group>
+      </Container>
+    </Box>
+  );
 };
