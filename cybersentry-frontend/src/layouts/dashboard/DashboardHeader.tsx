@@ -19,6 +19,7 @@ interface DashboardHeaderProps {
 const labelMap: Record<string, string> = {
   dashboard: 'Overview',
   security: 'Security',
+  profile: 'Profile',
   alerts: 'Alerts',
   analytics: 'Analytics',
   settings: 'Settings',
@@ -111,7 +112,9 @@ const DashboardHeader = ({ mobileOpened, setMobileOpened }: DashboardHeaderProps
             <Menu.Label>{user?.profile?.name || user?.profile?.preferred_username}</Menu.Label>
             <Menu.Divider />
             <Menu.Item leftSection={<IconBell size={15} />}>Notifications</Menu.Item>
-            <Menu.Item leftSection={<IconUser size={15} />}>Profile</Menu.Item>
+            <Menu.Item component={Link} to="/dashboard/profile" leftSection={<IconUser size={15} />}>
+              Profile
+            </Menu.Item>
             <Menu.Item leftSection={<IconSettings size={15} />}>Settings</Menu.Item>
             <Menu.Divider />
             <Menu.Item color="red" leftSection={<IconLogout size={15} />} onClick={() => void logout()}>

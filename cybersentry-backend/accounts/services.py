@@ -10,6 +10,13 @@ from .models import Organization, User
 user_model = get_user_model()
 token_generator = PasswordResetTokenGenerator()
 
+
+def get_client_ip(request: HttpRequest) -> str | None:
+    forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if forwarded_for:
+        return forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
 def create_organization_admins_and_notify(organization: Organization, admin_emails: list[str], request: HttpRequest) -> None:
     '''
         Create admin users for the organization

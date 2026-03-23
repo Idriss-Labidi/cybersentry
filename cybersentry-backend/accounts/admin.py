@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Organization, User
+from .models import LoginHistory, Organization, User
 from .forms import OrganizationForm
 from .services import create_organization_admins_and_notify
 
@@ -25,6 +25,13 @@ class UserAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'role', 'organization')
     search_fields = ('username', 'email')
     list_filter = ('role', 'organization')
+
+
+@admin.register(LoginHistory)
+class LoginHistoryAdmin(admin.ModelAdmin):
+    list_display = ('user', 'timestamp', 'ip_address')
+    search_fields = ('user__email', 'ip_address', 'user_agent')
+    readonly_fields = ('user', 'timestamp', 'ip_address', 'user_agent')
             
 
             

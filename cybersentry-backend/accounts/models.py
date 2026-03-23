@@ -1,5 +1,3 @@
-from encodings.punycode import T
-
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import validate_email
@@ -13,6 +11,7 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=Roles.choices, default=Roles.VIEWER)
     email = models.EmailField(unique=True, validators=[validate_email])
     organization = models.ForeignKey('Organization', on_delete=models.CASCADE, related_name='users', null=True, blank=True)
+    password_changed_at = models.DateTimeField(null=True, blank=True)
         
 
 class Organization(models.Model):
@@ -32,3 +31,16 @@ class Organization(models.Model):
     
     def __str__(self):
         return self.name
+
+
+class LoginHistory(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='login_history')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=512, blank=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.user.email} @ {self.timestamp.isoformat()}"

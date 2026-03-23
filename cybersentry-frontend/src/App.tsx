@@ -8,6 +8,7 @@ import { OAuthCallback } from './pages/auth/OAuthCallback';
 import { Landing } from './pages/landing/Landing';
 import { Dashboard } from './pages/dashboard/Dashboard';
 import { Security } from './pages/dashboard/Security';
+import { Profile } from './pages/dashboard/Profile';
 import { Alerts } from './pages/dashboard/Alerts';
 import { Analytics } from './pages/dashboard/Analytics';
 import { Settings } from './pages/dashboard/Settings';
@@ -55,6 +56,7 @@ function AppContent() {
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/security" element={<Security />} />
+            <Route path="/dashboard/profile" element={<Profile />} />
             <Route path="/dashboard/alerts" element={<Alerts />} />
             <Route path="/dashboard/analytics" element={<Analytics />} />
             <Route path="/dashboard/settings" element={<Settings />} />
