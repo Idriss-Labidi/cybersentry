@@ -1,56 +1,327 @@
-import { Group, Paper, SimpleGrid, Switch, Text } from '@mantine/core';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  Button,
+  Card,
+  Group,
+  NumberInput,
+  Select,
+  SimpleGrid,
+  Stack,
+  Switch,
+  Text,
+  TextInput,
+} from '@mantine/core';
 import { IconSettings } from '@tabler/icons-react';
 import DashboardPageLayout from '../../layouts/dashboard/DashboardPageLayout';
+import { useTheme } from '../../context/theme/useTheme';
+import { getUserSettings, updateUserSettings } from '../../services/settings';
 
-const settingsCards = [
-  {
-    title: 'Surface glass effects',
-    enabled: true,
-    detail: 'Subtle blur and depth on shared navigation and panel surfaces.',
-  },
-  {
-    title: 'Persistent theme mode',
-    enabled: true,
-    detail: 'Dark and light preference is now stored locally and restored on load.',
-  },
-  {
-    title: 'Compact analytical hierarchy',
-    enabled: true,
-    detail: 'Tighter layout rhythm for better scan speed across result-heavy pages.',
-  },
-  {
-    title: 'Experimental motion',
-    enabled: false,
-    detail: 'Reserved for later so the current interaction dynamics stay stable.',
-  },
-];
+const LOCAL_NOTIFICATION_KEY = 'cybersentry-notification-preferences';
+
+type NotificationPreferences = {
+  highRisk: boolean;
+  failedChecks: boolean;
+};
+
+const defaultNotificationPreferences: NotificationPreferences = {
+  highRisk: true,
+  failedChecks: true,
+};
+
+const readNotificationPreferences = (): NotificationPreferences => {
+  if (typeof window === 'undefined') {
+    return defaultNotificationPreferences;
+  }
+
+  try {
+    const stored = window.localStorage.getItem(LOCAL_NOTIFICATION_KEY);
+    if (!stored) {
+      return defaultNotificationPreferences;
+    }
+
+    const parsed = JSON.parse(stored) as Partial<NotificationPreferences>;
+    return {
+      highRisk: parsed.highRisk ?? defaultNotificationPreferences.highRisk,
+      failedChecks: parsed.failedChecks ?? defaultNotificationPreferences.failedChecks,
+    };
+  } catch {
+    return defaultNotificationPreferences;
+  }
+};
 
 export const Settings = () => {
+  const { preferredTheme, setPreferredTheme } = useTheme();
+
+  const [githubToken, setGithubToken] = useState('');
+  const [maskedGithubToken, setMaskedGithubToken] = useState('');
+  const [useCache, setUseCache] = useState(true);
+  const [cacheDuration, setCacheDuration] = useState<number | string>(60);
+  const [themeChoice, setThemeChoice] = useState(preferredTheme);
+
+  const [riskLowThreshold, setRiskLowThreshold] = useState<number | string>(25);
+  const [riskMediumThreshold, setRiskMediumThreshold] = useState<number | string>(60);
+  const [enableLevel1, setEnableLevel1] = useState(true);
+  const [enableLevel2, setEnableLevel2] = useState(true);
+  const [enableLevel3, setEnableLevel3] = useState(true);
+
+  const [notifications, setNotifications] = useState<NotificationPreferences>(
+    readNotificationPreferences
+  );
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      setIsLoading(true);
+      setErrorMessage(null);
+
+      try {
+        const response = await getUserSettings();
+        const data = response.data;
+
+        setMaskedGithubToken(data.github_token);
+        setUseCache(data.use_cache);
+        setCacheDuration(data.cache_duration);
+        setThemeChoice(data.preferred_theme);
+        setPreferredTheme(data.preferred_theme);
+      } catch {
+        setErrorMessage('Failed to load settings. Please refresh and try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadSettings();
+  }, [setPreferredTheme]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    window.localStorage.setItem(LOCAL_NOTIFICATION_KEY, JSON.stringify(notifications));
+  }, [notifications]);
+
+  const metrics = useMemo(
+    () => [
+      { label: 'Theme', value: themeChoice, hint: 'Brand accent preference' },
+      { label: 'Cache', value: useCache ? 'Enabled' : 'Disabled', hint: 'GitHub check caching mode' },
+      {
+        label: 'Duration',
+        value: `${cacheDuration || 0} min`,
+        hint: 'Cached result validity window',
+      },
+      {
+        label: 'GitHub token',
+        value: githubToken ? 'Updated' : maskedGithubToken ? 'Configured' : 'Not set',
+        hint: 'Used for authenticated API checks',
+      },
+    ],
+    [themeChoice, useCache, cacheDuration, githubToken, maskedGithubToken]
+  );
+
+  const handleThemeChange = (value: string | null) => {
+    if (!value || (value !== 'green' && value !== 'blue' && value !== 'purple')) {
+      return;
+    }
+
+    setThemeChoice(value);
+    setPreferredTheme(value);
+  };
+
+  const handleSaveSettings = async () => {
+    setErrorMessage(null);
+    setStatusMessage(null);
+
+    if (typeof cacheDuration !== 'number' || cacheDuration < 1 || cacheDuration > 1440) {
+      setErrorMessage('Cache duration must be between 1 and 1440 minutes.');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const payload = {
+        use_cache: useCache,
+        cache_duration: cacheDuration,
+        preferred_theme: themeChoice,
+        ...(githubToken ? { github_token: githubToken } : {}),
+      };
+
+      const response = await updateUserSettings(payload);
+      setMaskedGithubToken(response.data.github_token);
+      setGithubToken('');
+      setPreferredTheme(response.data.preferred_theme);
+      setStatusMessage('Settings saved successfully.');
+    } catch {
+      setErrorMessage('Could not save settings. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <DashboardPageLayout
       icon={<IconSettings size={26} />}
       eyebrow="Settings"
-      title="Workspace preferences"
-      description="Theme handling, surface defaults, and future workspace options now live inside a more credible settings surface."
-      metrics={[
-        { label: 'Theme modes', value: '2', hint: 'Persistent dark and light variants' },
-        { label: 'Shared tokens', value: 'Centralized', hint: 'Applied across layouts and tool pages' },
-        { label: 'UI consistency', value: 'Improved', hint: 'Reduced drift between sections' },
-      ]}
+      title="Workspace and integration settings"
+      description="Manage GitHub integration defaults, cache behavior, accent theme, and operational preferences in one place."
+      metrics={metrics}
     >
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-        {settingsCards.map((item) => (
-          <Paper key={item.title} p="lg">
-            <Group justify="space-between" align="flex-start">
-              <Text fw={800}>{item.title}</Text>
-              <Switch checked={item.enabled} readOnly />
-            </Group>
-            <Text c="dimmed" mt="sm">
-              {item.detail}
-            </Text>
-          </Paper>
-        ))}
-      </SimpleGrid>
+      {errorMessage ? (
+        <Alert color="red" title="Save error" variant="light">
+          {errorMessage}
+        </Alert>
+      ) : null}
+
+      {statusMessage ? (
+        <Alert color="green" title="Saved" variant="light">
+          {statusMessage}
+        </Alert>
+      ) : null}
+
+      {isLoading ? (
+        <Text c="dimmed">Loading settings...</Text>
+      ) : (
+        <Stack gap="lg">
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+            <Card p="lg">
+              <Stack gap="md">
+                <Text fw={800}>General settings</Text>
+                <Select
+                  label="Theme selector"
+                  data={[
+                    { value: 'green', label: 'Green (default)' },
+                    { value: 'blue', label: 'Blue' },
+                    { value: 'purple', label: 'Purple' },
+                  ]}
+                  value={themeChoice}
+                  onChange={handleThemeChange}
+                />
+                <Select
+                  label="Language"
+                  description="Coming soon"
+                  data={[{ value: 'en', label: 'English (default)' }]}
+                  value="en"
+                  disabled
+                />
+              </Stack>
+            </Card>
+
+            <Card p="lg">
+              <Stack gap="md">
+                <Text fw={800}>GitHub integration</Text>
+                <TextInput
+                  label="GitHub token"
+                  placeholder="Enter your GitHub Personal Access Token"
+                  type="password"
+                  value={githubToken}
+                  onChange={(event) => setGithubToken(event.currentTarget.value)}
+                  description={
+                    maskedGithubToken && !githubToken
+                      ? `Configured token: ${maskedGithubToken}`
+                      : 'Leave empty to keep existing token'
+                  }
+                />
+              </Stack>
+            </Card>
+          </SimpleGrid>
+
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+            <Card p="lg">
+              <Stack gap="md">
+                <Text fw={800}>Security settings</Text>
+                <NumberInput
+                  label="Low risk threshold"
+                  min={1}
+                  max={99}
+                  value={riskLowThreshold}
+                  onChange={setRiskLowThreshold}
+                />
+                <NumberInput
+                  label="Medium risk threshold"
+                  min={1}
+                  max={99}
+                  value={riskMediumThreshold}
+                  onChange={setRiskMediumThreshold}
+                />
+                <Group justify="space-between">
+                  <Text>Enable Level 1 checks</Text>
+                  <Switch checked={enableLevel1} onChange={(e) => setEnableLevel1(e.currentTarget.checked)} />
+                </Group>
+                <Group justify="space-between">
+                  <Text>Enable Level 2 checks</Text>
+                  <Switch checked={enableLevel2} onChange={(e) => setEnableLevel2(e.currentTarget.checked)} />
+                </Group>
+                <Group justify="space-between">
+                  <Text>Enable Level 3 checks</Text>
+                  <Switch checked={enableLevel3} onChange={(e) => setEnableLevel3(e.currentTarget.checked)} />
+                </Group>
+              </Stack>
+            </Card>
+
+            <Card p="lg">
+              <Stack gap="md">
+                <Text fw={800}>Notifications</Text>
+                <Group justify="space-between">
+                  <Text>Notify on high-risk repositories</Text>
+                  <Switch
+                    checked={notifications.highRisk}
+                    onChange={(event) =>
+                      setNotifications((current) => ({
+                        ...current,
+                        highRisk: event.currentTarget.checked,
+                      }))
+                    }
+                  />
+                </Group>
+                <Group justify="space-between">
+                  <Text>Notify on failed checks</Text>
+                  <Switch
+                    checked={notifications.failedChecks}
+                    onChange={(event) =>
+                      setNotifications((current) => ({
+                        ...current,
+                        failedChecks: event.currentTarget.checked,
+                      }))
+                    }
+                  />
+                </Group>
+                <Text c="dimmed" size="sm">
+                  Notification preferences are stored locally in your browser.
+                </Text>
+              </Stack>
+            </Card>
+          </SimpleGrid>
+
+          <Card p="lg">
+            <Stack gap="md">
+              <Text fw={800}>Advanced settings</Text>
+              <Group justify="space-between">
+                <Text>Use cached results</Text>
+                <Switch checked={useCache} onChange={(event) => setUseCache(event.currentTarget.checked)} />
+              </Group>
+              <NumberInput
+                label="Cache duration (minutes)"
+                min={1}
+                max={1440}
+                value={cacheDuration}
+                onChange={setCacheDuration}
+              />
+            </Stack>
+          </Card>
+
+          <Group justify="flex-end">
+            <Button onClick={handleSaveSettings} loading={isSaving}>
+              Save settings
+            </Button>
+          </Group>
+        </Stack>
+      )}
     </DashboardPageLayout>
   );
 };

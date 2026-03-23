@@ -44,3 +44,24 @@ class LoginHistory(models.Model):
 
     def __str__(self):
         return f"{self.user.email} @ {self.timestamp.isoformat()}"
+
+
+class UserSettings(models.Model):
+    class PreferredThemes(models.TextChoices):
+        GREEN = 'green', 'Green'
+        BLUE = 'blue', 'Blue'
+        PURPLE = 'purple', 'Purple'
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='settings')
+    github_token = models.TextField(null=True, blank=True)
+    use_cache = models.BooleanField(default=True)
+    cache_duration = models.IntegerField(default=60)
+    preferred_theme = models.CharField(
+        max_length=20,
+        choices=PreferredThemes.choices,
+        default=PreferredThemes.GREEN,
+    )
+
+    def __str__(self):
+        return f"Settings for {self.user.email}"
+

@@ -2,7 +2,7 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from .models import LoginHistory, Organization, User
+from .models import LoginHistory, Organization, User, UserSettings
 
 
 class ProfileApiTests(APITestCase):
@@ -68,6 +68,41 @@ class ProfileApiTests(APITestCase):
 		self.assertTrue(response.data['suspicious'])
 		self.assertEqual(response.data['message'], 'Multiple IPs detected recently')
 
+	def test_user_settings_endpoint_returns_masked_token(self):
+		settings_obj = UserSettings.objects.get(user=self.user)
+		settings_obj.github_token = 'ghp_1234567890'
+		settings_obj.save(update_fields=['github_token'])
+
+		response = self.client.get('/api/settings/')
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertEqual(response.data['github_token'], 'ghp********890')
+
+	def test_user_settings_put_updates_fields(self):
+		response = self.client.put(
+			'/api/settings/',
+			{
+				'github_token': 'ghp_newtoken123',
+				'use_cache': False,
+				'cache_duration': 15,
+				'preferred_theme': 'blue',
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		settings_obj = UserSettings.objects.get(user=self.user)
+		self.assertEqual(settings_obj.github_token, 'ghp_newtoken123')
+		self.assertFalse(settings_obj.use_cache)
+		self.assertEqual(settings_obj.cache_duration, 15)
+		self.assertEqual(settings_obj.preferred_theme, 'blue')
+
+	def test_user_settings_cache_duration_validation(self):
+		response = self.client.put('/api/settings/', {'cache_duration': 0}, format='json')
+
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		self.assertIn('cache_duration', response.data)
+
 
 class LoginHistorySignalTests(TestCase):
 	def setUp(self):
@@ -88,3 +123,7 @@ class LoginHistorySignalTests(TestCase):
 
 		self.assertTrue(logged_in)
 		self.assertEqual(LoginHistory.objects.filter(user=self.user).count(), 1)
+
+	def test_user_creation_auto_creates_settings(self):
+		self.assertTrue(UserSettings.objects.filter(user=self.user).exists())
+

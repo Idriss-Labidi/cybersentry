@@ -79,16 +79,18 @@ class CheckRepositoryInputSerializer(serializers.Serializer):
     )
     levels = serializers.MultipleChoiceField(
         choices=['1', '2', '3'],
+        required=False,
         default=['1', '2', '3'],
         help_text="Which check levels to run (1=REST API, 2=File Inspection, 3=Security APIs)"
     )
     use_cache = serializers.BooleanField(
-        default=True,
-        help_text="Use cached results if available (older than 1 hour)"
+        required=False,
+        help_text="Override whether cached results should be used"
     )
     github_token = serializers.CharField(
         required=False,
         allow_blank=True,
+        allow_null=True,
         write_only=True,
         help_text="Optional personal GitHub token for higher rate limits"
     )

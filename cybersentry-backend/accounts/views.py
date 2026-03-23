@@ -12,8 +12,14 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import LoginHistory
-from .serializers import LoginHistorySerializer, PasswordChangeSerializer, ProfileSerializer
+from .models import LoginHistory, UserSettings
+from .serializers import (
+    LoginHistorySerializer,
+    PasswordChangeSerializer,
+    ProfileSerializer,
+    UserSettingsUpdateSerializer,
+    mask_github_token,
+)
 from .services import get_client_ip
 
 user_model = get_user_model()
@@ -123,6 +129,28 @@ def security_status(request):
                 else 'No suspicious activity detected'
             ),
             'recent_ip_count': ip_count,
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def user_settings(request):
+    settings_obj, _ = UserSettings.objects.get_or_create(user=request.user)
+
+    if request.method == 'PUT':
+        serializer = UserSettingsUpdateSerializer(settings_obj, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        settings_obj.refresh_from_db()
+
+    return Response(
+        {
+            'github_token': mask_github_token(settings_obj.github_token),
+            'use_cache': settings_obj.use_cache,
+            'cache_duration': settings_obj.cache_duration,
+            'preferred_theme': settings_obj.preferred_theme,
         },
         status=status.HTTP_200_OK,
     )

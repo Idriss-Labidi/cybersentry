@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Container,
   Title,
@@ -42,6 +42,7 @@ import type { AxiosError } from 'axios';
 import { getRiskColor, getRiskLabel } from '../../../utils/githubHealthUtils';
 import { useAuth } from '../../../context/auth/useAuth';
 import { checkRepositoryHealth } from '../../../services/github-tools';
+import { getUserSettings } from '../../../services/settings';
 
 type WarningLevel = 'critical' | 'high' | 'medium' | 'low' | 'warning' | 'info';
 
@@ -176,6 +177,19 @@ const GitHubHealthCheck = () => {
   const [result, setResult] = useState<CheckResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [useCache, setUseCache] = useState(true);
+
+  useEffect(() => {
+    const loadCachePreference = async () => {
+      try {
+        const response = await getUserSettings();
+        setUseCache(response.data.use_cache);
+      } catch {
+        // Keep the local default when settings endpoint is unavailable.
+      }
+    };
+
+    void loadCachePreference();
+  }, []);
 
   const handleCheck = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,14 +1,13 @@
-from django.shortcuts import render
-
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from datetime import timedelta
 import re
 
 from .models import GithubRepository, RepositoryCheckResult
+from accounts.models import UserSettings
 from .serializers import (
     GitHubRepositorySerializer,
     CheckResultDetailSerializer,
@@ -55,9 +54,7 @@ def _run_checks(owner: str, repo: str, levels: list, token: str = None) -> dict:
 
 
 class GitHubRepositoryCheckViewSet(viewsets.ViewSet):
-    #permission_classes = [IsAuthenticated]
-
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=['post'])
     def check_repository(self, request):
@@ -78,8 +75,15 @@ class GitHubRepositoryCheckViewSet(viewsets.ViewSet):
 
         url = serializer.validated_data['url']
         levels = [int(l) for l in serializer.validated_data.get('levels', ['1', '2', '3'])]
-        use_cache = serializer.validated_data.get('use_cache', True)
-        user_token = serializer.validated_data.get('github_token')
+
+        user_settings, _ = UserSettings.objects.get_or_create(user=request.user)
+        use_cache = serializer.validated_data.get('use_cache')
+        if use_cache is None:
+            use_cache = user_settings.use_cache
+
+        request_token = serializer.validated_data.get('github_token')
+        user_token = request_token or user_settings.github_token or None
+        cache_duration = user_settings.cache_duration
 
         # Parse owner and repo from URL
         github_pattern = r'^https://github\.com/([a-zA-Z0-9_-]+)/([a-zA-Z0-9_.-]+)/?$'
@@ -107,13 +111,13 @@ class GitHubRepositoryCheckViewSet(viewsets.ViewSet):
         # Check cache if requested
         if use_cache:
             recent_result = github_repo.check_results.filter(
-                check_timestamp__gte=timezone.now() - timedelta(hours=1)
+                check_timestamp__gte=timezone.now() - timedelta(minutes=cache_duration)
             ).first()
 
             if recent_result:
                 return Response(
                     {
-                        "message": "Using cached result (less than 1 hour old)",
+                        "message": f"Using cached result (less than {cache_duration} minutes old)",
                         "result": CheckResultDetailSerializer(recent_result).data
                     },
                     status=status.HTTP_200_OK

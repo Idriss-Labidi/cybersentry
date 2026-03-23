@@ -10,4 +10,5 @@ urlpatterns = [
     path('api/profile/session-info/', views.session_info, name='profile-session-info'),
     path('api/profile/login-history/', views.login_history, name='profile-login-history'),
     path('api/profile/security-status/', views.security_status, name='profile-security-status'),
+    path('api/settings/', views.user_settings, name='user-settings'),
 ]

@@ -115,7 +115,9 @@ const DashboardHeader = ({ mobileOpened, setMobileOpened }: DashboardHeaderProps
             <Menu.Item component={Link} to="/dashboard/profile" leftSection={<IconUser size={15} />}>
               Profile
             </Menu.Item>
-            <Menu.Item leftSection={<IconSettings size={15} />}>Settings</Menu.Item>
+            <Menu.Item component={Link} to="/dashboard/settings" leftSection={<IconSettings size={15} />}>
+              Settings
+            </Menu.Item>
             <Menu.Divider />
             <Menu.Item color="red" leftSection={<IconLogout size={15} />} onClick={() => void logout()}>
               Logout
