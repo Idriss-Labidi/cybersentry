@@ -4,6 +4,7 @@ import {
   IconAnalyze,
   IconBrandGithub,
   IconDashboard,
+  IconServer2,
   IconShield,
   IconShieldCheck,
 } from '@tabler/icons-react';
@@ -28,6 +29,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { id: 'dashboard', icon: IconDashboard, label: 'Dashboard', href: '/dashboard' },
+  { id: 'assets', icon: IconServer2, label: 'Assets', href: '/dashboard/assets' },
   { id: 'security', icon: IconShield, label: 'Security', href: '/dashboard/security' },
   { id: 'alerts', icon: IconAlertTriangle, label: 'Alerts', href: '/dashboard/alerts' },
   { id: 'analytics', icon: IconAnalyze, label: 'Analytics', href: '/dashboard/analytics' },

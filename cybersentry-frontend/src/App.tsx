@@ -7,6 +7,7 @@ import DashboardLayout from './layouts/dashboard/DashboardLayout';
 import { OAuthCallback } from './pages/auth/OAuthCallback';
 import { Landing } from './pages/landing/Landing';
 import { Dashboard } from './pages/dashboard/Dashboard';
+import { Assets } from './pages/dashboard/Assets';
 import { Security } from './pages/dashboard/Security';
 import { Profile } from './pages/dashboard/Profile';
 import { Alerts } from './pages/dashboard/Alerts';
@@ -55,6 +56,7 @@ function AppContent() {
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} isLoading={isLoading} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/assets" element={<Assets />} />
             <Route path="/dashboard/security" element={<Security />} />
             <Route path="/dashboard/profile" element={<Profile />} />
             <Route path="/dashboard/alerts" element={<Alerts />} />

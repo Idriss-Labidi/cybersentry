@@ -97,3 +97,28 @@ class GitHubSettingsIntegrationTests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assertIn('120 minutes', response.data['message'])
 		run_checks_mock.assert_not_called()
+
+	def test_repository_history_returns_empty_list_when_repository_has_no_history(self):
+		response = self.client.get(
+			'/github-health/repository_history/',
+			{'url': 'https://github.com/octocat/No-History'},
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertEqual(response.data, [])
+
+	@patch('github_health_check.views._run_checks')
+	def test_check_repository_auto_provisions_personal_workspace(self, run_checks_mock):
+		run_checks_mock.return_value = {'level1': {}, 'level2': {}, 'level3': {}}
+		self.user.organization = None
+		self.user.save(update_fields=['organization'])
+
+		response = self.client.post(
+			'/github-health/check_repository/',
+			{'url': 'https://github.com/octocat/Bootstrap-Org'},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+		self.user.refresh_from_db()
+		self.assertIsNotNone(self.user.organization_id)

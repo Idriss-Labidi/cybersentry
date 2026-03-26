@@ -8,6 +8,7 @@ import re
 
 from .models import GithubRepository, RepositoryCheckResult
 from accounts.models import UserSettings
+from accounts.services import ensure_user_organization
 from .serializers import (
     GitHubRepositorySerializer,
     CheckResultDetailSerializer,
@@ -56,6 +57,9 @@ def _run_checks(owner: str, repo: str, levels: list, token: str = None) -> dict:
 class GitHubRepositoryCheckViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
+    def _get_user_organization(self, request):
+        return ensure_user_organization(request.user)
+
     @action(detail=False, methods=['post'])
     def check_repository(self, request):
         """
@@ -96,6 +100,7 @@ class GitHubRepositoryCheckViewSet(viewsets.ViewSet):
             )
 
         owner, repo = match.groups()
+        organization = self._get_user_organization(request)
 
         # Get or create repository record
         try:
@@ -103,10 +108,10 @@ class GitHubRepositoryCheckViewSet(viewsets.ViewSet):
                 url=url,
                 owner=owner,
                 name=repo,
-                organization=request.user.organization
+                organization=organization
             )
         except GithubRepository.MultipleObjectsReturned:
-            github_repo = GithubRepository.objects.filter(url=url, organization=request.user.organization).first()
+            github_repo = GithubRepository.objects.filter(url=url, organization=organization).first()
 
         # Check cache if requested
         if use_cache:
@@ -178,14 +183,10 @@ class GitHubRepositoryCheckViewSet(viewsets.ViewSet):
 
         List all repositories checked by user's organization with their latest scores.
         """
-        if not request.user.organization:
-            return Response(
-                {"error": "User does not belong to any organization"},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        organization = self._get_user_organization(request)
 
         repositories = GithubRepository.objects.filter(
-            organization=request.user.organization
+            organization=organization
         ).prefetch_related('check_results')
 
         results = []
@@ -215,9 +216,10 @@ class GitHubRepositoryCheckViewSet(viewsets.ViewSet):
             )
 
         try:
+            organization = self._get_user_organization(request)
             check_result = RepositoryCheckResult.objects.get(
                 id=result_id,
-                repository__organization=request.user.organization
+                repository__organization=organization
             )
         except RepositoryCheckResult.DoesNotExist:
             return Response(
@@ -245,16 +247,15 @@ class GitHubRepositoryCheckViewSet(viewsets.ViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        organization = self._get_user_organization(request)
+
         try:
             repository = GithubRepository.objects.get(
                 url=url,
-                organization=request.user.organization
+                organization=organization
             )
         except GithubRepository.DoesNotExist:
-            return Response(
-                {"error": "Repository not found"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response([], status=status.HTTP_200_OK)
 
         results = repository.check_results.all()
         serializer = CheckResultSummarySerializer(results, many=True)

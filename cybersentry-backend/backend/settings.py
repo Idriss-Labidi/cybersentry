@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     # local apps
     'oidc_provider',
     'accounts',
+    'assets',
     'github_health_check',
     'dns_tools',
     'ip_tools',

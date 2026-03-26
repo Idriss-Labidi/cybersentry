@@ -18,6 +18,7 @@ interface DashboardHeaderProps {
 
 const labelMap: Record<string, string> = {
   dashboard: 'Overview',
+  assets: 'Assets',
   security: 'Security',
   profile: 'Profile',
   alerts: 'Alerts',

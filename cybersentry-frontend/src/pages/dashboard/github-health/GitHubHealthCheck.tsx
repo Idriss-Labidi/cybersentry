@@ -169,6 +169,15 @@ interface CheckResult {
   };
 }
 
+const formatOptionalDate = (value?: string | null) => {
+  if (!value) {
+    return 'Not available';
+  }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Not available' : date.toLocaleDateString();
+};
+
 const GitHubHealthCheck = () => {
   const { user } = useAuth();
   const [url, setUrl] = useState('');
@@ -225,6 +234,7 @@ const GitHubHealthCheck = () => {
 
   const renderLevel1Data = (data: Level1Data | undefined) => {
     if (!data) return null;
+    const maintenanceLastPush = formatOptionalDate(data.maintenance?.last_push_date);
     return (
       <Tabs defaultValue="overview">
         <Tabs.List>
@@ -442,7 +452,7 @@ const GitHubHealthCheck = () => {
                 </Group>
                 <Group justify="space-between">
                   <Text size="sm">Last Push</Text>
-                  <Text size="sm">{new Date(data.maintenance!.last_push_date).toLocaleDateString()}</Text>
+                  <Text size="sm">{maintenanceLastPush}</Text>
                 </Group>
               </Stack>
             </Paper>
@@ -556,6 +566,8 @@ const GitHubHealthCheck = () => {
 
   const renderLevel2Data = (data: Level2Data | undefined) => {
     if (!data) return null;
+    const dependencies = Object.entries(data.dependencies ?? {});
+    const suspiciousPatterns = data.code_quality_signals?.suspicious_code_patterns ?? [];
     return (
       <Tabs defaultValue="files">
         <Tabs.List>
@@ -607,11 +619,11 @@ const GitHubHealthCheck = () => {
         <Tabs.Panel value="dependencies" pt="xl">
           <Paper p="md" radius="md" withBorder>
             <Text size="sm" c="dimmed">
-              {Object.keys(data.dependencies || {}).length > 0
+              {dependencies.length > 0
                 ? 'Dependencies detected'
                 : 'No dependency data available'}
             </Text>
-            {Object.keys(data.dependencies || {}).length > 0 && (
+            {dependencies.length > 0 && (
               <Table mt="md">
                 <Table.Thead>
                   <Table.Tr>
@@ -620,7 +632,7 @@ const GitHubHealthCheck = () => {
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  {Object.entries(data.dependencies!).map(([name, version]) => (
+                  {dependencies.map(([name, version]) => (
                     <Table.Tr key={name}>
                       <Table.Td>{name}</Table.Td>
                       <Table.Td>{version}</Table.Td>
@@ -637,9 +649,9 @@ const GitHubHealthCheck = () => {
             <Text fw={700} mb="md">
               Code Quality Signals
             </Text>
-            {data.code_quality_signals!.suspicious_code_patterns?.length > 0 ? (
+            {suspiciousPatterns.length > 0 ? (
               <List icon={<IconAlertTriangle size={16} color="orange" />}>
-                {data.code_quality_signals!.suspicious_code_patterns.map((pattern, idx) => (
+                {suspiciousPatterns.map((pattern, idx) => (
                   <List.Item key={`${pattern}-${idx}`}>{pattern}</List.Item>
                 ))}
               </List>
