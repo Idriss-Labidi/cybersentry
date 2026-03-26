@@ -4,7 +4,6 @@ import {
   IconAnalyze,
   IconBrandGithub,
   IconDashboard,
-  IconSettings,
   IconShield,
   IconShieldCheck,
 } from '@tabler/icons-react';
@@ -32,7 +31,6 @@ const navItems: NavItem[] = [
   { id: 'security', icon: IconShield, label: 'Security', href: '/dashboard/security' },
   { id: 'alerts', icon: IconAlertTriangle, label: 'Alerts', href: '/dashboard/alerts' },
   { id: 'analytics', icon: IconAnalyze, label: 'Analytics', href: '/dashboard/analytics' },
-  { id: 'settings', icon: IconSettings, label: 'Settings', href: '/dashboard/settings' },
   {
     id: 'github',
     icon: IconBrandGithub,

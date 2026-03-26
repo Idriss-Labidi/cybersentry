@@ -1,6 +1,5 @@
 import { Avatar, Badge, Breadcrumbs, Burger, Group, Menu, Paper, Text } from '@mantine/core';
 import {
-  IconBell,
   IconChevronRight,
   IconLogout,
   IconSettings,
@@ -9,6 +8,7 @@ import {
 } from '@tabler/icons-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/auth/useAuth';
+import NotificationMenuButton from '../../components/NotificationMenuButton';
 import ThemeToggleButton from '../../components/ThemeToggleButton';
 
 interface DashboardHeaderProps {
@@ -99,6 +99,8 @@ const DashboardHeader = ({ mobileOpened, setMobileOpened }: DashboardHeaderProps
           System secure
         </Badge>
 
+        <NotificationMenuButton />
+
         <ThemeToggleButton />
 
         <Menu shadow="md" width={220} position="bottom-end">
@@ -111,7 +113,6 @@ const DashboardHeader = ({ mobileOpened, setMobileOpened }: DashboardHeaderProps
           <Menu.Dropdown>
             <Menu.Label>{user?.profile?.name || user?.profile?.preferred_username}</Menu.Label>
             <Menu.Divider />
-            <Menu.Item leftSection={<IconBell size={15} />}>Notifications</Menu.Item>
             <Menu.Item component={Link} to="/dashboard/profile" leftSection={<IconUser size={15} />}>
               Profile
             </Menu.Item>

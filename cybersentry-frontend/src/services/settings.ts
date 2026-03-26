@@ -1,5 +1,5 @@
 import axiosInstance from '../utils/axios-instance';
-import type { PreferredTheme } from '../context/theme/themeContextBase';
+import type { PreferredTheme } from '../styles/theme';
 
 export interface UserSettingsResponse {
   github_token: string;

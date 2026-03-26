@@ -1,7 +1,5 @@
 import { createContext } from 'react';
-import type { ThemeMode } from '../../styles/theme';
-
-export type PreferredTheme = 'green' | 'blue' | 'purple';
+import type { PreferredTheme, ThemeMode } from '../../styles/theme';
 
 export type ThemeContextValue = {
   colorScheme: ThemeMode;
