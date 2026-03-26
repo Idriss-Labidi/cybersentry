@@ -13,4 +13,5 @@ urlpatterns = [
     # Advanced endpoints (authentication required)
     path('advanced/reputation/', views.advanced_ip_reputation, name='advanced-ip-reputation'),
     path('history/', views.scan_history, name='scan-history'),
+    path('history/<int:scan_id>/', views.delete_scan_history_entry, name='scan-history-delete'),
 ]

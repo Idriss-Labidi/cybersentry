@@ -130,3 +130,6 @@ export const getScanHistory = (limit?: number) =>
     params: { limit: limit || 50 }
   });
 
+export const deleteScanHistoryEntry = (scanId: number) =>
+  axiosInstance.delete(`/ip-tools/history/${scanId}/`);
+

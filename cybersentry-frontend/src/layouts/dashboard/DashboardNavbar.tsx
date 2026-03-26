@@ -33,20 +33,12 @@ const navItems: NavItem[] = [
   { id: 'security', icon: IconShield, label: 'Security', href: '/dashboard/security' },
   { id: 'alerts', icon: IconAlertTriangle, label: 'Alerts', href: '/dashboard/alerts' },
   { id: 'analytics', icon: IconAnalyze, label: 'Analytics', href: '/dashboard/analytics' },
-  {
-    id: 'github',
-    icon: IconBrandGithub,
-    label: 'GitHub',
-    children: [
-      { id: 'github-health', label: 'Health Check', href: '/dashboard/github' },
-      { id: 'github-history', label: 'History', href: '/dashboard/github/history' },
-    ],
-  },
+  { id: 'github', icon: IconBrandGithub, label: 'GitHub', href: '/dashboard/github' },
   {
     id: 'advanced-security',
     icon: IconShieldCheck,
-    label: 'Advanced Security',
-    href: '/dashboard/advanced-scanner',
+    label: 'IP Intelligence',
+    href: '/dashboard/ip-intelligence',
   },
 ];
 
@@ -92,8 +84,13 @@ const DashboardNavBar = () => {
         <Stack gap="xs">
           {navItems.map((item) => {
             const Icon = item.icon;
+            const matchesItemHref =
+              !!item.href &&
+              (location.pathname === item.href ||
+                (item.href !== '/dashboard' && location.pathname.startsWith(`${item.href}/`)) ||
+                (item.id === 'advanced-security' && location.pathname === '/dashboard/advanced-scanner'));
             const isActiveParent = item.href
-              ? location.pathname === item.href
+              ? matchesItemHref
               : item.children?.some((child) => location.pathname === child.href);
             const isOpen = item.children
               ? openedSections[item.id] ?? item.children.some((child) => location.pathname.startsWith(child.href))

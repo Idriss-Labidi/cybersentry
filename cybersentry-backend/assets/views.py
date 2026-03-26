@@ -1,12 +1,61 @@
+from urllib.parse import urlparse
+
 from django.db.models import Avg, Q
+from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.services import ensure_user_organization
+from github_health_check.serializers import (
+    CheckResultDetailSerializer,
+    CheckResultSummarySerializer,
+    GitHubRepositorySerializer,
+)
+from github_health_check.views import normalize_github_repository_url, run_repository_health_check
+from ip_tools.models import IPReputationScan
+from ip_tools.serializers import IPReputationScanSerializer
+from ip_tools.services import check_ip_reputation_with_history
 from .models import Asset, AssetRiskSnapshot
-from .serializers import AssetRiskSnapshotSerializer, AssetSerializer
+from .serializers import (
+    AssetLookupSerializer,
+    AssetRiskSnapshotSerializer,
+    AssetSerializer,
+    normalize_asset_value,
+)
+
+
+def _build_default_asset_name(asset_type: str, value: str) -> str:
+    if asset_type == Asset.AssetTypes.DOMAIN:
+        return f'Domain {value}'
+
+    if asset_type == Asset.AssetTypes.IP:
+        return f'IP {value}'
+
+    if asset_type == Asset.AssetTypes.WEBSITE:
+        hostname = urlparse(value).netloc or value
+        return f'Website {hostname}'
+
+    if asset_type == Asset.AssetTypes.GITHUB_REPOSITORY:
+        repo_path = urlparse(value).path.strip('/')
+        return f'Repository {repo_path}' if repo_path else 'GitHub repository'
+
+    return value
+
+
+def _build_creation_defaults(asset_type: str, value: str):
+    normalized_value = normalize_asset_value(asset_type, value)
+    return {
+        'name': _build_default_asset_name(asset_type, normalized_value),
+        'asset_type': asset_type,
+        'value': normalized_value,
+        'category': Asset.Categories.PRODUCTION,
+        'status': Asset.Statuses.ACTIVE,
+        'description': '',
+        'risk_score': 0,
+        'tag_names': [],
+    }
 
 
 class AssetViewSet(viewsets.ModelViewSet):
@@ -68,6 +117,43 @@ class AssetViewSet(viewsets.ModelViewSet):
             )
 
     @action(detail=False, methods=['get'])
+    def lookup(self, request):
+        serializer = AssetLookupSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        asset_type = serializer.validated_data['asset_type']
+        value = serializer.validated_data['value']
+        organization = self._get_user_organization()
+
+        queryset = Asset.objects.filter(
+            organization=organization,
+            asset_type=asset_type,
+        ).prefetch_related('tags')
+
+        if asset_type == Asset.AssetTypes.GITHUB_REPOSITORY:
+            github_value = normalize_github_repository_url(value)
+            asset = queryset.filter(
+                Q(value=github_value) | Q(value=f'{github_value}/')
+            ).first()
+            lookup_value = github_value
+        else:
+            asset = queryset.filter(value=value).first()
+            lookup_value = value
+
+        return Response(
+            {
+                'found': asset is not None,
+                'asset': AssetSerializer(asset).data if asset else None,
+                'lookup': {
+                    'asset_type': asset_type,
+                    'value': lookup_value,
+                },
+                'defaults': _build_creation_defaults(asset_type, lookup_value),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=['get'])
     def summary(self, request):
         organization = self._get_user_organization()
         queryset = Asset.objects.filter(organization=organization)
@@ -92,6 +178,104 @@ class AssetViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
+    @action(detail=True, methods=['get'])
+    def related_context(self, request, pk=None):
+        asset = self.get_object()
+
+        if asset.asset_type == Asset.AssetTypes.IP:
+            history_queryset = IPReputationScan.objects.filter(
+                user=request.user,
+                ip_address=asset.value,
+            )
+            latest_scan = history_queryset.first()
+            recent_history = history_queryset[:10]
+
+            return Response(
+                {
+                    'asset_type': asset.asset_type,
+                    'message': 'IP reputation history is linked directly to this asset.',
+                    'ip_reputation': {
+                        'lookup_value': asset.value,
+                        'latest_scan': IPReputationScanSerializer(latest_scan).data if latest_scan else None,
+                        'history': IPReputationScanSerializer(recent_history, many=True).data,
+                    },
+                    'github_health': None,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        if asset.asset_type == Asset.AssetTypes.GITHUB_REPOSITORY:
+            organization = self._get_user_organization()
+            normalized_value = normalize_github_repository_url(asset.value)
+            repository = organization.github_repositories.filter(
+                Q(url=normalized_value) | Q(url=f'{normalized_value}/')
+            ).first()
+            latest_result = repository.check_results.first() if repository else None
+            recent_history = repository.check_results.all()[:10] if repository else []
+
+            return Response(
+                {
+                    'asset_type': asset.asset_type,
+                    'message': 'GitHub health history is linked directly to this asset.',
+                    'ip_reputation': None,
+                    'github_health': {
+                        'lookup_value': normalized_value,
+                        'repository': GitHubRepositorySerializer(repository).data if repository else None,
+                        'latest_result': CheckResultDetailSerializer(latest_result).data if latest_result else None,
+                        'history': CheckResultSummarySerializer(recent_history, many=True).data,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(
+            {
+                'asset_type': asset.asset_type,
+                'message': 'Automated related intelligence is not wired yet for this asset type.',
+                'ip_reputation': None,
+                'github_health': None,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=['post'])
+    def run_ip_reputation(self, request, pk=None):
+        asset = self.get_object()
+        if asset.asset_type != Asset.AssetTypes.IP:
+            return Response(
+                {'error': 'IP reputation checks are only available for IP assets.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        result = check_ip_reputation_with_history(asset.value, user=request.user)
+        asset.last_scanned_at = timezone.now()
+        asset.save(update_fields=['last_scanned_at'])
+
+        return Response({'result': result}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    def run_github_health(self, request, pk=None):
+        asset = self.get_object()
+        if asset.asset_type != Asset.AssetTypes.GITHUB_REPOSITORY:
+            return Response(
+                {'error': 'GitHub health checks are only available for GitHub repository assets.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        payload, response_status = run_repository_health_check(
+            user=request.user,
+            url=asset.value,
+            levels=request.data.get('levels', ['1', '2', '3']),
+            use_cache=request.data.get('use_cache'),
+            github_token=request.data.get('github_token'),
+        )
+
+        if response_status in {status.HTTP_200_OK, status.HTTP_201_CREATED}:
+            asset.last_scanned_at = timezone.now()
+            asset.save(update_fields=['last_scanned_at'])
+
+        return Response(payload, status=response_status)
 
     @action(detail=True, methods=['get'])
     def risk_history(self, request, pk=None):

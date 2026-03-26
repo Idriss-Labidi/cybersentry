@@ -1,50 +1,55 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  Container,
-  Title,
-  Text,
-  TextInput,
-  MultiSelect,
+  ActionIcon,
+  Alert,
+  Badge,
   Button,
   Card,
-  Group,
-  Stack,
+  Center,
+  Container,
   Divider,
-  Badge,
-  Progress,
-  Tooltip,
-  Alert,
-  SimpleGrid,
+  Group,
+  Input,
+  List,
+  Loader,
+  Modal,
+  MultiSelect,
   Paper,
   RingProgress,
-  Center,
+  SimpleGrid,
+  Stack,
   Table,
   Tabs,
-  List,
+  Text,
+  TextInput,
+  Title,
+  Tooltip,
 } from '@mantine/core';
 import {
-  IconCheck,
-  IconX,
-  IconAlertTriangle,
-  IconUsers,
-  IconShield,
-  IconFileText,
-  IconCode,
-  IconGitCommit,
-  IconSearch,
   IconAlertCircle,
-  IconLockOff,
-  IconGitFork,
-  IconStar,
-  IconBug,
+  IconAlertTriangle,
+  IconCalendar,
+  IconCheck,
+  IconExternalLink,
+  IconEye,
+  IconHistory,
+  IconRefresh,
+  IconSearch,
+  IconShield,
+  IconTrash,
 } from '@tabler/icons-react';
 import type { AxiosError } from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { getRiskColor, getRiskLabel } from '../../../utils/githubHealthUtils';
 import { useAuth } from '../../../context/auth/useAuth';
-import { checkRepositoryHealth } from '../../../services/github-tools';
+import { lookupAsset, type Asset, type AssetPayload } from '../../../services/assets';
+import {
+  checkRepositoryHealth,
+  deleteRepositoryCheckResult,
+  getRepositoryCheckResult,
+  getRepositoryHistory,
+} from '../../../services/github-tools';
 import { getUserSettings } from '../../../services/settings';
-
-type WarningLevel = 'critical' | 'high' | 'medium' | 'low' | 'warning' | 'info';
 
 interface RepositoryInfo {
   id: number;
@@ -53,139 +58,119 @@ interface RepositoryInfo {
   url: string;
   organization: number;
   created_at: string;
-  last_check_at: string;
-}
-
-interface Level1Releases {
-  score: number;
-  has_releases: boolean;
-  release_count: number;
-}
-
-interface Level1Community {
-  forks: number;
-  score: number;
-  stars: number;
-  bus_factor_risk: string;
-  total_contributors: number;
-}
-
-interface Level1Maintenance {
-  score: number;
-  status: string;
-  last_push_date: string;
-  days_since_last_commit: number;
-}
-
-interface Level1RawMetrics {
-  forks: number;
-  stars: number;
-  language?: string;
-  watchers: number;
-  open_issues: number;
-}
-
-interface Level1Documentation {
-  score: number;
-  checks: {
-    topics: string[];
-    has_homepage: boolean;
-    has_description: boolean;
-  };
-}
-
-interface Level1SecurityBasics {
-  score: number;
-  checks: {
-    is_private: boolean;
-    has_license: boolean;
-    license_type: string | null;
-    has_vulnerability_alerts: boolean;
-  };
-}
-
-interface Level1BranchProtection {
-  score: number;
-  branch_count: number;
-  default_branch_protected: boolean;
-}
-
-interface Level1Data {
-  releases?: Level1Releases;
-  community?: Level1Community;
-  last_push?: string;
-  maintenance?: Level1Maintenance;
-  raw_metrics?: Level1RawMetrics;
-  documentation?: Level1Documentation;
-  security_basics?: Level1SecurityBasics;
-  branch_protection?: Level1BranchProtection;
-}
-
-interface SecurityFileCheckItem {
-  exists: boolean;
-  size_bytes: number;
-}
-
-interface Level2Data {
-  dependencies?: Record<string, string>;
-  security_file_check?: Record<string, SecurityFileCheckItem>;
-  code_quality_signals?: {
-    suspicious_code_patterns: string[];
-  };
-}
-
-interface Level3Data {
-  code_scanning?: {
-    available: boolean;
-  };
-  secret_scanning?: {
-    available: boolean;
-  };
-  dependabot_alerts?: {
-    available: boolean;
-    error?: string;
-  };
+  last_check_at: string | null;
 }
 
 interface WarningItem {
-  level: WarningLevel;
+  level: string;
   message: string;
   category: string;
 }
 
-interface CheckResult {
-  message: string;
-  result: {
-    id: number;
-    repository: RepositoryInfo;
-    risk_score: number;
-    level1_data?: Level1Data;
-    level2_data?: Level2Data;
-    level3_data?: Level3Data;
-    summary: string;
-    warnings?: WarningItem[];
-    recommendations?: string[];
-    check_timestamp: string;
+interface CheckResultDetail {
+  id: number;
+  repository: RepositoryInfo;
+  risk_score: number;
+  level1_data?: {
+    raw_metrics?: { stars?: number; forks?: number; open_issues?: number; language?: string };
+    community?: { total_contributors?: number };
+    maintenance?: { status?: string; last_push_date?: string; days_since_last_commit?: number };
+  };
+  level2_data?: {
+    dependencies?: Record<string, string>;
+    security_file_check?: Record<string, { exists: boolean; size_bytes: number }>;
+    code_quality_signals?: { suspicious_code_patterns?: string[] };
+  };
+  level3_data?: {
+    code_scanning?: { available?: boolean };
+    secret_scanning?: { available?: boolean };
+    dependabot_alerts?: { available?: boolean; error?: string };
+  };
+  summary: string;
+  warnings?: WarningItem[];
+  recommendations?: string[];
+  check_timestamp: string;
+}
+
+interface CheckResponse {
+  message?: string;
+  result: CheckResultDetail;
+}
+
+interface HistorySummary {
+  id: number;
+  repository_url: string;
+  repository_name: string;
+  risk_score: number;
+  summary: string;
+  check_timestamp: string;
+  repository: {
+    owner: string;
+    name: string;
+    url: string;
   };
 }
 
-const formatOptionalDate = (value?: string | null) => {
+const parseRepositoryUrl = (url?: string) => {
+  const match = url?.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+)/i);
+  return {
+    owner: match?.[1] ?? 'Unknown',
+    name: match?.[2]?.replace(/\.git$/, '') ?? 'Unknown',
+  };
+};
+
+const normalizeHistoryEntry = (entry: Omit<HistorySummary, 'repository'>): HistorySummary => ({
+  ...entry,
+  repository: {
+    ...parseRepositoryUrl(entry.repository_url),
+    url: entry.repository_url,
+  },
+});
+
+const formatDate = (value?: string | null) => {
   if (!value) {
     return 'Not available';
   }
 
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? 'Not available' : date.toLocaleDateString();
+  return Number.isNaN(date.getTime()) ? 'Not available' : date.toLocaleString();
 };
 
 const GitHubHealthCheck = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [url, setUrl] = useState('');
   const [levels, setLevels] = useState<string[]>(['1', '2', '3']);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<CheckResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [useCache, setUseCache] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<CheckResponse | null>(null);
+  const [linkedAsset, setLinkedAsset] = useState<Asset | null>(null);
+  const [assetDefaults, setAssetDefaults] = useState<AssetPayload | null>(null);
+  const [assetLookupLoading, setAssetLookupLoading] = useState(false);
+  const [history, setHistory] = useState<HistorySummary[]>([]);
+  const [historySearch, setHistorySearch] = useState('');
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [selectedResult, setSelectedResult] = useState<CheckResultDetail | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    setHistoryError(null);
+
+    try {
+      const response = await getRepositoryHistory<Omit<HistorySummary, 'repository'>[]>({});
+      setHistory(response.data.map(normalizeHistoryEntry));
+    } catch (requestError: unknown) {
+      const axiosError = requestError as AxiosError<{ error?: string }>;
+      setHistoryError(axiosError.response?.data?.error ?? 'Failed to load GitHub history.');
+      setHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   useEffect(() => {
     const loadCachePreference = async () => {
@@ -193,23 +178,49 @@ const GitHubHealthCheck = () => {
         const response = await getUserSettings();
         setUseCache(response.data.use_cache);
       } catch {
-        // Keep the local default when settings endpoint is unavailable.
+        // Keep local default.
       }
     };
 
     void loadCachePreference();
+    void loadHistory();
   }, []);
 
-  const handleCheck = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!url.trim()) {
-      setError('Please enter a GitHub repository URL');
+  useEffect(() => {
+    const repositoryUrl = result?.result.repository.url;
+    if (!repositoryUrl) {
+      setLinkedAsset(null);
+      setAssetDefaults(null);
       return;
     }
 
-    const accessToken = user?.access_token;
-    if (!accessToken) {
+    const loadLinkedAsset = async () => {
+      setAssetLookupLoading(true);
+
+      try {
+        const response = await lookupAsset('github_repo', repositoryUrl);
+        setLinkedAsset(response.data.asset);
+        setAssetDefaults(response.data.defaults);
+      } catch {
+        setLinkedAsset(null);
+        setAssetDefaults(null);
+      } finally {
+        setAssetLookupLoading(false);
+      }
+    };
+
+    void loadLinkedAsset();
+  }, [result?.result.repository.url]);
+
+  const handleCheck = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!url.trim()) {
+      setError('Please enter a GitHub repository URL.');
+      return;
+    }
+
+    if (!user?.access_token) {
       setError('You must be logged in to run this check. Please sign in again.');
       return;
     }
@@ -218,503 +229,289 @@ const GitHubHealthCheck = () => {
     setError(null);
 
     try {
-      const response = await checkRepositoryHealth<CheckResult>({
+      const response = await checkRepositoryHealth<CheckResponse>({
         url: url.trim(),
         levels,
         use_cache: useCache,
       });
       setResult(response.data);
-    } catch (err: unknown) {
-      const axiosError = err as AxiosError<{ error?: string }>;
-      setError(axiosError.response?.data?.error ?? 'Failed to check repository');
+      void loadHistory();
+    } catch (requestError: unknown) {
+      const axiosError = requestError as AxiosError<{ error?: string }>;
+      setError(axiosError.response?.data?.error ?? 'Failed to check repository.');
     } finally {
       setLoading(false);
     }
   };
 
-  const renderLevel1Data = (data: Level1Data | undefined) => {
-    if (!data) return null;
-    const maintenanceLastPush = formatOptionalDate(data.maintenance?.last_push_date);
+  const handleViewHistoryResult = async (resultId: number) => {
+    setDetailsLoading(true);
+
+    try {
+      const response = await getRepositoryCheckResult<CheckResultDetail>(resultId);
+      setSelectedResult(response.data);
+      setDetailsOpen(true);
+    } catch (requestError: unknown) {
+      const axiosError = requestError as AxiosError<{ error?: string }>;
+      setHistoryError(axiosError.response?.data?.error ?? 'Failed to load check details.');
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const handleDeleteHistoryResult = async (resultId: number) => {
+    try {
+      await deleteRepositoryCheckResult(resultId);
+      setHistory((current) => current.filter((entry) => entry.id !== resultId));
+
+      if (selectedResult?.id === resultId) {
+        setDetailsOpen(false);
+        setSelectedResult(null);
+      }
+    } catch {
+      setHistoryError('Failed to delete check result.');
+    }
+  };
+
+  const handleSaveAsAsset = () => {
+    if (!assetDefaults) {
+      return;
+    }
+
+    navigate('/dashboard/assets', {
+      state: {
+        prefillAsset: assetDefaults,
+      },
+    });
+  };
+
+  const filteredHistory = useMemo(() => {
+    const search = historySearch.trim().toLowerCase();
+
+    if (!search) {
+      return history;
+    }
+
+    return history.filter((entry) => {
+      const repository = `${entry.repository.owner}/${entry.repository.name}`.toLowerCase();
+      return (
+        repository.includes(search) ||
+        entry.repository.url.toLowerCase().includes(search) ||
+        entry.summary.toLowerCase().includes(search)
+      );
+    });
+  }, [history, historySearch]);
+
+  const renderRepositoryStats = (detail: CheckResultDetail) => (
+    <SimpleGrid cols={{ base: 1, sm: 2, xl: 4 }} spacing="md">
+      <Paper p="md" radius="md" withBorder>
+        <Text size="xs" c="dimmed" fw={700}>
+          Stars
+        </Text>
+        <Text size="xl" fw={700}>
+          {detail.level1_data?.raw_metrics?.stars ?? 0}
+        </Text>
+      </Paper>
+      <Paper p="md" radius="md" withBorder>
+        <Text size="xs" c="dimmed" fw={700}>
+          Forks
+        </Text>
+        <Text size="xl" fw={700}>
+          {detail.level1_data?.raw_metrics?.forks ?? 0}
+        </Text>
+      </Paper>
+      <Paper p="md" radius="md" withBorder>
+        <Text size="xs" c="dimmed" fw={700}>
+          Contributors
+        </Text>
+        <Text size="xl" fw={700}>
+          {detail.level1_data?.community?.total_contributors ?? 0}
+        </Text>
+      </Paper>
+      <Paper p="md" radius="md" withBorder>
+        <Text size="xs" c="dimmed" fw={700}>
+          Maintenance
+        </Text>
+        <Text size="xl" fw={700}>
+          {detail.level1_data?.maintenance?.status ?? 'Unknown'}
+        </Text>
+      </Paper>
+    </SimpleGrid>
+  );
+
+  const renderCheckSections = (detail: CheckResultDetail) => {
+    const dependencyEntries = Object.entries(detail.level2_data?.dependencies ?? {});
+    const suspiciousPatterns = detail.level2_data?.code_quality_signals?.suspicious_code_patterns ?? [];
+    const securityFiles = Object.entries(detail.level2_data?.security_file_check ?? {});
+
     return (
-      <Tabs defaultValue="overview">
-        <Tabs.List>
-          <Tabs.Tab value="overview" leftSection={<IconShield size={14} />}>
-            Overview
-          </Tabs.Tab>
-          <Tabs.Tab value="community" leftSection={<IconUsers size={14} />}>
-            Community
-          </Tabs.Tab>
-          <Tabs.Tab value="maintenance" leftSection={<IconGitCommit size={14} />}>
-            Maintenance
-          </Tabs.Tab>
-          <Tabs.Tab value="security" leftSection={<IconShield size={14} />}>
-            Security Basics
-          </Tabs.Tab>
-        </Tabs.List>
+      <Stack gap="lg">
+        {renderRepositoryStats(detail)}
 
-        <Tabs.Panel value="overview" pt="xl">
-          <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
-            <Paper p="md" radius="md" withBorder>
-              <Group justify="space-between" mb="xs">
+        <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+          <Paper p="md" radius="md" withBorder>
+            <Text fw={700} mb="md">
+              Repository summary
+            </Text>
+            <Stack gap="sm">
+              <Group justify="space-between">
                 <Text size="sm" c="dimmed">
-                  <IconStar size={16} style={{ marginRight: 4 }} />
-                  Stars
+                  URL
                 </Text>
-                <Text fw={700}>{data.raw_metrics?.stars || 0}</Text>
+                <Text size="sm">{detail.repository.url}</Text>
               </Group>
-              <Progress value={(data.raw_metrics?.stars || 0) * 5} color="yellow" />
-            </Paper>
-
-            <Paper p="md" radius="md" withBorder>
-              <Group justify="space-between" mb="xs">
+              <Group justify="space-between">
                 <Text size="sm" c="dimmed">
-                  <IconGitFork size={16} style={{ marginRight: 4 }} />
-                  Forks
+                  Created
                 </Text>
-                <Text fw={700}>{data.raw_metrics?.forks || 0}</Text>
+                <Text size="sm">{formatDate(detail.repository.created_at)}</Text>
               </Group>
-              <Progress value={(data.raw_metrics?.forks || 0) * 5} color="blue" />
-            </Paper>
-
-            <Paper p="md" radius="md" withBorder>
-              <Group justify="space-between" mb="xs">
+              <Group justify="space-between">
                 <Text size="sm" c="dimmed">
-                  <IconUsers size={16} style={{ marginRight: 4 }} />
-                  Contributors
+                  Last check
                 </Text>
-                <Text fw={700}>{data.community?.total_contributors || 0}</Text>
+                <Text size="sm">{formatDate(detail.check_timestamp)}</Text>
               </Group>
-              <Progress value={Math.min((data.community?.total_contributors || 0) * 10, 100)} color="grape" />
-            </Paper>
-
-            <Paper p="md" radius="md" withBorder>
-              <Group justify="space-between" mb="xs">
+              <Group justify="space-between">
                 <Text size="sm" c="dimmed">
-                  <IconBug size={16} style={{ marginRight: 4 }} />
-                  Open Issues
+                  Last push
                 </Text>
-                <Text fw={700}>{data.raw_metrics?.open_issues || 0}</Text>
+                <Text size="sm">{formatDate(detail.level1_data?.maintenance?.last_push_date)}</Text>
               </Group>
-              <Progress value={Math.min((data.raw_metrics?.open_issues || 0) * 2, 100)} color="red" />
-            </Paper>
-
-            <Paper p="md" radius="md" withBorder>
-              <Group justify="space-between" mb="xs">
-                <Text size="sm" c="dimmed">
-                  Releases
-                </Text>
-                <Badge>{data.releases?.release_count || 0}</Badge>
-              </Group>
-              <Text size="xs" c="dimmed">
-                {data.releases?.has_releases ? 'Has releases' : 'No releases'}
-              </Text>
-            </Paper>
-
-            <Paper p="md" radius="md" withBorder>
-              <Group justify="space-between" mb="xs">
+              <Group justify="space-between">
                 <Text size="sm" c="dimmed">
                   Language
                 </Text>
-                <Badge>{data.raw_metrics?.language || 'Unknown'}</Badge>
+                <Text size="sm">{detail.level1_data?.raw_metrics?.language ?? 'Unknown'}</Text>
               </Group>
-            </Paper>
-          </SimpleGrid>
-
-          <Divider my="lg" />
-
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-            <Paper p="md" radius="md" withBorder>
-              <Text fw={700} mb="md">Documentation Score</Text>
-              <Group justify="space-between" mb="md">
-                <Center>
-                  <RingProgress
-                    sections={[{ value: data.documentation?.score || 0, color: 'blue' }]}
-                    label={
-                      <div>
-                        <Text fw={700} ta="center">
-                          {data.documentation?.score || 0}%
-                        </Text>
-                      </div>
-                    }
-                    size={120}
-                  />
-                </Center>
-                <Stack gap="xs" flex={1}>
-                  {data.documentation?.checks?.has_description && (
-                    <Group gap={8}>
-                      <IconCheck size={16} color="green" />
-                      <Text size="sm">Has description</Text>
-                    </Group>
-                  )}
-                  {data.documentation?.checks?.has_homepage && (
-                    <Group gap={8}>
-                      <IconCheck size={16} color="green" />
-                      <Text size="sm">Has homepage</Text>
-                    </Group>
-                  )}
-                  {data.documentation?.checks?.topics && data.documentation.checks.topics.length > 0 && (
-                    <Group gap={8}>
-                      <IconCheck size={16} color="green" />
-                      <Text size="sm">Has topics</Text>
-                    </Group>
-                  )}
-                </Stack>
-              </Group>
-            </Paper>
-
-            <Paper p="md" radius="md" withBorder>
-              <Text fw={700} mb="md">Releases Score</Text>
-              <Center>
-                <RingProgress
-                  sections={[{ value: data.releases?.score || 0, color: 'teal' }]}
-                  label={
-                    <div>
-                      <Text fw={700} ta="center">
-                        {data.releases?.score || 0}%
-                      </Text>
-                    </div>
-                  }
-                  size={120}
-                />
-              </Center>
-            </Paper>
-          </SimpleGrid>
-        </Tabs.Panel>
-
-        <Tabs.Panel value="community" pt="xl">
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-            <Paper p="md" radius="md" withBorder>
-              <Text fw={700} mb="md">Community Metrics</Text>
-              <Stack gap="md">
-                <Group justify="space-between">
-                  <Text size="sm">Stars</Text>
-                  <Text fw={700}>{data.community?.stars || 0}</Text>
-                </Group>
-                <Group justify="space-between">
-                  <Text size="sm">Forks</Text>
-                  <Text fw={700}>{data.community?.forks || 0}</Text>
-                </Group>
-                <Group justify="space-between">
-                  <Text size="sm">Total Contributors</Text>
-                  <Text fw={700}>{data.community?.total_contributors || 0}</Text>
-                </Group>
-                <Divider />
-                <Group justify="space-between">
-                  <Text size="sm">Bus Factor Risk</Text>
-                  <Badge color={data.community?.bus_factor_risk === 'Critical' ? 'red' : 'orange'}>
-                    {data.community?.bus_factor_risk}
-                  </Badge>
-                </Group>
-              </Stack>
-            </Paper>
-
-            <Paper p="md" radius="md" withBorder>
-              <Text fw={700} mb="md">Community Score: {data.community?.score}%</Text>
-              <Center>
-                <RingProgress
-                  sections={[{ value: data.community?.score || 0, color: 'violet' }]}
-                  label={
-                    <div>
-                      <Text fw={700} ta="center">
-                        {data.community?.score || 0}%
-                      </Text>
-                    </div>
-                  }
-                  size={120}
-                />
-              </Center>
-            </Paper>
-          </SimpleGrid>
-        </Tabs.Panel>
-
-        <Tabs.Panel value="maintenance" pt="xl">
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-            <Paper p="md" radius="md" withBorder>
-              <Text fw={700} mb="md">Maintenance Status</Text>
-              <Stack gap="md">
-                <Group justify="space-between">
-                  <Text size="sm">Status</Text>
-                  <Badge
-                    color={
-                      data.maintenance?.status === 'Active'
-                        ? 'green'
-                        : data.maintenance?.status === 'Stale'
-                        ? 'yellow'
-                        : 'red'
-                    }
-                  >
-                    {data.maintenance?.status}
-                  </Badge>
-                </Group>
-                <Group justify="space-between">
-                  <Text size="sm">Days Since Last Commit</Text>
-                  <Text fw={700}>{data.maintenance?.days_since_last_commit || 0}</Text>
-                </Group>
-                <Group justify="space-between">
-                  <Text size="sm">Last Push</Text>
-                  <Text size="sm">{maintenanceLastPush}</Text>
-                </Group>
-              </Stack>
-            </Paper>
-
-            <Paper p="md" radius="md" withBorder>
-              <Text fw={700} mb="md">Maintenance Score: {data.maintenance?.score}%</Text>
-              <Center>
-                <RingProgress
-                  sections={[{ value: data.maintenance?.score || 0, color: 'cyan' }]}
-                  label={
-                    <div>
-                      <Text fw={700} ta="center">
-                        {data.maintenance?.score || 0}%
-                      </Text>
-                    </div>
-                  }
-                  size={120}
-                />
-              </Center>
-            </Paper>
-          </SimpleGrid>
-        </Tabs.Panel>
-
-        <Tabs.Panel value="security" pt="xl">
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-            <Paper p="md" radius="md" withBorder>
-              <Text fw={700} mb="md">Security Basics</Text>
-              <Stack gap="md">
-                <Group gap={8}>
-                  {data.security_basics?.checks?.is_private ? (
-                    <IconCheck size={16} color="green" />
-                  ) : (
-                    <IconLockOff size={16} color="red" />
-                  )}
-                  <Text size="sm">
-                    {data.security_basics?.checks?.is_private ? 'Private' : 'Public'} repository
-                  </Text>
-                </Group>
-
-                <Group gap={8}>
-                  {data.security_basics?.checks?.has_license ? (
-                    <IconCheck size={16} color="green" />
-                  ) : (
-                    <IconX size={16} color="red" />
-                  )}
-                  <Text size="sm">
-                    {data.security_basics?.checks?.has_license
-                      ? `License: ${data.security_basics.checks.license_type}`
-                      : 'No license'}
-                  </Text>
-                </Group>
-
-                <Group gap={8}>
-                  {data.security_basics?.checks?.has_vulnerability_alerts ? (
-                    <IconAlertTriangle size={16} color="orange" />
-                  ) : (
-                    <IconCheck size={16} color="green" />
-                  )}
-                  <Text size="sm">
-                    {data.security_basics?.checks?.has_vulnerability_alerts
-                      ? 'Has vulnerability alerts'
-                      : 'No vulnerability alerts'}
-                  </Text>
-                </Group>
-              </Stack>
-            </Paper>
-
-            <Paper p="md" radius="md" withBorder>
-              <Text fw={700} mb="md">Security Score: {data.security_basics?.score}%</Text>
-              <Center>
-                <RingProgress
-                  sections={[{ value: data.security_basics?.score || 0, color: 'red' }]}
-                  label={
-                    <div>
-                      <Text fw={700} ta="center">
-                        {data.security_basics?.score || 0}%
-                      </Text>
-                    </div>
-                  }
-                  size={120}
-                />
-              </Center>
-            </Paper>
-          </SimpleGrid>
-
-          <Divider my="lg" />
-
-          <Paper p="md" radius="md" withBorder>
-            <Text fw={700} mb="md">Branch Protection</Text>
-            <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-              <Group justify="space-between">
-                <Text size="sm">Total Branches</Text>
-                <Text fw={700}>{data.branch_protection?.branch_count || 0}</Text>
-              </Group>
-              <Group justify="space-between">
-                <Text size="sm">Default Branch Protected</Text>
-                <Badge color={data.branch_protection?.default_branch_protected ? 'green' : 'red'}>
-                  {data.branch_protection?.default_branch_protected ? 'Yes' : 'No'}
-                </Badge>
-              </Group>
-            </SimpleGrid>
-            <Progress
-              value={data.branch_protection?.score || 0}
-              mt="md"
-            />
+            </Stack>
           </Paper>
-        </Tabs.Panel>
-      </Tabs>
-    );
-  };
 
-  const renderLevel2Data = (data: Level2Data | undefined) => {
-    if (!data) return null;
-    const dependencies = Object.entries(data.dependencies ?? {});
-    const suspiciousPatterns = data.code_quality_signals?.suspicious_code_patterns ?? [];
-    return (
-      <Tabs defaultValue="files">
-        <Tabs.List>
-          <Tabs.Tab value="files" leftSection={<IconFileText size={14} />}>
-            Files
-          </Tabs.Tab>
-          <Tabs.Tab value="dependencies" leftSection={<IconCode size={14} />}>
-            Dependencies
-          </Tabs.Tab>
-          <Tabs.Tab value="quality" leftSection={<IconShield size={14} />}>
-            Code Quality
-          </Tabs.Tab>
-        </Tabs.List>
-
-        <Tabs.Panel value="files" pt="xl">
-          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-            {Object.entries(data.security_file_check || {}).map(([filename, fileData]) => (
-              <Paper key={filename} p="md" radius="md" withBorder>
-                <Group justify="space-between" mb="sm">
-                  <Text size="sm" fw={700}>
-                    {filename}
-                  </Text>
-                  {fileData.exists ? (
-                    <Group gap={4}>
-                      <IconCheck size={16} color="green" />
-                      <Text size="xs" c="green">
-                        Exists
-                      </Text>
-                    </Group>
-                  ) : (
-                    <Group gap={4}>
-                      <IconX size={16} color="red" />
-                      <Text size="xs" c="red">
-                        Missing
-                      </Text>
-                    </Group>
-                  )}
-                </Group>
-                {fileData.exists && fileData.size_bytes > 0 && (
-                  <Text size="xs" c="dimmed">
-                    Size: {(fileData.size_bytes / 1024).toFixed(2)} KB
-                  </Text>
-                )}
-              </Paper>
-            ))}
-          </SimpleGrid>
-        </Tabs.Panel>
-
-        <Tabs.Panel value="dependencies" pt="xl">
-          <Paper p="md" radius="md" withBorder>
-            <Text size="sm" c="dimmed">
-              {dependencies.length > 0
-                ? 'Dependencies detected'
-                : 'No dependency data available'}
-            </Text>
-            {dependencies.length > 0 && (
-              <Table mt="md">
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Package</Table.Th>
-                    <Table.Th>Version</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {dependencies.map(([name, version]) => (
-                    <Table.Tr key={name}>
-                      <Table.Td>{name}</Table.Td>
-                      <Table.Td>{version}</Table.Td>
-                    </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
-            )}
-          </Paper>
-        </Tabs.Panel>
-
-        <Tabs.Panel value="quality" pt="xl">
           <Paper p="md" radius="md" withBorder>
             <Text fw={700} mb="md">
-              Code Quality Signals
+              Security capabilities
             </Text>
-            {suspiciousPatterns.length > 0 ? (
-              <List icon={<IconAlertTriangle size={16} color="orange" />}>
-                {suspiciousPatterns.map((pattern, idx) => (
-                  <List.Item key={`${pattern}-${idx}`}>{pattern}</List.Item>
-                ))}
-              </List>
-            ) : (
-              <Group gap={8}>
-                <IconCheck size={16} color="green" />
-                <Text size="sm">No suspicious code patterns detected</Text>
+            <Stack gap="sm">
+              <Group justify="space-between">
+                <Text size="sm">Code scanning</Text>
+                <Badge color={detail.level3_data?.code_scanning?.available ? 'green' : 'gray'}>
+                  {detail.level3_data?.code_scanning?.available ? 'Available' : 'Not available'}
+                </Badge>
               </Group>
+              <Group justify="space-between">
+                <Text size="sm">Secret scanning</Text>
+                <Badge color={detail.level3_data?.secret_scanning?.available ? 'green' : 'gray'}>
+                  {detail.level3_data?.secret_scanning?.available ? 'Available' : 'Not available'}
+                </Badge>
+              </Group>
+              <Group justify="space-between">
+                <Text size="sm">Dependabot alerts</Text>
+                <Badge color={detail.level3_data?.dependabot_alerts?.available ? 'green' : 'gray'}>
+                  {detail.level3_data?.dependabot_alerts?.available ? 'Available' : 'Not available'}
+                </Badge>
+              </Group>
+              {detail.level3_data?.dependabot_alerts?.error ? (
+                <Alert color="yellow" variant="light" title="Dependabot note">
+                  {detail.level3_data.dependabot_alerts.error}
+                </Alert>
+              ) : null}
+            </Stack>
+          </Paper>
+        </SimpleGrid>
+
+        <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+          <Paper p="md" radius="md" withBorder>
+            <Text fw={700} mb="md">
+              Dependencies
+            </Text>
+            {dependencyEntries.length > 0 ? (
+              <Stack gap="xs">
+                {dependencyEntries.slice(0, 8).map(([name, version]) => (
+                  <Group key={name} justify="space-between">
+                    <Text size="sm">{name}</Text>
+                    <Badge variant="light">{version}</Badge>
+                  </Group>
+                ))}
+              </Stack>
+            ) : (
+              <Text c="dimmed" size="sm">
+                No dependency data available.
+              </Text>
             )}
           </Paper>
-        </Tabs.Panel>
-      </Tabs>
-    );
-  };
 
-  const renderLevel3Data = (data: Level3Data | undefined) => {
-    if (!data) return null;
-    return (
-      <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-        <Paper p="md" radius="md" withBorder>
-          <Group justify="space-between" mb="sm">
-            <Text fw={700}>Code Scanning</Text>
-            {data.code_scanning?.available ? (
-              <Badge color="green">Available</Badge>
+          <Paper p="md" radius="md" withBorder>
+            <Text fw={700} mb="md">
+              Security files
+            </Text>
+            {securityFiles.length > 0 ? (
+              <Stack gap="xs">
+                {securityFiles.map(([name, file]) => (
+                  <Group key={name} justify="space-between">
+                    <Text size="sm">{name}</Text>
+                    <Badge color={file.exists ? 'green' : 'red'}>{file.exists ? 'Present' : 'Missing'}</Badge>
+                  </Group>
+                ))}
+              </Stack>
             ) : (
-              <Badge color="gray">Not Available</Badge>
+              <Text c="dimmed" size="sm">
+                No file inspection data available.
+              </Text>
             )}
-          </Group>
-          <Text size="sm" c="dimmed">
-            {data.code_scanning?.available ? 'Code scanning is enabled' : 'Code scanning is not available'}
+          </Paper>
+        </SimpleGrid>
+
+        <Paper p="md" radius="md" withBorder>
+          <Text fw={700} mb="md">
+            Code quality signals
           </Text>
-        </Paper>
-
-        <Paper p="md" radius="md" withBorder>
-          <Group justify="space-between" mb="sm">
-            <Text fw={700}>Secret Scanning</Text>
-            {data.secret_scanning?.available ? (
-              <Badge color="green">Available</Badge>
-            ) : (
-              <Badge color="gray">Not Available</Badge>
-            )}
-          </Group>
-          <Text size="sm" c="dimmed">
-            {data.secret_scanning?.available ? 'Secret scanning is enabled' : 'Secret scanning is not available'}
-          </Text>
-        </Paper>
-
-        <Paper p="md" radius="md" withBorder>
-          <Group justify="space-between" mb="sm">
-            <Text fw={700}>Dependabot Alerts</Text>
-            {data.dependabot_alerts?.available ? (
-              <Badge color="green">Available</Badge>
-            ) : (
-              <Badge color="gray">Not Available</Badge>
-            )}
-          </Group>
-          {data.dependabot_alerts?.error && (
-            <Alert icon={<IconAlertCircle size={16} />} color="yellow" mt="sm">
-              {data.dependabot_alerts.error}
-            </Alert>
+          {suspiciousPatterns.length > 0 ? (
+            <List icon={<IconAlertTriangle size={16} color="orange" />}>
+              {suspiciousPatterns.map((pattern) => (
+                <List.Item key={pattern}>{pattern}</List.Item>
+              ))}
+            </List>
+          ) : (
+            <Group gap={8}>
+              <IconCheck size={16} color="green" />
+              <Text size="sm">No suspicious code patterns detected.</Text>
+            </Group>
           )}
         </Paper>
-      </SimpleGrid>
+
+        {detail.warnings && detail.warnings.length > 0 ? (
+          <Card withBorder radius="md" padding="lg">
+            <Text fw={700} mb="md">
+              Warnings and issues
+            </Text>
+            <Stack gap="sm">
+              {detail.warnings.map((warning, index) => (
+                <Alert
+                  key={`${warning.category}-${index}`}
+                  icon={<IconAlertTriangle size={16} />}
+                  color={warning.level === 'critical' ? 'red' : warning.level === 'warning' ? 'yellow' : 'orange'}
+                  title={warning.category}
+                >
+                  {warning.message}
+                </Alert>
+              ))}
+            </Stack>
+          </Card>
+        ) : null}
+
+        {detail.recommendations && detail.recommendations.length > 0 ? (
+          <Card withBorder radius="md" padding="lg">
+            <Text fw={700} mb="md">
+              Recommendations
+            </Text>
+            <List icon={<IconCheck size={16} color="green" />}>
+              {detail.recommendations.map((recommendation) => (
+                <List.Item key={recommendation}>{recommendation}</List.Item>
+              ))}
+            </List>
+          </Card>
+        ) : null}
+      </Stack>
     );
   };
 
@@ -723,239 +520,319 @@ const GitHubHealthCheck = () => {
       <Stack gap="xl">
         <div>
           <Title order={1} mb="sm">
-            GitHub Repository Health Check
+            GitHub Health
           </Title>
           <Text c="dimmed">
-            Analyze your GitHub repositories for security, maintenance, and community health metrics
+            Run repository checks and review the full GitHub history from one page.
           </Text>
         </div>
 
-        {/* Input Form */}
-        <Card withBorder radius="md" padding="lg">
-          <form onSubmit={handleCheck}>
-            <Stack gap="md">
-              <TextInput
-                label="GitHub Repository URL"
-                placeholder="https://github.com/owner/repo"
-                value={url}
-                onChange={(e) => setUrl(e.currentTarget.value)}
-                description="Enter the full GitHub repository URL"
-              />
+        <Tabs defaultValue="scan">
+          <Tabs.List>
+            <Tabs.Tab value="scan" leftSection={<IconSearch size={16} />}>
+              New Check
+            </Tabs.Tab>
+            <Tabs.Tab value="history" leftSection={<IconHistory size={16} />}>
+              History
+            </Tabs.Tab>
+          </Tabs.List>
 
-              <MultiSelect
-                label="Check Levels"
-                placeholder="Select levels to check"
-                data={[
-                  { value: '1', label: 'Level 1: REST API & Metrics' },
-                  { value: '2', label: 'Level 2: File Inspection' },
-                  { value: '3', label: 'Level 3: Security APIs' },
-                ]}
-                value={levels}
-                onChange={setLevels}
-                searchable
-                clearable
-                maxDropdownHeight={160}
-              />
+          <Tabs.Panel value="scan" pt="xl">
+            <Stack gap="xl">
+              <Card withBorder radius="md" padding="lg">
+                <form onSubmit={handleCheck}>
+                  <Stack gap="md">
+                    <TextInput
+                      label="GitHub Repository URL"
+                      placeholder="https://github.com/owner/repo"
+                      value={url}
+                      onChange={(event) => setUrl(event.currentTarget.value)}
+                    />
 
-              <Group justify="space-between">
-                <Text size="sm">
-                  <Tooltip label="Use cached results from less than 1 hour ago">
-                    <span>Use cached results</span>
-                  </Tooltip>
-                </Text>
-                <Button
-                  variant={useCache ? 'default' : 'light'}
-                  size="xs"
-                  onClick={() => setUseCache(!useCache)}
-                >
-                  {useCache ? 'Enabled' : 'Disabled'}
+                    <MultiSelect
+                      label="Check Levels"
+                      placeholder="Select levels to check"
+                      data={[
+                        { value: '1', label: 'Level 1: REST API & Metrics' },
+                        { value: '2', label: 'Level 2: File Inspection' },
+                        { value: '3', label: 'Level 3: Security APIs' },
+                      ]}
+                      value={levels}
+                      onChange={setLevels}
+                      searchable
+                      clearable
+                    />
+
+                    <Group justify="space-between">
+                      <Text size="sm">
+                        <Tooltip label="Use cached results from less than 1 hour ago">
+                          <span>Use cached results</span>
+                        </Tooltip>
+                      </Text>
+                      <Button size="xs" variant={useCache ? 'default' : 'light'} onClick={() => setUseCache(!useCache)}>
+                        {useCache ? 'Enabled' : 'Disabled'}
+                      </Button>
+                    </Group>
+
+                    <Button type="submit" fullWidth size="md" loading={loading} leftSection={<IconSearch size={16} />}>
+                      {loading ? 'Checking Repository...' : 'Check Repository'}
+                    </Button>
+                  </Stack>
+                </form>
+              </Card>
+
+              {error ? (
+                <Alert icon={<IconAlertCircle size={16} />} color="red" title="Error">
+                  {error}
+                </Alert>
+              ) : null}
+
+              {result ? (
+                <Stack gap="xl">
+                  {result.message ? (
+                    <Alert icon={<IconCheck size={16} />} color="blue">
+                      {result.message}
+                    </Alert>
+                  ) : null}
+
+                  <Paper p="lg" radius="md" withBorder>
+                    <Group justify="space-between" mb="md">
+                      <div>
+                        <Title order={2}>
+                          {result.result.repository.owner}/{result.result.repository.name}
+                        </Title>
+                        <Text size="sm" c="dimmed" mt={4}>
+                          {result.result.repository.url}
+                        </Text>
+                      </div>
+                      <Center>
+                        <RingProgress
+                          sections={[{ value: result.result.risk_score, color: getRiskColor(result.result.risk_score) }]}
+                          label={<Text fw={700}>{result.result.risk_score}%</Text>}
+                          size={110}
+                        />
+                      </Center>
+                    </Group>
+
+                    <Group gap="sm" mb="md">
+                      <Badge size="lg" color={getRiskColor(result.result.risk_score)}>
+                        {getRiskLabel(result.result.risk_score)}
+                      </Badge>
+                      <Badge variant="light">{result.result.summary}</Badge>
+                    </Group>
+
+                    <Group gap="sm" mb="md">
+                      {linkedAsset ? (
+                        <Button
+                          variant="light"
+                          onClick={() => navigate(`/dashboard/assets/${linkedAsset.id}`)}
+                          leftSection={<IconExternalLink size={16} />}
+                        >
+                          Open linked asset
+                        </Button>
+                      ) : assetDefaults ? (
+                        <Button
+                          variant="light"
+                          onClick={handleSaveAsAsset}
+                          leftSection={<IconShield size={16} />}
+                        >
+                          Save as asset
+                        </Button>
+                      ) : null}
+                      {assetLookupLoading ? (
+                        <Text size="sm" c="dimmed">
+                          Checking asset inventory link...
+                        </Text>
+                      ) : null}
+                    </Group>
+
+                    <Divider my="md" />
+
+                    {renderCheckSections(result.result)}
+                  </Paper>
+                </Stack>
+              ) : null}
+            </Stack>
+          </Tabs.Panel>
+
+          <Tabs.Panel value="history" pt="xl">
+            <Stack gap="lg">
+              <Group justify="space-between" align="flex-end">
+                <Input
+                  placeholder="Filter by repository, URL, or summary"
+                  leftSection={<IconSearch size={16} />}
+                  value={historySearch}
+                  onChange={(event) => setHistorySearch(event.currentTarget.value)}
+                  style={{ flex: 1 }}
+                />
+                <Button variant="light" leftSection={<IconRefresh size={16} />} onClick={() => void loadHistory()}>
+                  Refresh history
                 </Button>
               </Group>
 
-              <Button
-                type="submit"
-                fullWidth
-                size="md"
-                loading={loading}
-                leftSection={<IconSearch size={16} />}
-              >
-                {loading ? 'Checking Repository...' : 'Check Repository'}
-              </Button>
+              {historyError ? (
+                <Alert icon={<IconAlertCircle size={16} />} color="red">
+                  {historyError}
+                </Alert>
+              ) : null}
+
+              {historyLoading ? (
+                <Center py="xl">
+                  <Loader />
+                </Center>
+              ) : filteredHistory.length > 0 ? (
+                <>
+                  <SimpleGrid cols={{ base: 1, sm: 2, xl: 4 }} spacing="md">
+                    <Paper p="md" radius="md" withBorder>
+                      <Text size="xs" c="dimmed" fw={700}>
+                        Total Checks
+                      </Text>
+                      <Text size="xl" fw={700}>
+                        {filteredHistory.length}
+                      </Text>
+                    </Paper>
+                    <Paper p="md" radius="md" withBorder>
+                      <Text size="xs" c="dimmed" fw={700}>
+                        Critical Risks
+                      </Text>
+                      <Text size="xl" fw={700} c="red">
+                        {filteredHistory.filter((entry) => entry.risk_score >= 75).length}
+                      </Text>
+                    </Paper>
+                    <Paper p="md" radius="md" withBorder>
+                      <Text size="xs" c="dimmed" fw={700}>
+                        Low Risk
+                      </Text>
+                      <Text size="xl" fw={700} c="green">
+                        {filteredHistory.filter((entry) => entry.risk_score < 25).length}
+                      </Text>
+                    </Paper>
+                    <Paper p="md" radius="md" withBorder>
+                      <Text size="xs" c="dimmed" fw={700}>
+                        Latest Check
+                      </Text>
+                      <Text size="sm" fw={700}>
+                        {formatDate(filteredHistory[0]?.check_timestamp)}
+                      </Text>
+                    </Paper>
+                  </SimpleGrid>
+
+                  <Card withBorder radius="md">
+                    <Table striped highlightOnHover>
+                      <Table.Thead>
+                        <Table.Tr>
+                          <Table.Th>Repository</Table.Th>
+                          <Table.Th>Risk</Table.Th>
+                          <Table.Th>Checked</Table.Th>
+                          <Table.Th style={{ textAlign: 'center' }}>Actions</Table.Th>
+                        </Table.Tr>
+                      </Table.Thead>
+                      <Table.Tbody>
+                        {filteredHistory.map((entry) => (
+                          <Table.Tr key={entry.id}>
+                            <Table.Td>
+                              <Text fw={700}>{entry.repository.owner}/{entry.repository.name}</Text>
+                              <Text size="xs" c="dimmed">
+                                {entry.repository.url}
+                              </Text>
+                            </Table.Td>
+                            <Table.Td>
+                              <Badge color={getRiskColor(entry.risk_score)}>
+                                {entry.risk_score}/100
+                              </Badge>
+                            </Table.Td>
+                            <Table.Td>
+                              <Group gap={6}>
+                                <IconCalendar size={14} />
+                                <Text size="sm">{formatDate(entry.check_timestamp)}</Text>
+                              </Group>
+                            </Table.Td>
+                            <Table.Td style={{ textAlign: 'center' }}>
+                              <Center>
+                                <Group gap="xs" wrap="nowrap">
+                                  <ActionIcon
+                                    color="blue"
+                                    variant="light"
+                                    onClick={() => void handleViewHistoryResult(entry.id)}
+                                    title="View details"
+                                  >
+                                    <IconEye size={16} />
+                                  </ActionIcon>
+                                  <ActionIcon
+                                    color="red"
+                                    variant="light"
+                                    onClick={() => void handleDeleteHistoryResult(entry.id)}
+                                    title="Delete"
+                                  >
+                                    <IconTrash size={16} />
+                                  </ActionIcon>
+                                </Group>
+                              </Center>
+                            </Table.Td>
+                          </Table.Tr>
+                        ))}
+                      </Table.Tbody>
+                    </Table>
+                  </Card>
+                </>
+              ) : (
+                <Paper p="xl" radius="md" withBorder>
+                  <Center>
+                    <Stack gap="sm" align="center">
+                      <IconSearch size={42} />
+                      <Text fw={700}>No GitHub checks found</Text>
+                      <Text size="sm" c="dimmed" ta="center">
+                        {historySearch ? 'Try adjusting the filter.' : 'Run the first repository check to build history.'}
+                      </Text>
+                    </Stack>
+                  </Center>
+                </Paper>
+              )}
             </Stack>
-          </form>
-        </Card>
+          </Tabs.Panel>
+        </Tabs>
+      </Stack>
 
-        {/* Error Alert */}
-        {error && (
-          <Alert icon={<IconAlertCircle size={16} />} color="red" title="Error">
-            {error}
-          </Alert>
-        )}
-
-        {/* Results */}
-        {result && (
-          <Stack gap="xl">
-            {/* Message */}
-            {result.message && (
-              <Alert icon={<IconCheck size={16} />} color="blue">
-                {result.message}
-              </Alert>
-            )}
-
-            {/* Repository Header */}
+      <Modal
+        opened={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        title={selectedResult ? `${selectedResult.repository.owner}/${selectedResult.repository.name}` : 'Check details'}
+        size="xl"
+      >
+        {detailsLoading ? (
+          <Center py="xl">
+            <Loader />
+          </Center>
+        ) : selectedResult ? (
+          <Stack gap="lg">
             <Paper p="lg" radius="md" withBorder>
               <Group justify="space-between" mb="md">
                 <div>
-                  <Title order={2}>
-                    {result.result.repository.owner}/{result.result.repository.name}
-                  </Title>
+                  <Text fw={700}>{selectedResult.repository.url}</Text>
                   <Text size="sm" c="dimmed" mt={4}>
-                    {result.result.repository.url}
+                    {selectedResult.summary}
                   </Text>
                 </div>
-                <Stack gap={0} align="flex-end">
-                  <Badge size="lg" color={getRiskColor(result.result.risk_score)}>
-                    {getRiskLabel(result.result.risk_score)}
-                  </Badge>
-                </Stack>
+                <Badge size="lg" color={getRiskColor(selectedResult.risk_score)}>
+                  {getRiskLabel(selectedResult.risk_score)}
+                </Badge>
               </Group>
 
-              <Divider my="md" />
-
-              <Group align="stretch" wrap="nowrap" gap="md">
-                <Stack gap="sm" style={{ flex: 2 }}>
-                  <Paper p="sm" radius="sm" style={{ background: 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))' }}>
-                    <Text size="xs" c="dimmed" mb={4}>
-                      Repository Created
-                    </Text>
-                    <Text size="sm" fw={700}>
-                      {new Date(result.result.repository.created_at).toLocaleDateString()}
-                    </Text>
-                  </Paper>
-
-                  <Paper p="sm" radius="sm" style={{ background: 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))' }}>
-                    <Text size="xs" c="dimmed" mb={4}>
-                      Last Check
-                    </Text>
-                    <Text size="sm" fw={700}>
-                      {new Date(result.result.check_timestamp).toLocaleString()}
-                    </Text>
-                  </Paper>
-
-                  <Paper p="sm" radius="sm" style={{ background: 'light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6))' }}>
-                    <Text size="xs" c="dimmed" mb={4}>
-                      Risk Assessment
-                    </Text>
-                    <Text size="sm" fw={700}>
-                      {result.result.summary}
-                    </Text>
-                  </Paper>
-                </Stack>
-
-                {/* Risk Score Visualization */}
-                <Center style={{ flex: 1 }}>
-                  <RingProgress
-                    sections={[
-                      {
-                        value: result.result.risk_score,
-                        color: getRiskColor(result.result.risk_score),
-                      },
-                    ]}
-                    label={
-                      <div>
-                        <Text fw={900} ta="center" size="xl">
-                          {result.result.risk_score}%
-                        </Text>
-                        <Text size="xs" ta="center" c="dimmed">
-                          Risk Score
-                        </Text>
-                      </div>
-                    }
-                    size={240}
-                    thickness={16}
-                  />
-                </Center>
-              </Group>
+              <Center>
+                <RingProgress
+                  sections={[{ value: selectedResult.risk_score, color: getRiskColor(selectedResult.risk_score) }]}
+                  label={<Text fw={700}>{selectedResult.risk_score}%</Text>}
+                  size={110}
+                />
+              </Center>
             </Paper>
 
-            {/* Warnings */}
-            {result.result.warnings && result.result.warnings.length > 0 && (
-              <Card withBorder radius="md" padding="lg">
-                <Title order={3} mb="md">
-                  ⚠️ Warnings & Issues
-                </Title>
-                <Stack gap="sm">
-                  {result.result.warnings.map((warning, idx) => (
-                    <Alert
-                      key={`${warning.category}-${idx}`}
-                      icon={<IconAlertTriangle size={16} />}
-                      color={warning.level === 'critical' ? 'red' : warning.level === 'warning' ? 'yellow' : 'orange'}
-                      title={warning.category}
-                    >
-                      {warning.message}
-                    </Alert>
-                  ))}
-                </Stack>
-              </Card>
-            )}
-
-            {/* Recommendations */}
-            {result.result.recommendations && result.result.recommendations.length > 0 && (
-              <Card withBorder radius="md" padding="lg">
-                <Title order={3} mb="md">
-                  💡 Recommendations
-                </Title>
-                <List icon={<IconCheck size={16} color="green" />} spacing="md">
-                  {result.result.recommendations.map((rec, idx) => (
-                    <List.Item key={`${rec}-${idx}`}>{rec}</List.Item>
-                  ))}
-                </List>
-              </Card>
-            )}
-
-            <Tabs defaultValue="level1">
-              <Tabs.List>
-                {levels.includes('1') && (
-                  <Tabs.Tab value="level1" leftSection={<IconShield size={14} />}>
-                    Level 1: REST API
-                  </Tabs.Tab>
-                )}
-                {levels.includes('2') && (
-                  <Tabs.Tab value="level2" leftSection={<IconFileText size={14} />}>
-                    Level 2: Files
-                  </Tabs.Tab>
-                )}
-                {levels.includes('3') && (
-                  <Tabs.Tab value="level3" leftSection={<IconShield size={14} />}>
-                    Level 3: Security
-                  </Tabs.Tab>
-                )}
-              </Tabs.List>
-
-              {levels.includes('1') && (
-                <Tabs.Panel value="level1" pt="xl">
-                  {renderLevel1Data(result.result.level1_data)}
-                </Tabs.Panel>
-              )}
-
-              {levels.includes('2') && (
-                <Tabs.Panel value="level2" pt="xl">
-                  {renderLevel2Data(result.result.level2_data)}
-                </Tabs.Panel>
-              )}
-
-              {levels.includes('3') && (
-                <Tabs.Panel value="level3" pt="xl">
-                  {renderLevel3Data(result.result.level3_data)}
-                </Tabs.Panel>
-              )}
-            </Tabs>
+            {renderCheckSections(selectedResult)}
           </Stack>
-        )}
-      </Stack>
+        ) : null}
+      </Modal>
     </Container>
   );
 };
 
 export default GitHubHealthCheck;
-

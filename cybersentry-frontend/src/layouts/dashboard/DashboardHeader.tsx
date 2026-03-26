@@ -10,6 +10,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/auth/useAuth';
 import NotificationMenuButton from '../../components/NotificationMenuButton';
 import ThemeToggleButton from '../../components/ThemeToggleButton';
+import { useDashboardBreadcrumb } from './DashboardBreadcrumbContext';
 
 interface DashboardHeaderProps {
   mobileOpened: boolean;
@@ -39,12 +40,18 @@ const DashboardHeader = ({
 }: DashboardHeaderProps) => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const { currentLabel } = useDashboardBreadcrumb();
 
   const pathSegments = location.pathname.split('/').filter(Boolean);
   const breadcrumbItems = pathSegments.map((segment, index) => {
     const href = `/${pathSegments.slice(0, index + 1).join('/')}`;
-    const label = labelMap[segment] || segment.replace(/-/g, ' ');
     const isLast = index === pathSegments.length - 1;
+    const previousSegment = index > 0 ? pathSegments[index - 1] : null;
+    const fallbackLabel =
+      previousSegment === 'assets' && /^\d+$/.test(segment)
+        ? 'Asset detail'
+        : labelMap[segment] || segment.replace(/-/g, ' ');
+    const label = isLast && currentLabel ? currentLabel : fallbackLabel;
 
     return isLast ? (
       <Text key={href} size="sm" fw={700}>

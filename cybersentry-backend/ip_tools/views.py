@@ -10,6 +10,7 @@ from .serializers import (
     TyposquattingDetectionSerializer,
     IPReputationScanSerializer,
 )
+from .models import IPReputationScan
 from .services import (
     WhoisLookupError,
     IpLookupError,
@@ -134,4 +135,21 @@ def scan_history(request):
     return Response({
         'ip_scans': IPReputationScanSerializer(ip_scans, many=True).data,
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_scan_history_entry(request, scan_id):
+    """
+    Delete a saved IP reputation scan belonging to the authenticated user.
+    """
+    deleted, _ = IPReputationScan.objects.filter(id=scan_id, user=request.user).delete()
+
+    if deleted == 0:
+        return Response(
+            {'error': 'IP reputation scan not found.'},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    return Response(status=status.HTTP_204_NO_CONTENT)
 

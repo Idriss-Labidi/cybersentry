@@ -42,7 +42,11 @@ export const Dashboard = () => {
     () => [
       { label: 'Managed assets', value: String(summary.total_assets), hint: 'Tracked in the authenticated workspace' },
       { label: 'High risk assets', value: String(summary.high_risk_assets), hint: 'Currently scored at 70/100 or above' },
-      { label: 'Average risk', value: `${summary.average_risk_score}/100`, hint: 'Rolling baseline for monitored assets' },
+      {
+        label: 'Average baseline risk',
+        value: `${summary.average_risk_score}/100`,
+        hint: 'Rolling manual baseline for monitored assets',
+      },
     ],
     [summary]
   );

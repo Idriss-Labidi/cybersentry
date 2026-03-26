@@ -3,6 +3,18 @@ from rest_framework import serializers
 from .models import Asset, AssetRiskSnapshot, AssetTag
 
 
+def normalize_asset_value(asset_type: str, value: str) -> str:
+    cleaned_value = value.strip()
+
+    if asset_type == Asset.AssetTypes.GITHUB_REPOSITORY:
+        return cleaned_value.lower().rstrip('/')
+
+    if asset_type in {Asset.AssetTypes.DOMAIN, Asset.AssetTypes.WEBSITE}:
+        return cleaned_value.lower()
+
+    return cleaned_value
+
+
 class AssetTagSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssetTag
@@ -55,10 +67,11 @@ class AssetSerializer(serializers.ModelSerializer):
         return value
 
     def validate_value(self, value):
-        value = value.strip()
+        asset_type = self.initial_data.get('asset_type') or getattr(self.instance, 'asset_type', None)
+        value = normalize_asset_value(asset_type, value) if asset_type else value.strip()
         if not value:
             raise serializers.ValidationError('This field may not be blank.')
-        return value.lower() if self.initial_data.get('asset_type') in {'domain', 'website', 'github_repo'} else value
+        return value
 
     def validate_tag_names(self, value):
         cleaned_names = []
@@ -98,3 +111,11 @@ class AssetSerializer(serializers.ModelSerializer):
         ]
         asset.tags.set(tags)
 
+
+class AssetLookupSerializer(serializers.Serializer):
+    asset_type = serializers.ChoiceField(choices=Asset.AssetTypes.choices)
+    value = serializers.CharField(max_length=255)
+
+    def validate(self, attrs):
+        attrs['value'] = normalize_asset_value(attrs['asset_type'], attrs['value'])
+        return attrs

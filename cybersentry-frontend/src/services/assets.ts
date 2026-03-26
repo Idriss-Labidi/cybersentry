@@ -1,4 +1,5 @@
 import axiosInstance from '../utils/axios-instance';
+import type { IPReputationScanHistory, IpReputationResponse } from './ip-tools';
 
 export type AssetType = 'domain' | 'ip' | 'website' | 'github_repo';
 export type AssetCategory = 'production' | 'development' | 'test';
@@ -58,7 +59,85 @@ export interface AssetRiskHistoryResponse {
   entries: AssetRiskHistoryEntry[];
 }
 
+export interface AssetLookupResponse {
+  found: boolean;
+  asset: Asset | null;
+  lookup: {
+    asset_type: AssetType;
+    value: string;
+  };
+  defaults: AssetPayload;
+}
+
+export interface GitHubRepositoryLink {
+  id: number;
+  owner: string;
+  name: string;
+  url: string;
+  organization: number;
+  created_at: string;
+  last_check_at: string | null;
+}
+
+export interface GitHubCheckResultSummary {
+  id: number;
+  repository_url: string;
+  repository_name: string;
+  risk_score: number;
+  summary: string;
+  check_timestamp: string;
+}
+
+export interface GitHubWarningItem {
+  level: string;
+  message: string;
+  category: string;
+}
+
+export interface GitHubCheckResultDetail {
+  id: number;
+  repository: GitHubRepositoryLink;
+  risk_score: number;
+  level1_data?: Record<string, unknown>;
+  level2_data?: Record<string, unknown>;
+  level3_data?: Record<string, unknown>;
+  summary: string;
+  warnings?: GitHubWarningItem[];
+  recommendations?: string[];
+  check_timestamp: string;
+}
+
+export interface AssetRelatedContextResponse {
+  asset_type: AssetType;
+  message: string;
+  ip_reputation: {
+    lookup_value: string;
+    latest_scan: IPReputationScanHistory | null;
+    history: IPReputationScanHistory[];
+  } | null;
+  github_health: {
+    lookup_value: string;
+    repository: GitHubRepositoryLink | null;
+    latest_result: GitHubCheckResultDetail | null;
+    history: GitHubCheckResultSummary[];
+  } | null;
+}
+
+export interface AssetRunIpResponse {
+  result: IpReputationResponse;
+}
+
+export interface AssetRunGitHubHealthResponse {
+  message?: string;
+  result?: GitHubCheckResultDetail;
+  score_breakdown?: Record<string, number>;
+  risk_category?: string;
+  error?: string;
+}
+
 export const getAssets = () => axiosInstance.get<Asset[]>('/api/assets/');
+
+export const getAsset = (id: number) => axiosInstance.get<Asset>(`/api/assets/${id}/`);
 
 export const getAssetSummary = () => axiosInstance.get<AssetSummaryResponse>('/api/assets/summary/');
 
@@ -72,3 +151,16 @@ export const deleteAsset = (id: number) => axiosInstance.delete(`/api/assets/${i
 export const getAssetRiskHistory = (id: number) =>
   axiosInstance.get<AssetRiskHistoryResponse>(`/api/assets/${id}/risk_history/`);
 
+export const lookupAsset = (assetType: AssetType, value: string) =>
+  axiosInstance.get<AssetLookupResponse>('/api/assets/lookup/', {
+    params: { asset_type: assetType, value },
+  });
+
+export const getAssetRelatedContext = (id: number) =>
+  axiosInstance.get<AssetRelatedContextResponse>(`/api/assets/${id}/related_context/`);
+
+export const runAssetIpReputation = (id: number) =>
+  axiosInstance.post<AssetRunIpResponse>(`/api/assets/${id}/run_ip_reputation/`);
+
+export const runAssetGitHubHealth = (id: number, data?: { levels?: string[]; use_cache?: boolean }) =>
+  axiosInstance.post<AssetRunGitHubHealthResponse>(`/api/assets/${id}/run_github_health/`, data ?? {});

@@ -107,6 +107,37 @@ class GitHubSettingsIntegrationTests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assertEqual(response.data, [])
 
+	def test_repository_history_returns_all_results_when_url_is_missing(self):
+		repository = GithubRepository.objects.create(
+			owner='octocat',
+			name='History-All',
+			url='https://github.com/octocat/History-All',
+			organization=self.organization,
+		)
+		second_repository = GithubRepository.objects.create(
+			owner='octocat',
+			name='History-All-2',
+			url='https://github.com/octocat/History-All-2',
+			organization=self.organization,
+		)
+		first_result = RepositoryCheckResult.objects.create(
+			repository=repository,
+			checked_by=self.user,
+			risk_score=42,
+			summary='first',
+		)
+		second_result = RepositoryCheckResult.objects.create(
+			repository=second_repository,
+			checked_by=self.user,
+			risk_score=18,
+			summary='second',
+		)
+
+		response = self.client.get('/github-health/repository_history/')
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.assertEqual({entry['id'] for entry in response.data}, {first_result.id, second_result.id})
+
 	@patch('github_health_check.views._run_checks')
 	def test_check_repository_auto_provisions_personal_workspace(self, run_checks_mock):
 		run_checks_mock.return_value = {'level1': {}, 'level2': {}, 'level3': {}}

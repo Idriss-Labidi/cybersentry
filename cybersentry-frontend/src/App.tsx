@@ -7,7 +7,8 @@ import DashboardLayout from './layouts/dashboard/DashboardLayout';
 import { OAuthCallback } from './pages/auth/OAuthCallback';
 import { Landing } from './pages/landing/Landing';
 import { Dashboard } from './pages/dashboard/Dashboard';
-import { Assets } from './pages/dashboard/Assets';
+import { AssetsList } from './pages/dashboard/assets/AssetsList';
+import { AssetDetail } from './pages/dashboard/assets/AssetDetail';
 import { Security } from './pages/dashboard/Security';
 import { Profile } from './pages/dashboard/Profile';
 import { Alerts } from './pages/dashboard/Alerts';
@@ -56,7 +57,8 @@ function AppContent() {
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} isLoading={isLoading} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dashboard/assets" element={<Assets />} />
+            <Route path="/dashboard/assets" element={<AssetsList />} />
+            <Route path="/dashboard/assets/:id" element={<AssetDetail />} />
             <Route path="/dashboard/security" element={<Security />} />
             <Route path="/dashboard/profile" element={<Profile />} />
             <Route path="/dashboard/alerts" element={<Alerts />} />
@@ -65,6 +67,7 @@ function AppContent() {
             <Route path="/dashboard/github" element={<GitHubHealthCheck />} />
             <Route path="/dashboard/github/history" element={<GitHubHealthCheckHistory />} />
             <Route path="/dashboard/advanced-scanner" element={<AdvancedSecurityScanner />} />
+            <Route path="/dashboard/ip-intelligence" element={<AdvancedSecurityScanner />} />
           </Route>
         </Route>
         {/* Add other routes here */}
