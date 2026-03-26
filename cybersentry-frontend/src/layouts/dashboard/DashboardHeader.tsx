@@ -14,6 +14,8 @@ import ThemeToggleButton from '../../components/ThemeToggleButton';
 interface DashboardHeaderProps {
   mobileOpened: boolean;
   setMobileOpened: (value: boolean) => void;
+  desktopOpened: boolean;
+  setDesktopOpened: (value: boolean) => void;
 }
 
 const labelMap: Record<string, string> = {
@@ -29,7 +31,12 @@ const labelMap: Record<string, string> = {
   'advanced-scanner': 'Advanced Scanner',
 };
 
-const DashboardHeader = ({ mobileOpened, setMobileOpened }: DashboardHeaderProps) => {
+const DashboardHeader = ({
+  mobileOpened,
+  setMobileOpened,
+  desktopOpened,
+  setDesktopOpened,
+}: DashboardHeaderProps) => {
   const { user, logout } = useAuth();
   const location = useLocation();
 
@@ -74,6 +81,13 @@ const DashboardHeader = ({ mobileOpened, setMobileOpened }: DashboardHeaderProps
           hiddenFrom="md"
           size="sm"
           aria-label="Toggle navigation menu"
+        />
+        <Burger
+          opened={desktopOpened}
+          onClick={() => setDesktopOpened(!desktopOpened)}
+          visibleFrom="md"
+          size="sm"
+          aria-label="Toggle sidebar"
         />
 
         <Paper

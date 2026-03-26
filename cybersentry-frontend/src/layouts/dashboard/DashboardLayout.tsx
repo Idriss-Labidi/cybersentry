@@ -6,15 +6,25 @@ import DashboardNavbar from './DashboardNavbar';
 
 const DashboardLayout = () => {
   const [mobileOpened, setMobileOpened] = useState(false);
+  const [desktopOpened, setDesktopOpened] = useState(true);
 
   return (
     <AppShell
       header={{ height: 76 }}
-      navbar={{ width: 312, breakpoint: 'md', collapsed: { mobile: !mobileOpened } }}
+      navbar={{
+        width: 312,
+        breakpoint: 'md',
+        collapsed: { mobile: !mobileOpened, desktop: !desktopOpened },
+      }}
       padding={0}
     >
       <AppShell.Header px="md">
-        <DashboardHeader mobileOpened={mobileOpened} setMobileOpened={setMobileOpened} />
+        <DashboardHeader
+          mobileOpened={mobileOpened}
+          setMobileOpened={setMobileOpened}
+          desktopOpened={desktopOpened}
+          setDesktopOpened={setDesktopOpened}
+        />
       </AppShell.Header>
 
       <AppShell.Navbar p="md">

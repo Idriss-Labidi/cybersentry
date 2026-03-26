@@ -122,3 +122,23 @@ class GitHubSettingsIntegrationTests(APITestCase):
 		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 		self.user.refresh_from_db()
 		self.assertIsNotNone(self.user.organization_id)
+
+	def test_delete_check_result_removes_result(self):
+		repository = GithubRepository.objects.create(
+			owner='octocat',
+			name='Delete-Me',
+			url='https://github.com/octocat/Delete-Me',
+			organization=self.organization,
+			last_check_at=timezone.now(),
+		)
+		check_result = RepositoryCheckResult.objects.create(
+			repository=repository,
+			checked_by=self.user,
+			risk_score=18,
+			summary='low risk',
+		)
+
+		response = self.client.delete(f'/github-health/check-results/{check_result.id}/')
+
+		self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+		self.assertFalse(RepositoryCheckResult.objects.filter(id=check_result.id).exists())

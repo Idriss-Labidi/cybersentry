@@ -261,3 +261,27 @@ class GitHubRepositoryCheckViewSet(viewsets.ViewSet):
         serializer = CheckResultSummarySerializer(results, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['delete'], url_path=r'check-results/(?P<result_id>[^/.]+)')
+    def delete_check_result(self, request, result_id=None):
+        organization = self._get_user_organization(request)
+
+        try:
+            check_result = RepositoryCheckResult.objects.select_related('repository').get(
+                id=result_id,
+                repository__organization=organization,
+            )
+        except RepositoryCheckResult.DoesNotExist:
+            return Response(
+                {"error": "Check result not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        repository = check_result.repository
+        check_result.delete()
+
+        latest_result = repository.check_results.first()
+        repository.last_check_at = latest_result.check_timestamp if latest_result else None
+        repository.save(update_fields=['last_check_at'])
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
