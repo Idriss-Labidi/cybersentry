@@ -155,6 +155,9 @@ const GitHubHealthCheck = () => {
   const [selectedResult, setSelectedResult] = useState<CheckResultDetail | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [selectedResultLinkedAsset, setSelectedResultLinkedAsset] = useState<Asset | null>(null);
+  const [selectedResultAssetDefaults, setSelectedResultAssetDefaults] = useState<AssetPayload | null>(null);
+  const [selectedResultAssetLookupLoading, setSelectedResultAssetLookupLoading] = useState(false);
 
   const loadHistory = async () => {
     setHistoryLoading(true);
@@ -198,7 +201,7 @@ const GitHubHealthCheck = () => {
       setAssetLookupLoading(true);
 
       try {
-        const response = await lookupAsset('github_repo', repositoryUrl);
+        const response = await lookupAsset('github_repo', repositoryUrl, result.result.risk_score);
         setLinkedAsset(response.data.asset);
         setAssetDefaults(response.data.defaults);
       } catch {
@@ -210,7 +213,33 @@ const GitHubHealthCheck = () => {
     };
 
     void loadLinkedAsset();
-  }, [result?.result.repository.url]);
+  }, [result?.result.repository.url, result?.result.risk_score]);
+
+  useEffect(() => {
+    const repositoryUrl = selectedResult?.repository.url;
+    if (!repositoryUrl) {
+      setSelectedResultLinkedAsset(null);
+      setSelectedResultAssetDefaults(null);
+      return;
+    }
+
+    const loadSelectedResultLinkedAsset = async () => {
+      setSelectedResultAssetLookupLoading(true);
+
+      try {
+        const response = await lookupAsset('github_repo', repositoryUrl, selectedResult.risk_score);
+        setSelectedResultLinkedAsset(response.data.asset);
+        setSelectedResultAssetDefaults(response.data.defaults);
+      } catch {
+        setSelectedResultLinkedAsset(null);
+        setSelectedResultAssetDefaults(null);
+      } finally {
+        setSelectedResultAssetLookupLoading(false);
+      }
+    };
+
+    void loadSelectedResultLinkedAsset();
+  }, [selectedResult?.repository.url, selectedResult?.risk_score]);
 
   const handleCheck = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -281,6 +310,18 @@ const GitHubHealthCheck = () => {
     navigate('/dashboard/assets', {
       state: {
         prefillAsset: assetDefaults,
+      },
+    });
+  };
+
+  const handleSaveSelectedResultAsAsset = () => {
+    if (!selectedResultAssetDefaults) {
+      return;
+    }
+
+    navigate('/dashboard/assets', {
+      state: {
+        prefillAsset: selectedResultAssetDefaults,
       },
     });
   };
@@ -816,6 +857,31 @@ const GitHubHealthCheck = () => {
                 <Badge size="lg" color={getRiskColor(selectedResult.risk_score)}>
                   {getRiskLabel(selectedResult.risk_score)}
                 </Badge>
+              </Group>
+
+              <Group gap="sm" mb="md">
+                {selectedResultLinkedAsset ? (
+                  <Button
+                    variant="light"
+                    onClick={() => navigate(`/dashboard/assets/${selectedResultLinkedAsset.id}`)}
+                    leftSection={<IconExternalLink size={16} />}
+                  >
+                    Open linked asset
+                  </Button>
+                ) : selectedResultAssetDefaults ? (
+                  <Button
+                    variant="light"
+                    onClick={handleSaveSelectedResultAsAsset}
+                    leftSection={<IconShield size={16} />}
+                  >
+                    Save as asset
+                  </Button>
+                ) : null}
+                {selectedResultAssetLookupLoading ? (
+                  <Text size="sm" c="dimmed">
+                    Checking asset inventory link...
+                  </Text>
+                ) : null}
               </Group>
 
               <Center>

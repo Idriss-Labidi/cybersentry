@@ -115,6 +115,7 @@ class AssetSerializer(serializers.ModelSerializer):
 class AssetLookupSerializer(serializers.Serializer):
     asset_type = serializers.ChoiceField(choices=Asset.AssetTypes.choices)
     value = serializers.CharField(max_length=255)
+    risk_score = serializers.IntegerField(min_value=0, max_value=100, required=False)
 
     def validate(self, attrs):
         attrs['value'] = normalize_asset_value(attrs['asset_type'], attrs['value'])

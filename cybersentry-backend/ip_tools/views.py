@@ -2,6 +2,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from assets.models import Asset
+from assets.services import sync_linked_asset_score
 
 from .serializers import (
     WhoisLookupSerializer,
@@ -93,6 +95,15 @@ def advanced_ip_reputation(request):
         result = check_ip_reputation_with_history(ip_address, user=request.user)
     except IpLookupError as exc:
         return Response({'message': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    sync_linked_asset_score(
+        request.user,
+        asset_type=Asset.AssetTypes.IP,
+        value=result['ip'],
+        score=result['score'],
+        source='ip-reputation',
+        note='Score synced from IP reputation scan',
+    )
 
     return Response(result, status=status.HTTP_200_OK)
 

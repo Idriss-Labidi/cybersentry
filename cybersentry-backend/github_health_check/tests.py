@@ -6,6 +6,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import Organization, User, UserSettings
+from assets.models import Asset
 from .models import GithubRepository, RepositoryCheckResult
 
 
@@ -173,3 +174,30 @@ class GitHubSettingsIntegrationTests(APITestCase):
 
 		self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 		self.assertFalse(RepositoryCheckResult.objects.filter(id=check_result.id).exists())
+
+	@patch('github_health_check.views._run_checks')
+	def test_check_repository_syncs_linked_asset_score(self, run_checks_mock):
+		run_checks_mock.return_value = {
+			'level1': {},
+			'level2': {},
+			'level3': {},
+		}
+		Asset.objects.create(
+			organization=self.organization,
+			created_by=self.user,
+			name='Linked Repo',
+			asset_type='github_repo',
+			value='https://github.com/octocat/hello-world',
+			category='production',
+			risk_score=12,
+		)
+
+		response = self.client.post(
+			'/github-health/check_repository/',
+			{'url': 'https://github.com/octocat/Hello-World'},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+		asset = Asset.objects.get(value='https://github.com/octocat/hello-world')
+		self.assertEqual(asset.risk_score, response.data['result']['risk_score'])

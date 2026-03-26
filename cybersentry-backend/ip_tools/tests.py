@@ -1,8 +1,11 @@
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from accounts.models import Organization
+from assets.models import Asset
 
 from .models import IPReputationScan
 
@@ -65,3 +68,36 @@ class IPHistoryApiTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertTrue(IPReputationScan.objects.filter(id=scan.id).exists())
+
+    @patch('ip_tools.views.check_ip_reputation_with_history')
+    def test_advanced_ip_reputation_syncs_linked_asset_score(self, reputation_mock):
+        Asset.objects.create(
+            organization=self.organization,
+            created_by=self.user,
+            name='Gateway IP',
+            asset_type='ip',
+            value='8.8.8.8',
+            category='production',
+            risk_score=5,
+        )
+        reputation_mock.return_value = {
+            'ip': '8.8.8.8',
+            'score': 64,
+            'risk_level': 'medium',
+            'risk_factors': ['Hosting provider'],
+            'is_proxy': False,
+            'is_hosting': True,
+            'is_mobile': False,
+            'geolocation': {'country': 'United States'},
+            'network': {'isp': 'Google'},
+        }
+
+        response = self.client.post(
+            '/ip-tools/advanced/reputation/',
+            {'ip_address': '8.8.8.8'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        asset = Asset.objects.get(value='8.8.8.8')
+        self.assertEqual(asset.risk_score, 64)

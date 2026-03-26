@@ -10,7 +10,7 @@ from datetime import timedelta
 from accounts.models import Organization
 from github_health_check.models import GithubRepository, RepositoryCheckResult
 from ip_tools.models import IPReputationScan
-from .models import Asset
+from .models import Asset, AssetRiskSnapshot
 
 
 class AssetApiTests(APITestCase):
@@ -123,6 +123,15 @@ class AssetApiTests(APITestCase):
             response.data['defaults']['value'],
             'https://github.com/octocat/hello-world',
         )
+
+    def test_lookup_uses_requested_risk_score_in_defaults(self):
+        response = self.client.get(
+            '/api/assets/lookup/',
+            {'asset_type': 'ip', 'value': '8.8.8.8', 'risk_score': 67},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['defaults']['risk_score'], 67)
 
     def test_lookup_is_scoped_to_current_organization(self):
         other_organization = Organization.objects.create(
@@ -238,7 +247,15 @@ class AssetApiTests(APITestCase):
         self.assertEqual(response.data['result']['ip'], '1.1.1.1')
         reputation_mock.assert_called_once_with('1.1.1.1', user=self.user)
         asset.refresh_from_db()
+        self.assertEqual(asset.risk_score, 15)
         self.assertIsNotNone(asset.last_scanned_at)
+        self.assertTrue(
+            AssetRiskSnapshot.objects.filter(
+                asset=asset,
+                score=15,
+                source='ip-reputation',
+            ).exists()
+        )
 
     @patch('assets.views.run_repository_health_check')
     def test_run_github_health_from_github_asset(self, github_check_mock):
@@ -268,7 +285,15 @@ class AssetApiTests(APITestCase):
         github_check_mock.assert_called_once()
         self.assertEqual(github_check_mock.call_args.kwargs['url'], 'https://github.com/octocat/backend')
         asset.refresh_from_db()
+        self.assertEqual(asset.risk_score, 33)
         self.assertIsNotNone(asset.last_scanned_at)
+        self.assertTrue(
+            AssetRiskSnapshot.objects.filter(
+                asset=asset,
+                score=33,
+                source='github-health',
+            ).exists()
+        )
 
     def test_run_actions_reject_incompatible_asset_types(self):
         asset = Asset.objects.create(

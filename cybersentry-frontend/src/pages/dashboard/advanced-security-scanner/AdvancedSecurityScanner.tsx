@@ -23,6 +23,9 @@ export const AdvancedSecurityScanner = () => {
     linkedAsset,
     assetDefaults,
     assetLookupLoading,
+    selectedScanLinkedAsset,
+    selectedScanAssetDefaults,
+    selectedScanAssetLookupLoading,
     canLoadMoreHistory,
     deletingScanId,
     setIpInput,
@@ -32,6 +35,7 @@ export const AdvancedSecurityScanner = () => {
     handleViewDetails,
     handleDeleteScan,
     handleSaveAsAsset,
+    handleSaveSelectedScanAsAsset,
   } = useIpIntelligence();
 
   return (
@@ -103,6 +107,11 @@ export const AdvancedSecurityScanner = () => {
       <IpScanDetailsModal
         opened={detailsModalOpened}
         scan={selectedScan}
+        linkedAsset={selectedScanLinkedAsset}
+        assetDefaults={selectedScanAssetDefaults}
+        assetLookupLoading={selectedScanAssetLookupLoading}
+        onOpenLinkedAsset={(asset) => navigate(`/dashboard/assets/${asset.id}`)}
+        onSaveAsAsset={handleSaveSelectedScanAsAsset}
         onClose={() => setDetailsModalOpened(false)}
       />
     </Container>

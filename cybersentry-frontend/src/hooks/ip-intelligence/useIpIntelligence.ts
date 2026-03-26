@@ -27,6 +27,9 @@ export function useIpIntelligence() {
   const [linkedAsset, setLinkedAsset] = useState<Asset | null>(null);
   const [assetDefaults, setAssetDefaults] = useState<AssetPayload | null>(null);
   const [assetLookupLoading, setAssetLookupLoading] = useState(false);
+  const [selectedScanLinkedAsset, setSelectedScanLinkedAsset] = useState<Asset | null>(null);
+  const [selectedScanAssetDefaults, setSelectedScanAssetDefaults] = useState<AssetPayload | null>(null);
+  const [selectedScanAssetLookupLoading, setSelectedScanAssetLookupLoading] = useState(false);
 
   const loadHistory = async (limit = historyLimit) => {
     setHistoryLoading(true);
@@ -56,7 +59,7 @@ export function useIpIntelligence() {
       setAssetLookupLoading(true);
 
       try {
-        const response = await lookupAsset('ip', ipResult.ip);
+        const response = await lookupAsset('ip', ipResult.ip, ipResult.score);
         setLinkedAsset(response.data.asset);
         setAssetDefaults(response.data.defaults);
       } catch {
@@ -68,7 +71,32 @@ export function useIpIntelligence() {
     };
 
     void loadLinkedAsset();
-  }, [ipResult?.ip]);
+  }, [ipResult?.ip, ipResult?.score]);
+
+  useEffect(() => {
+    if (!selectedScan?.ip_address) {
+      setSelectedScanLinkedAsset(null);
+      setSelectedScanAssetDefaults(null);
+      return;
+    }
+
+    const loadSelectedScanLinkedAsset = async () => {
+      setSelectedScanAssetLookupLoading(true);
+
+      try {
+        const response = await lookupAsset('ip', selectedScan.ip_address, selectedScan.reputation_score);
+        setSelectedScanLinkedAsset(response.data.asset);
+        setSelectedScanAssetDefaults(response.data.defaults);
+      } catch {
+        setSelectedScanLinkedAsset(null);
+        setSelectedScanAssetDefaults(null);
+      } finally {
+        setSelectedScanAssetLookupLoading(false);
+      }
+    };
+
+    void loadSelectedScanLinkedAsset();
+  }, [selectedScan?.ip_address, selectedScan?.reputation_score]);
 
   const handleIpCheck = async () => {
     if (!ipInput.trim()) {
@@ -132,6 +160,18 @@ export function useIpIntelligence() {
     });
   };
 
+  const handleSaveSelectedScanAsAsset = () => {
+    if (!selectedScanAssetDefaults) {
+      return;
+    }
+
+    navigate('/dashboard/assets', {
+      state: {
+        prefillAsset: selectedScanAssetDefaults,
+      },
+    });
+  };
+
   return {
     ipInput,
     ipResult,
@@ -146,6 +186,9 @@ export function useIpIntelligence() {
     linkedAsset,
     assetDefaults,
     assetLookupLoading,
+    selectedScanLinkedAsset,
+    selectedScanAssetDefaults,
+    selectedScanAssetLookupLoading,
     canLoadMoreHistory: scans.length >= historyLimit,
     setIpInput,
     setDetailsModalOpened,
@@ -154,5 +197,6 @@ export function useIpIntelligence() {
     handleViewDetails,
     handleDeleteScan,
     handleSaveAsAsset,
+    handleSaveSelectedScanAsAsset,
   };
 }

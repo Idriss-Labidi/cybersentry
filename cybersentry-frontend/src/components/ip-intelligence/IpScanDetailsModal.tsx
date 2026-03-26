@@ -1,18 +1,55 @@
-import { Badge, Box, Center, Group, Modal, Paper, RingProgress, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Badge, Box, Button, Center, Group, Modal, Paper, RingProgress, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { IconExternalLink, IconShield } from '@tabler/icons-react';
+import type { Asset, AssetPayload } from '../../services/assets';
 import type { IPReputationScanHistory } from '../../services/ip-tools';
 import { formatScanDate, riskColor } from '../../utils/ip-intelligence';
 
 type IpScanDetailsModalProps = {
   opened: boolean;
   scan: IPReputationScanHistory | null;
+  linkedAsset: Asset | null;
+  assetDefaults: AssetPayload | null;
+  assetLookupLoading: boolean;
+  onOpenLinkedAsset: (asset: Asset) => void;
+  onSaveAsAsset: () => void;
   onClose: () => void;
 };
 
-export default function IpScanDetailsModal({ opened, scan, onClose }: IpScanDetailsModalProps) {
+export default function IpScanDetailsModal({
+  opened,
+  scan,
+  linkedAsset,
+  assetDefaults,
+  assetLookupLoading,
+  onOpenLinkedAsset,
+  onSaveAsAsset,
+  onClose,
+}: IpScanDetailsModalProps) {
   return (
     <Modal opened={opened} onClose={onClose} title={`IP Reputation Details - ${scan?.ip_address}`} size="xl">
       {scan ? (
         <Stack gap="lg">
+          <Group gap="sm">
+            {linkedAsset ? (
+              <Button
+                variant="light"
+                onClick={() => onOpenLinkedAsset(linkedAsset)}
+                leftSection={<IconExternalLink size={16} />}
+              >
+                Open linked asset
+              </Button>
+            ) : assetDefaults ? (
+              <Button variant="light" onClick={onSaveAsAsset} leftSection={<IconShield size={16} />}>
+                Save as asset
+              </Button>
+            ) : null}
+            {assetLookupLoading ? (
+              <Text size="sm" c="dimmed">
+                Checking asset inventory link...
+              </Text>
+            ) : null}
+          </Group>
+
           <Paper withBorder p="lg" radius="md">
             <Group justify="space-between" align="center">
               <div>

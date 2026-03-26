@@ -8,6 +8,9 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from assets.models import Asset
+from assets.services import sync_linked_asset_score
+
 from .models import GithubRepository, RepositoryCheckResult
 from accounts.models import UserSettings
 from accounts.services import ensure_user_organization
@@ -100,6 +103,15 @@ def run_repository_health_check(*, user, url: str, levels=None, use_cache=None, 
         ).first()
 
         if recent_result:
+            sync_linked_asset_score(
+                user,
+                asset_type=Asset.AssetTypes.GITHUB_REPOSITORY,
+                value=normalized_url,
+                score=recent_result.risk_score,
+                source='github-health',
+                note='Score synced from GitHub health check',
+                scanned_at=recent_result.check_timestamp,
+            )
             return (
                 {
                     "message": f"Using cached result (less than {cache_duration} minutes old)",
@@ -141,6 +153,16 @@ def run_repository_health_check(*, user, url: str, levels=None, use_cache=None, 
 
     github_repo.last_check_at = timezone.now()
     github_repo.save(update_fields=['last_check_at'])
+
+    sync_linked_asset_score(
+        user,
+        asset_type=Asset.AssetTypes.GITHUB_REPOSITORY,
+        value=normalized_url,
+        score=check_result.risk_score,
+        source='github-health',
+        note='Score synced from GitHub health check',
+        scanned_at=check_result.check_timestamp,
+    )
 
     return (
         {

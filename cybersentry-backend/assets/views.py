@@ -24,6 +24,7 @@ from .serializers import (
     AssetSerializer,
     normalize_asset_value,
 )
+from .services import apply_asset_signal_score
 
 
 def _build_default_asset_name(asset_type: str, value: str) -> str:
@@ -44,7 +45,7 @@ def _build_default_asset_name(asset_type: str, value: str) -> str:
     return value
 
 
-def _build_creation_defaults(asset_type: str, value: str):
+def _build_creation_defaults(asset_type: str, value: str, risk_score: int = 0):
     normalized_value = normalize_asset_value(asset_type, value)
     return {
         'name': _build_default_asset_name(asset_type, normalized_value),
@@ -53,7 +54,7 @@ def _build_creation_defaults(asset_type: str, value: str):
         'category': Asset.Categories.PRODUCTION,
         'status': Asset.Statuses.ACTIVE,
         'description': '',
-        'risk_score': 0,
+        'risk_score': max(0, min(100, int(risk_score))),
         'tag_names': [],
     }
 
@@ -123,6 +124,7 @@ class AssetViewSet(viewsets.ModelViewSet):
 
         asset_type = serializer.validated_data['asset_type']
         value = serializer.validated_data['value']
+        risk_score = serializer.validated_data.get('risk_score', 0)
         organization = self._get_user_organization()
 
         queryset = Asset.objects.filter(
@@ -148,7 +150,7 @@ class AssetViewSet(viewsets.ModelViewSet):
                     'asset_type': asset_type,
                     'value': lookup_value,
                 },
-                'defaults': _build_creation_defaults(asset_type, lookup_value),
+                'defaults': _build_creation_defaults(asset_type, lookup_value, risk_score),
             },
             status=status.HTTP_200_OK,
         )
@@ -249,8 +251,12 @@ class AssetViewSet(viewsets.ModelViewSet):
             )
 
         result = check_ip_reputation_with_history(asset.value, user=request.user)
-        asset.last_scanned_at = timezone.now()
-        asset.save(update_fields=['last_scanned_at'])
+        apply_asset_signal_score(
+            asset,
+            result['score'],
+            source='ip-reputation',
+            note='Score synced from IP reputation scan',
+        )
 
         return Response({'result': result}, status=status.HTTP_200_OK)
 
@@ -272,8 +278,15 @@ class AssetViewSet(viewsets.ModelViewSet):
         )
 
         if response_status in {status.HTTP_200_OK, status.HTTP_201_CREATED}:
-            asset.last_scanned_at = timezone.now()
-            asset.save(update_fields=['last_scanned_at'])
+            result = payload.get('result')
+            if result:
+                apply_asset_signal_score(
+                    asset,
+                    result['risk_score'],
+                    source='github-health',
+                    note='Score synced from GitHub health check',
+                    scanned_at=result.get('check_timestamp'),
+                )
 
         return Response(payload, status=response_status)
 

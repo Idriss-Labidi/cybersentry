@@ -151,9 +151,9 @@ export const deleteAsset = (id: number) => axiosInstance.delete(`/api/assets/${i
 export const getAssetRiskHistory = (id: number) =>
   axiosInstance.get<AssetRiskHistoryResponse>(`/api/assets/${id}/risk_history/`);
 
-export const lookupAsset = (assetType: AssetType, value: string) =>
+export const lookupAsset = (assetType: AssetType, value: string, riskScore?: number) =>
   axiosInstance.get<AssetLookupResponse>('/api/assets/lookup/', {
-    params: { asset_type: assetType, value },
+    params: { asset_type: assetType, value, risk_score: riskScore },
   });
 
 export const getAssetRelatedContext = (id: number) =>
