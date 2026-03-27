@@ -17,8 +17,7 @@ import { Settings } from './pages/dashboard/Settings';
 import { DnsLookup } from './pages/tools/dns/DnsLookup';
 import { DnsHealthCheck } from './pages/tools/dns/DnsHealthCheck';
 import { DnsPropagation } from './pages/tools/dns/dns-propagation/DnsPropagation';
-import GitHubHealthCheck from './pages/dashboard/github-health/GitHubHealthCheck';
-import GitHubHealthCheckHistory from './pages/dashboard/github-health/GitHubHealthCheckHistory';
+import GitHub from './pages/dashboard/github-health/GitHub';
 import { WhoisLookup } from './pages/tools/domain/WhoisLookup';
 import { IpReputation } from './pages/tools/ip/IpReputation';
 import { ReverseIp } from './pages/tools/ip/ReverseIp';
@@ -64,8 +63,8 @@ function AppContent() {
             <Route path="/dashboard/alerts" element={<Alerts />} />
             <Route path="/dashboard/analytics" element={<Analytics />} />
             <Route path="/dashboard/settings" element={<Settings />} />
-            <Route path="/dashboard/github" element={<GitHubHealthCheck />} />
-            <Route path="/dashboard/github/history" element={<GitHubHealthCheckHistory />} />
+            <Route path="/dashboard/github" element={<GitHub />} />
+            <Route path="/dashboard/github/history" element={<GitHub initialTab="history" />} />
             <Route path="/dashboard/advanced-scanner" element={<AdvancedSecurityScanner />} />
             <Route path="/dashboard/ip-intelligence" element={<AdvancedSecurityScanner />} />
           </Route>
