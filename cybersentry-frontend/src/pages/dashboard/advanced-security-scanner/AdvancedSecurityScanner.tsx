@@ -6,6 +6,7 @@ import IpScanDetailsModal from '../../../components/ip-intelligence/IpScanDetail
 import IpScanForm from '../../../components/ip-intelligence/IpScanForm';
 import IpScanResult from '../../../components/ip-intelligence/IpScanResult';
 import { useIpIntelligence } from '../../../hooks/ip-intelligence/useIpIntelligence';
+import { ReverseIp } from '../../tools/ip/ReverseIp';
 import { HISTORY_PAGE_SIZE } from '../../../utils/ip-intelligence';
 
 export const AdvancedSecurityScanner = () => {
@@ -47,7 +48,7 @@ export const AdvancedSecurityScanner = () => {
             IP Intelligence
           </Title>
           <Text c="dimmed" fz="sm">
-            Run authenticated IP reputation checks, review historical scans, and link the result to a managed asset.
+            Run IP reputation checks, investigate reverse IP data, review historical scans, and link results to managed assets.
           </Text>
         </div>
 
@@ -55,6 +56,9 @@ export const AdvancedSecurityScanner = () => {
           <Tabs.List>
             <Tabs.Tab value="scan" leftSection={<IconSearch size={16} />}>
               New Scan
+            </Tabs.Tab>
+            <Tabs.Tab value="reverse-ip" leftSection={<IconSearch size={16} />}>
+              Reverse IP
             </Tabs.Tab>
             <Tabs.Tab value="history" leftSection={<IconHistory size={16} />}>
               History
@@ -89,6 +93,10 @@ export const AdvancedSecurityScanner = () => {
             </Stack>
           </Tabs.Panel>
 
+          <Tabs.Panel value="reverse-ip" pt="xl">
+            <ReverseIp embedded />
+          </Tabs.Panel>
+
           <Tabs.Panel value="history" pt="xl">
             <IpHistorySection
               scans={scans}
@@ -101,6 +109,8 @@ export const AdvancedSecurityScanner = () => {
               onDelete={(scanId) => void handleDeleteScan(scanId)}
             />
           </Tabs.Panel>
+
+          
         </Tabs>
       </Stack>
 

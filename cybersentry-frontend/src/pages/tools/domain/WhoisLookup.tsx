@@ -43,7 +43,11 @@ function formatValue(value: unknown): string {
   return String(value);
 }
 
-export const WhoisLookup = () => {
+type WhoisLookupProps = {
+  embedded?: boolean;
+};
+
+export const WhoisLookup = ({ embedded = false }: WhoisLookupProps) => {
   const [query, setQuery] = useState('');
   const [result, setResult] = useState<WhoisLookupResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -94,28 +98,8 @@ export const WhoisLookup = () => {
 
   const rows = getFieldRows();
 
-  return (
-    <ToolPageLayout
-      icon={<IconFileText size={26} />}
-      eyebrow="Public tool"
-      title="WHOIS lookup"
-      description="Inspect registration, ownership, and registrar metadata for domains and IP addresses from a focused reporting surface."
-      metrics={[
-        { label: 'Current query', value: query.trim() || 'None', hint: 'Domain or IP target' },
-        { label: 'Rows returned', value: result ? String(rows.length) : '0', hint: 'Structured WHOIS fields' },
-        { label: 'Priority fields', value: String(IMPORTANT_FIELDS.length), hint: 'Fields surfaced first when present' },
-      ]}
-      workflow={[
-        'Submit the domain or IP you need to inspect.',
-        'Review registrar, lifecycle, and nameserver data before deeper analysis.',
-        'Use the remaining field list for ownership and operational context.',
-      ]}
-      notes={[
-        'WHOIS quality varies by TLD and registrar, so sparse output is not always an error.',
-        'Pair this with DNS lookup when investigating suspicious delegation or hosting changes.',
-      ]}
-      examples={['example.com', 'github.com', '8.8.8.8']}
-    >
+  const content = (
+    <>
       <Paper p="lg" radius="xl" pos="relative">
         <LoadingOverlay visible={loading} />
         <Group align="end">
@@ -175,6 +159,36 @@ export const WhoisLookup = () => {
           </ScrollArea>
         </Paper>
       ) : null}
+    </>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <ToolPageLayout
+      icon={<IconFileText size={26} />}
+      eyebrow="Public tool"
+      title="WHOIS lookup"
+      description="Inspect registration, ownership, and registrar metadata for domains and IP addresses from a focused reporting surface."
+      metrics={[
+        { label: 'Current query', value: query.trim() || 'None', hint: 'Domain or IP target' },
+        { label: 'Rows returned', value: result ? String(rows.length) : '0', hint: 'Structured WHOIS fields' },
+        { label: 'Priority fields', value: String(IMPORTANT_FIELDS.length), hint: 'Fields surfaced first when present' },
+      ]}
+      workflow={[
+        'Submit the domain or IP you need to inspect.',
+        'Review registrar, lifecycle, and nameserver data before deeper analysis.',
+        'Use the remaining field list for ownership and operational context.',
+      ]}
+      notes={[
+        'WHOIS quality varies by TLD and registrar, so sparse output is not always an error.',
+        'Pair this with DNS lookup when investigating suspicious delegation or hosting changes.',
+      ]}
+      examples={['example.com', 'github.com', '8.8.8.8']}
+    >
+      {content}
     </ToolPageLayout>
   );
 };

@@ -4,8 +4,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework import status
-from .serializers import DNSLookupSerializer, DNSPropagationSerializer, DnsServerSerializer, DNSHealthCheckSerializer
-from .models import DnsServer
+from accounts.services import ensure_user_organization
+from assets.models import Asset
+from assets.services import sync_linked_asset_score
+from .serializers import (
+    DNSLookupSerializer,
+    DNSPropagationSerializer,
+    DnsServerSerializer,
+    DNSHealthCheckSerializer,
+    DNSHealthScanSerializer,
+)
+from .models import DNSHealthScan, DnsServer
 from .services import (
     DomainNotFoundError,
     check_dns_propagation,
@@ -119,7 +128,52 @@ def dns_health_check_(request):
     domain_name = data['domain_name']
     res = dns_health_check(domain_name)
 
+    if request.user.is_authenticated:
+        organization = ensure_user_organization(request.user)
+        DNSHealthScan.objects.create(
+            organization=organization,
+            user=request.user,
+            domain_name=domain_name,
+            score=res.get('score', 0),
+            grade=res.get('grade', 'Unknown'),
+            checks=res.get('checks', {}),
+            recommendations=res.get('recommendations', []),
+        )
+        sync_linked_asset_score(
+            request.user,
+            asset_type=Asset.AssetTypes.DOMAIN,
+            value=domain_name,
+            score=res.get('score', 0),
+            source='dns-health',
+            note='Score synced from DNS health check',
+        )
+
     return Response(res, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dns_health_history(request):
+    limit = int(request.query_params.get('limit', 50))
+    scans = DNSHealthScan.objects.filter(user=request.user)[:limit]
+
+    return Response({
+        'dns_health_scans': DNSHealthScanSerializer(scans, many=True).data,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_dns_health_history_entry(request, scan_id):
+    deleted, _ = DNSHealthScan.objects.filter(id=scan_id, user=request.user).delete()
+
+    if deleted == 0:
+        return Response(
+            {'error': 'DNS health scan not found.'},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 class DnsServerList(APIView):
     '''

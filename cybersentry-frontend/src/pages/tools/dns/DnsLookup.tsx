@@ -22,7 +22,11 @@ import { getApiErrorMessage } from '../../../utils/api-error';
 
 const RECORD_TYPES = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SOA'];
 
-export const DnsLookup = () => {
+type DnsLookupProps = {
+  embedded?: boolean;
+};
+
+export const DnsLookup = ({ embedded = false }: DnsLookupProps) => {
   const [domain, setDomain] = useState('');
   const [selectedTypes, setSelectedTypes] = useState<string[]>(['A']);
   const [result, setResult] = useState<DnsLookupResponse | null>(null);
@@ -54,32 +58,8 @@ export const DnsLookup = () => {
     }
   };
 
-  return (
-    <ToolPageLayout
-      icon={<IconWorld size={26} />}
-      eyebrow="Public tool"
-      title="DNS lookup"
-      description="Query DNS records for any domain and review the returned values in a cleaner analytical shell."
-      metrics={[
-        { label: 'Selected record types', value: String(selectedTypes.length), hint: selectedTypes.join(', ') },
-        { label: 'Current target', value: domain.trim() || 'None', hint: 'Domain under inspection' },
-        {
-          label: 'Result state',
-          value: result ? 'Loaded' : loading ? 'Running' : 'Ready',
-          hint: result ? `${Object.keys(result.result).length} groups returned` : 'Awaiting query',
-        },
-      ]}
-      workflow={[
-        'Enter the target domain and choose the record classes you want to inspect.',
-        'Run the lookup and compare values by record type.',
-        'Use TXT, MX, and NS results as a baseline before moving to deeper checks.',
-      ]}
-      notes={[
-        'A and AAAA records are best reviewed together when validating hosting changes.',
-        'TXT output is often the quickest way to inspect SPF and ownership markers.',
-      ]}
-      examples={['example.com', 'openai.com', 'github.com']}
-    >
+  const content = (
+    <>
       <Paper p="lg" radius="xl" pos="relative">
         <LoadingOverlay visible={loading} />
         <Stack gap="md">
@@ -165,6 +145,40 @@ export const DnsLookup = () => {
           </Stack>
         </Paper>
       ) : null}
+    </>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <ToolPageLayout
+      icon={<IconWorld size={26} />}
+      eyebrow="Public tool"
+      title="DNS lookup"
+      description="Query DNS records for any domain and review the returned values in a cleaner analytical shell."
+      metrics={[
+        { label: 'Selected record types', value: String(selectedTypes.length), hint: selectedTypes.join(', ') },
+        { label: 'Current target', value: domain.trim() || 'None', hint: 'Domain under inspection' },
+        {
+          label: 'Result state',
+          value: result ? 'Loaded' : loading ? 'Running' : 'Ready',
+          hint: result ? `${Object.keys(result.result).length} groups returned` : 'Awaiting query',
+        },
+      ]}
+      workflow={[
+        'Enter the target domain and choose the record classes you want to inspect.',
+        'Run the lookup and compare values by record type.',
+        'Use TXT, MX, and NS results as a baseline before moving to deeper checks.',
+      ]}
+      notes={[
+        'A and AAAA records are best reviewed together when validating hosting changes.',
+        'TXT output is often the quickest way to inspect SPF and ownership markers.',
+      ]}
+      examples={['example.com', 'openai.com', 'github.com']}
+    >
+      {content}
     </ToolPageLayout>
   );
 };

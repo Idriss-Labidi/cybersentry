@@ -136,7 +136,11 @@ function statusColor(status: string) {
   }
 }
 
-export const DnsPropagation = () => {
+type DnsPropagationProps = {
+  embedded?: boolean;
+};
+
+export const DnsPropagation = ({ embedded = false }: DnsPropagationProps) => {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
   const [domain, setDomain] = useState('');
@@ -223,30 +227,8 @@ export const DnsPropagation = () => {
   const okCount = markers.filter((m) => m.status === 'ok').length;
   const failCount = markers.filter((m) => m.status === 'fail').length;
 
-  return (
-    <ToolPageLayout
-      icon={<IconWorldWww size={26} />}
-      eyebrow="Public tool"
-      title="DNS propagation checker"
-      description="Check record propagation across public resolver regions and inspect the result on an interactive map."
-      metrics={[
-        { label: 'Record types', value: String(selectedTypes.length), hint: selectedTypes.join(', ') },
-        { label: 'Regions', value: selectedRegions.length > 0 ? String(selectedRegions.length) : 'All', hint: 'Resolver groups in scope' },
-        { label: 'Healthy resolvers', value: result ? `${okCount}/${totalServers}` : 'Pending', hint: ipVersion },
-      ]}
-      workflow={[
-        'Select the domain, record types, and optional region subset.',
-        'Run the propagation check to populate the map and regional tables.',
-        'Use marker detail for resolver-level comparison before opening the full region table.',
-      ]}
-      notes={[
-        'Leaving regions empty checks the broadest available resolver set.',
-        'Propagation drift is easiest to spot when you compare the summary badges with the per-resolver detail panel.',
-      ]}
-      examples={['example.com', 'openai.com', 'cloudflare.com']}
-      mainSpan={9}
-    >
-      <Stack gap="lg">
+  const content = (
+    <Stack gap="lg">
 
         {/* Query form */}
         <Paper withBorder p="lg" radius="md" pos="relative">
@@ -554,7 +536,37 @@ export const DnsPropagation = () => {
             </Paper>
           </Stack>
         )}
-      </Stack>
+    </Stack>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <ToolPageLayout
+      icon={<IconWorldWww size={26} />}
+      eyebrow="Public tool"
+      title="DNS propagation checker"
+      description="Check record propagation across public resolver regions and inspect the result on an interactive map."
+      metrics={[
+        { label: 'Record types', value: String(selectedTypes.length), hint: selectedTypes.join(', ') },
+        { label: 'Regions', value: selectedRegions.length > 0 ? String(selectedRegions.length) : 'All', hint: 'Resolver groups in scope' },
+        { label: 'Healthy resolvers', value: result ? `${okCount}/${totalServers}` : 'Pending', hint: ipVersion },
+      ]}
+      workflow={[
+        'Select the domain, record types, and optional region subset.',
+        'Run the propagation check to populate the map and regional tables.',
+        'Use marker detail for resolver-level comparison before opening the full region table.',
+      ]}
+      notes={[
+        'Leaving regions empty checks the broadest available resolver set.',
+        'Propagation drift is easiest to spot when you compare the summary badges with the per-resolver detail panel.',
+      ]}
+      examples={['example.com', 'openai.com', 'cloudflare.com']}
+      mainSpan={9}
+    >
+      {content}
     </ToolPageLayout>
   );
 };

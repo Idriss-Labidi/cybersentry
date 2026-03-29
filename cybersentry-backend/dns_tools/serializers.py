@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import DnsServer
+from .models import DNSHealthScan, DnsServer
 import re
 
 class DNSLookupSerializer(serializers.Serializer):
@@ -46,6 +46,12 @@ class DnsServerSerializer(serializers.ModelSerializer):
     class Meta:
         model = DnsServer
         fields = ['id', 'name', 'ip_address1', 'ip_address2', 'location', 'type', 'country', 'region']
+
+
+class DNSHealthScanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DNSHealthScan
+        fields = ['id', 'domain_name', 'score', 'grade', 'checks', 'recommendations', 'scanned_at']
 
 
 class DNSHealthCheckSerializer(serializers.Serializer):

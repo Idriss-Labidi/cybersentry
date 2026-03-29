@@ -76,6 +76,20 @@ export interface DnsHealthCheckResponse {
   recommendations: Recommendation[];
 }
 
+export interface DnsHealthHistoryEntry {
+  id: number;
+  domain_name: string;
+  score: number;
+  grade: string;
+  checks: Record<string, HealthCheckResult>;
+  recommendations: Recommendation[];
+  scanned_at: string;
+}
+
+export interface DnsHealthHistoryResponse {
+  dns_health_scans: DnsHealthHistoryEntry[];
+}
+
 // DNS Server
 export interface DnsServer {
   id: number;
@@ -100,6 +114,14 @@ export const dnsPropagation = (data: DnsPropagationRequest) =>
 
 export const dnsHealthCheck = (data: DnsHealthCheckRequest) =>
   axiosInstance.post<DnsHealthCheckResponse>('/dns-tools/health/', data);
+
+export const getDnsHealthHistory = (limit?: number) =>
+  axiosInstance.get<DnsHealthHistoryResponse>('/dns-tools/history/', {
+    params: { limit: limit || 50 },
+  });
+
+export const deleteDnsHealthHistoryEntry = (scanId: number) =>
+  axiosInstance.delete(`/dns-tools/history/${scanId}/`);
 
 export const getDnsServers = () =>
   axiosInstance.get<DnsServer[]>('/dns-tools/dns-servers/');

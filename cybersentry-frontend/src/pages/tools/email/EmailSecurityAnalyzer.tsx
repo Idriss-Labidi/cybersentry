@@ -336,7 +336,11 @@ function RecommendationsPanel({ recommendations }: { recommendations: Recommenda
 
 // Main Page
 
-export const EmailSecurityAnalyzer = () => {
+type EmailSecurityAnalyzerProps = {
+  embedded?: boolean;
+};
+
+export const EmailSecurityAnalyzer = ({ embedded = false }: EmailSecurityAnalyzerProps) => {
   const [domain, setDomain] = useState('');
   const [result, setResult] = useState<EmailSecurityResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -364,6 +368,117 @@ export const EmailSecurityAnalyzer = () => {
       setLoading(false);
     }
   };
+
+  const content = (
+    <Stack gap="lg">
+      <Paper withBorder p="lg" radius="md" pos="relative">
+        <LoadingOverlay visible={loading} />
+        <Group align="end">
+          <TextInput
+            label="Domain Name"
+            placeholder="example.com"
+            value={domain}
+            onChange={(e) => setDomain(e.currentTarget.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
+            size="md"
+            style={{ flex: 1 }}
+          />
+          <Button
+            leftSection={<IconSearch size={18} />}
+            onClick={handleCheck}
+            disabled={!domain.trim()}
+            size="md"
+          >
+            Analyze
+          </Button>
+        </Group>
+      </Paper>
+
+      {error && (
+        <Alert icon={<IconAlertCircle size={18} />} color="red" title="Error" variant="light">
+          {error}
+        </Alert>
+      )}
+
+      {result && (
+        <Stack gap="lg">
+          <Paper withBorder p="lg" radius="md">
+            <Group justify="space-between" align="center">
+              <div>
+                <Text fz="sm" c="dimmed" fw={500}>Email Security Score</Text>
+                <Group gap="xs" align="baseline">
+                  <Title order={1}>{result.score}</Title>
+                  <Text c="dimmed" fz="sm">/ 100</Text>
+                </Group>
+                <Progress
+                  value={result.score}
+                  color={gradeColor(result.grade)}
+                  size="sm"
+                  mt="xs"
+                  w={200}
+                />
+              </div>
+              <Center>
+                <RingProgress
+                  size={100}
+                  thickness={10}
+                  roundCaps
+                  sections={[{ value: result.score, color: gradeColor(result.grade) }]}
+                  label={
+                    <Text ta="center" fw={700} fz="xl">
+                      {result.grade}
+                    </Text>
+                  }
+                />
+              </Center>
+            </Group>
+            <Divider my="md" />
+            <Group gap="xs">
+              <Badge variant="light" size="lg">{result.domain}</Badge>
+              <Badge variant="light" color={statusColor(result.spf.status)} size="sm">SPF: {result.spf.status}</Badge>
+              <Badge variant="light" color={statusColor(result.dkim.status)} size="sm">DKIM: {result.dkim.status}</Badge>
+              <Badge variant="light" color={statusColor(result.dmarc.status)} size="sm">DMARC: {result.dmarc.status}</Badge>
+            </Group>
+          </Paper>
+
+          <Paper withBorder p="lg" radius="md">
+            <Tabs defaultValue="spf">
+              <Tabs.List>
+                <Tabs.Tab value="spf" leftSection={<IconMailForward size={16} />}>
+                  SPF
+                </Tabs.Tab>
+                <Tabs.Tab value="dkim" leftSection={<IconKey size={16} />}>
+                  DKIM
+                </Tabs.Tab>
+                <Tabs.Tab value="dmarc" leftSection={<IconShieldLock size={16} />}>
+                  DMARC
+                </Tabs.Tab>
+              </Tabs.List>
+
+              <Tabs.Panel value="spf" pt="md">
+                <SPFPanel spf={result.spf} />
+              </Tabs.Panel>
+              <Tabs.Panel value="dkim" pt="md">
+                <DKIMPanel dkim={result.dkim} />
+              </Tabs.Panel>
+              <Tabs.Panel value="dmarc" pt="md">
+                <DMARCPanel dmarc={result.dmarc} />
+              </Tabs.Panel>
+            </Tabs>
+          </Paper>
+
+          <Paper withBorder p="lg" radius="md">
+            <Title order={4} mb="md">Recommendations</Title>
+            <RecommendationsPanel recommendations={result.recommendations} />
+          </Paper>
+        </Stack>
+      )}
+    </Stack>
+  );
+
+  if (embedded) {
+    return content;
+  }
 
   return (
     <ToolPageLayout
@@ -395,115 +510,7 @@ export const EmailSecurityAnalyzer = () => {
       ]}
       examples={['example.com', 'openai.com', 'github.com']}
     >
-      <Stack gap="lg">
-        <Paper withBorder p="lg" radius="md" pos="relative">
-          <LoadingOverlay visible={loading} />
-          <Group align="end">
-            <TextInput
-              label="Domain Name"
-              placeholder="example.com"
-              value={domain}
-              onChange={(e) => setDomain(e.currentTarget.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleCheck()}
-              size="md"
-              style={{ flex: 1 }}
-            />
-            <Button
-              leftSection={<IconSearch size={18} />}
-              onClick={handleCheck}
-              disabled={!domain.trim()}
-              size="md"
-            >
-              Analyze
-            </Button>
-          </Group>
-        </Paper>
-
-        {/* Error */}
-        {error && (
-          <Alert icon={<IconAlertCircle size={18} />} color="red" title="Error" variant="light">
-            {error}
-          </Alert>
-        )}
-
-        {/* Results */}
-        {result && (
-          <Stack gap="lg">
-            {/* Score card */}
-            <Paper withBorder p="lg" radius="md">
-              <Group justify="space-between" align="center">
-                <div>
-                  <Text fz="sm" c="dimmed" fw={500}>Email Security Score</Text>
-                  <Group gap="xs" align="baseline">
-                    <Title order={1}>{result.score}</Title>
-                    <Text c="dimmed" fz="sm">/ 100</Text>
-                  </Group>
-                  <Progress
-                    value={result.score}
-                    color={gradeColor(result.grade)}
-                    size="sm"
-                    mt="xs"
-                    w={200}
-                  />
-                </div>
-                <Center>
-                  <RingProgress
-                    size={100}
-                    thickness={10}
-                    roundCaps
-                    sections={[{ value: result.score, color: gradeColor(result.grade) }]}
-                    label={
-                      <Text ta="center" fw={700} fz="xl">
-                        {result.grade}
-                      </Text>
-                    }
-                  />
-                </Center>
-              </Group>
-              <Divider my="md" />
-              <Group gap="xs">
-                <Badge variant="light" size="lg">{result.domain}</Badge>
-                <Badge variant="light" color={statusColor(result.spf.status)} size="sm">SPF: {result.spf.status}</Badge>
-                <Badge variant="light" color={statusColor(result.dkim.status)} size="sm">DKIM: {result.dkim.status}</Badge>
-                <Badge variant="light" color={statusColor(result.dmarc.status)} size="sm">DMARC: {result.dmarc.status}</Badge>
-              </Group>
-            </Paper>
-
-            {/* Tabbed detail panels */}
-            <Paper withBorder p="lg" radius="md">
-              <Tabs defaultValue="spf">
-                <Tabs.List>
-                  <Tabs.Tab value="spf" leftSection={<IconMailForward size={16} />}>
-                    SPF
-                  </Tabs.Tab>
-                  <Tabs.Tab value="dkim" leftSection={<IconKey size={16} />}>
-                    DKIM
-                  </Tabs.Tab>
-                  <Tabs.Tab value="dmarc" leftSection={<IconShieldLock size={16} />}>
-                    DMARC
-                  </Tabs.Tab>
-                </Tabs.List>
-
-                <Tabs.Panel value="spf" pt="md">
-                  <SPFPanel spf={result.spf} />
-                </Tabs.Panel>
-                <Tabs.Panel value="dkim" pt="md">
-                  <DKIMPanel dkim={result.dkim} />
-                </Tabs.Panel>
-                <Tabs.Panel value="dmarc" pt="md">
-                  <DMARCPanel dmarc={result.dmarc} />
-                </Tabs.Panel>
-              </Tabs>
-            </Paper>
-
-            {/* Recommendations */}
-            <Paper withBorder p="lg" radius="md">
-              <Title order={4} mb="md">Recommendations</Title>
-              <RecommendationsPanel recommendations={result.recommendations} />
-            </Paper>
-          </Stack>
-        )}
-      </Stack>
+      {content}
     </ToolPageLayout>
   );
 };

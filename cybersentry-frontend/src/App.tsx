@@ -14,6 +14,7 @@ import { Profile } from './pages/dashboard/Profile';
 import { Alerts } from './pages/dashboard/Alerts';
 import { Analytics } from './pages/dashboard/Analytics';
 import { Settings } from './pages/dashboard/Settings';
+import { Dns } from './pages/dashboard/dns-intelligence/Dns';
 import { DnsLookup } from './pages/tools/dns/DnsLookup';
 import { DnsHealthCheck } from './pages/tools/dns/DnsHealthCheck';
 import { DnsPropagation } from './pages/tools/dns/dns-propagation/DnsPropagation';
@@ -63,6 +64,7 @@ function AppContent() {
             <Route path="/dashboard/alerts" element={<Alerts />} />
             <Route path="/dashboard/analytics" element={<Analytics />} />
             <Route path="/dashboard/settings" element={<Settings />} />
+            <Route path="/dashboard/dns-intelligence" element={<Dns />} />
             <Route path="/dashboard/github" element={<GitHub />} />
             <Route path="/dashboard/github/history" element={<GitHub initialTab="history" />} />
             <Route path="/dashboard/advanced-scanner" element={<AdvancedSecurityScanner />} />

@@ -29,7 +29,11 @@ import ToolPageLayout from '../../../layouts/tools/ToolPageLayout';
 import { detectTyposquatting, type TyposquattingResponse } from '../../../services/ip-tools';
 import { getApiErrorMessage } from '../../../utils/api-error';
 
-export const TyposquattingDetection = () => {
+type TyposquattingDetectionProps = {
+  embedded?: boolean;
+};
+
+export const TyposquattingDetection = ({ embedded = false }: TyposquattingDetectionProps) => {
   const [domain, setDomain] = useState('');
   const [result, setResult] = useState<TyposquattingResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -57,28 +61,8 @@ export const TyposquattingDetection = () => {
     }
   };
 
-  return (
-    <ToolPageLayout
-      icon={<IconFingerprint size={26} />}
-      eyebrow="Public tool"
-      title="Typosquatting detection"
-      description="Generate likely domain variants, check which ones are registered, and surface suspicious lookalikes in one pass."
-      metrics={[
-        { label: 'Target domain', value: domain.trim() || 'None', hint: 'Brand or property under review' },
-        { label: 'Threats detected', value: result ? String(result.threat_count) : '0', hint: 'Suspicious domains returned' },
-        { label: 'Variants checked', value: result ? String(result.variants_checked) : '0', hint: 'Generated and evaluated candidates' },
-      ]}
-      workflow={[
-        'Submit the brand domain you want to protect.',
-        'Review the threat count before examining individual variants.',
-        'Use registered suspicious domains as the highest-priority triage set.',
-      ]}
-      notes={[
-        'A domain can be registered but still low priority if it does not look operationally risky.',
-        'This page is strongest when used alongside WHOIS lookup for suspicious registered variants.',
-      ]}
-      examples={['example.com', 'openai.com', 'github.com']}
-    >
+  const content = (
+    <>
       <Paper p="lg" radius="xl" pos="relative">
         <LoadingOverlay visible={loading} />
         <Group align="end">
@@ -218,6 +202,36 @@ export const TyposquattingDetection = () => {
           )}
         </Stack>
       ) : null}
+    </>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <ToolPageLayout
+      icon={<IconFingerprint size={26} />}
+      eyebrow="Public tool"
+      title="Typosquatting detection"
+      description="Generate likely domain variants, check which ones are registered, and surface suspicious lookalikes in one pass."
+      metrics={[
+        { label: 'Target domain', value: domain.trim() || 'None', hint: 'Brand or property under review' },
+        { label: 'Threats detected', value: result ? String(result.threat_count) : '0', hint: 'Suspicious domains returned' },
+        { label: 'Variants checked', value: result ? String(result.variants_checked) : '0', hint: 'Generated and evaluated candidates' },
+      ]}
+      workflow={[
+        'Submit the brand domain you want to protect.',
+        'Review the threat count before examining individual variants.',
+        'Use registered suspicious domains as the highest-priority triage set.',
+      ]}
+      notes={[
+        'A domain can be registered but still low priority if it does not look operationally risky.',
+        'This page is strongest when used alongside WHOIS lookup for suspicious registered variants.',
+      ]}
+      examples={['example.com', 'openai.com', 'github.com']}
+    >
+      {content}
     </ToolPageLayout>
   );
 };
