@@ -1,5 +1,6 @@
 import axiosInstance from '../utils/axios-instance';
 import type { IPReputationScanHistory, IpReputationResponse } from './ip-tools';
+import type { DnsHealthHistoryEntry } from './dns-tools';
 
 export type AssetType = 'domain' | 'ip' | 'website' | 'github_repo';
 export type AssetCategory = 'production' | 'development' | 'test';
@@ -57,6 +58,37 @@ export interface AssetRiskHistoryEntry {
 
 export interface AssetRiskHistoryResponse {
   entries: AssetRiskHistoryEntry[];
+}
+
+export interface AssetDnsSnapshot {
+  id: number;
+  status: 'success' | 'failed';
+  record_types: string[];
+  records: Record<string, string[]>;
+  error_message: string;
+  scanned_at: string;
+}
+
+export interface AssetDnsChangeEvent {
+  id: number;
+  record_type: string;
+  change_type: 'added' | 'removed' | 'modified' | 'status';
+  severity: 'low' | 'medium' | 'high';
+  summary: string;
+  previous_value: string[];
+  current_value: string[];
+  created_at: string;
+}
+
+export interface AssetAlert {
+  id: number;
+  alert_type: 'dns_change';
+  severity: 'low' | 'medium' | 'high';
+  title: string;
+  detail: string;
+  metadata: Record<string, unknown>;
+  is_read: boolean;
+  created_at: string;
 }
 
 export interface AssetLookupResponse {
@@ -121,6 +153,15 @@ export interface AssetRelatedContextResponse {
     latest_result: GitHubCheckResultDetail | null;
     history: GitHubCheckResultSummary[];
   } | null;
+  dns_monitor: {
+    lookup_value: string;
+    latest_snapshot: AssetDnsSnapshot | null;
+    snapshots: AssetDnsSnapshot[];
+    recent_changes: AssetDnsChangeEvent[];
+    alerts: AssetAlert[];
+    latest_health_check: DnsHealthHistoryEntry | null;
+    health_history: DnsHealthHistoryEntry[];
+  } | null;
 }
 
 export interface AssetRunIpResponse {
@@ -133,6 +174,13 @@ export interface AssetRunGitHubHealthResponse {
   score_breakdown?: Record<string, number>;
   risk_category?: string;
   error?: string;
+}
+
+export interface AssetRunDnsMonitorResponse {
+  snapshot: AssetDnsSnapshot;
+  changes: AssetDnsChangeEvent[];
+  alert: AssetAlert | null;
+  health_check: DnsHealthHistoryEntry;
 }
 
 export const getAssets = () => axiosInstance.get<Asset[]>('/api/assets/');
@@ -164,3 +212,6 @@ export const runAssetIpReputation = (id: number) =>
 
 export const runAssetGitHubHealth = (id: number, data?: { levels?: string[]; use_cache?: boolean }) =>
   axiosInstance.post<AssetRunGitHubHealthResponse>(`/api/assets/${id}/run_github_health/`, data ?? {});
+
+export const runAssetDnsMonitor = (id: number) =>
+  axiosInstance.post<AssetRunDnsMonitorResponse>(`/api/assets/${id}/run_dns_monitor/`);

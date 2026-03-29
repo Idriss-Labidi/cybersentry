@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Asset, AssetRiskSnapshot, AssetTag
+from .models import Asset, AssetAlert, AssetDnsChangeEvent, AssetDnsSnapshot, AssetRiskSnapshot, AssetTag
 
 
 def normalize_asset_value(asset_type: str, value: str) -> str:
@@ -25,6 +25,33 @@ class AssetRiskSnapshotSerializer(serializers.ModelSerializer):
     class Meta:
         model = AssetRiskSnapshot
         fields = ['id', 'score', 'source', 'note', 'calculated_at']
+
+
+class AssetDnsSnapshotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssetDnsSnapshot
+        fields = ['id', 'status', 'record_types', 'records', 'error_message', 'scanned_at']
+
+
+class AssetDnsChangeEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssetDnsChangeEvent
+        fields = [
+            'id',
+            'record_type',
+            'change_type',
+            'severity',
+            'summary',
+            'previous_value',
+            'current_value',
+            'created_at',
+        ]
+
+
+class AssetAlertSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssetAlert
+        fields = ['id', 'alert_type', 'severity', 'title', 'detail', 'metadata', 'is_read', 'created_at']
 
 
 class AssetSerializer(serializers.ModelSerializer):

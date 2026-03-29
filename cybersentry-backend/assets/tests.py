@@ -8,9 +8,10 @@ from django.utils import timezone
 from datetime import timedelta
 
 from accounts.models import Organization
+from dns_tools.models import DNSHealthScan
 from github_health_check.models import GithubRepository, RepositoryCheckResult
 from ip_tools.models import IPReputationScan
-from .models import Asset, AssetRiskSnapshot
+from .models import Asset, AssetAlert, AssetDnsChangeEvent, AssetDnsSnapshot, AssetRiskSnapshot
 
 
 class AssetApiTests(APITestCase):
@@ -218,6 +219,143 @@ class AssetApiTests(APITestCase):
         self.assertEqual(response.data['github_health']['latest_result']['id'], check_result.id)
         self.assertEqual(len(response.data['github_health']['history']), 1)
 
+    @patch('assets.views.dns_health_check')
+    @patch('assets.services.perform_dns_lookup')
+    def test_run_dns_monitor_creates_baseline_snapshot_for_domain_asset(self, dns_lookup_mock, dns_health_check_mock):
+        asset = Asset.objects.create(
+            organization=self.organization,
+            created_by=self.user,
+            name='Primary Domain',
+            asset_type='domain',
+            value='example.cybersentry.test',
+            category='production',
+            risk_score=40,
+        )
+        dns_lookup_mock.return_value = {
+            'A': ['1.1.1.1'],
+            'AAAA': [],
+            'CNAME': [],
+            'MX': ['10 mail.cybersentry.test.'],
+            'TXT': ['"v=spf1 include:_spf.google.com ~all"'],
+            'NS': ['ns1.cybersentry.test.', 'ns2.cybersentry.test.'],
+            'SOA': ['ns1.cybersentry.test. hostmaster.cybersentry.test. 1 7200 3600 1209600 3600'],
+        }
+        dns_health_check_mock.return_value = {
+            'domain': asset.value,
+            'score': 86,
+            'grade': 'B',
+            'checks': {'a_record': {'status': 'OK'}},
+            'recommendations': [],
+        }
+
+        response = self.client.post(f'/api/assets/{asset.id}/run_dns_monitor/', {}, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['snapshot']['status'], 'success')
+        self.assertEqual(response.data['changes'], [])
+        self.assertIsNone(response.data['alert'])
+        self.assertEqual(response.data['health_check']['score'], 86)
+        self.assertEqual(AssetDnsSnapshot.objects.filter(asset=asset).count(), 1)
+        self.assertEqual(AssetDnsChangeEvent.objects.filter(asset=asset).count(), 0)
+        self.assertEqual(AssetAlert.objects.filter(asset=asset).count(), 0)
+        self.assertEqual(DNSHealthScan.objects.filter(user=self.user, domain_name=asset.value).count(), 1)
+        asset.refresh_from_db()
+        self.assertEqual(asset.risk_score, 86)
+        self.assertIsNotNone(asset.last_scanned_at)
+        self.assertTrue(
+            AssetRiskSnapshot.objects.filter(
+                asset=asset,
+                score=86,
+                source='dns-health',
+            ).exists()
+        )
+
+    @patch('assets.views.dns_health_check')
+    @patch('assets.services.perform_dns_lookup')
+    def test_run_dns_monitor_detects_changes_and_creates_alert(self, dns_lookup_mock, dns_health_check_mock):
+        asset = Asset.objects.create(
+            organization=self.organization,
+            created_by=self.user,
+            name='Primary Domain',
+            asset_type='domain',
+            value='example.cybersentry.test',
+            category='production',
+            risk_score=40,
+        )
+        dns_lookup_mock.side_effect = [
+            {
+                'A': ['1.1.1.1'],
+                'AAAA': [],
+                'CNAME': [],
+                'MX': ['10 mail.cybersentry.test.'],
+                'TXT': ['"v=spf1 include:_spf.google.com ~all"'],
+                'NS': ['ns1.cybersentry.test.', 'ns2.cybersentry.test.'],
+                'SOA': ['ns1.cybersentry.test. hostmaster.cybersentry.test. 1 7200 3600 1209600 3600'],
+            },
+            {
+                'A': ['2.2.2.2'],
+                'AAAA': [],
+                'CNAME': [],
+                'MX': ['10 mail.cybersentry.test.'],
+                'TXT': ['"v=spf1 include:_spf.google.com -all"'],
+                'NS': ['ns1.cybersentry.test.', 'ns2.cybersentry.test.'],
+                'SOA': ['ns1.cybersentry.test. hostmaster.cybersentry.test. 1 7200 3600 1209600 3600'],
+            },
+        ]
+        dns_health_check_mock.side_effect = [
+            {
+                'domain': asset.value,
+                'score': 91,
+                'grade': 'A',
+                'checks': {'a_record': {'status': 'OK'}},
+                'recommendations': [],
+            },
+            {
+                'domain': asset.value,
+                'score': 63,
+                'grade': 'C',
+                'checks': {'a_record': {'status': 'OK'}, 'spf': {'status': 'MISSING'}},
+                'recommendations': [{'priority': 'HIGH', 'issue': 'Missing SPF', 'recommendation': 'Add SPF'}],
+            },
+        ]
+
+        first_response = self.client.post(f'/api/assets/{asset.id}/run_dns_monitor/', {}, format='json')
+        second_response = self.client.post(f'/api/assets/{asset.id}/run_dns_monitor/', {}, format='json')
+
+        self.assertEqual(first_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(second_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(second_response.data['changes']), 2)
+        self.assertIsNotNone(second_response.data['alert'])
+        self.assertEqual(second_response.data['alert']['alert_type'], 'dns_change')
+        self.assertEqual(second_response.data['health_check']['score'], 63)
+        self.assertEqual(AssetDnsSnapshot.objects.filter(asset=asset).count(), 2)
+        self.assertEqual(AssetDnsChangeEvent.objects.filter(asset=asset).count(), 2)
+        self.assertEqual(DNSHealthScan.objects.filter(user=self.user, domain_name=asset.value).count(), 2)
+        self.assertTrue(
+            AssetAlert.objects.filter(
+                asset=asset,
+                alert_type=AssetAlert.AlertTypes.DNS_CHANGE,
+            ).exists()
+        )
+
+        related_context_response = self.client.get(f'/api/assets/{asset.id}/related_context/')
+        self.assertEqual(related_context_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(related_context_response.data['asset_type'], 'domain')
+        self.assertEqual(related_context_response.data['dns_monitor']['latest_snapshot']['status'], 'success')
+        self.assertEqual(len(related_context_response.data['dns_monitor']['recent_changes']), 2)
+        self.assertEqual(len(related_context_response.data['dns_monitor']['alerts']), 1)
+        self.assertEqual(related_context_response.data['dns_monitor']['latest_health_check']['score'], 63)
+        self.assertEqual(len(related_context_response.data['dns_monitor']['health_history']), 2)
+
+        snapshots_response = self.client.get(f'/api/assets/{asset.id}/dns_snapshots/')
+        changes_response = self.client.get(f'/api/assets/{asset.id}/dns_changes/')
+        self.assertEqual(snapshots_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(changes_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(snapshots_response.data['entries']), 2)
+        self.assertEqual(len(changes_response.data['entries']), 2)
+        asset.refresh_from_db()
+        self.assertEqual(asset.risk_score, 63)
+
     @patch('assets.views.check_ip_reputation_with_history')
     def test_run_ip_reputation_from_ip_asset(self, reputation_mock):
         asset = Asset.objects.create(
@@ -308,6 +446,12 @@ class AssetApiTests(APITestCase):
 
         ip_response = self.client.post(f'/api/assets/{asset.id}/run_ip_reputation/', {}, format='json')
         github_response = self.client.post(f'/api/assets/{asset.id}/run_github_health/', {}, format='json')
+        dns_response = self.client.post(f'/api/assets/{asset.id}/run_dns_monitor/', {}, format='json')
+        dns_snapshots_response = self.client.get(f'/api/assets/{asset.id}/dns_snapshots/')
+        dns_changes_response = self.client.get(f'/api/assets/{asset.id}/dns_changes/')
 
         self.assertEqual(ip_response.status_code, status.HTTP_409_CONFLICT)
         self.assertEqual(github_response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(dns_response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(dns_snapshots_response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(dns_changes_response.status_code, status.HTTP_409_CONFLICT)

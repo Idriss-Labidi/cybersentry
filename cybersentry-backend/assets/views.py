@@ -8,6 +8,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.services import ensure_user_organization
+from dns_tools.models import DNSHealthScan
+from dns_tools.serializers import DNSHealthScanSerializer
+from dns_tools.services import dns_health_check
 from github_health_check.serializers import (
     CheckResultDetailSerializer,
     CheckResultSummarySerializer,
@@ -17,14 +20,17 @@ from github_health_check.views import normalize_github_repository_url, run_repos
 from ip_tools.models import IPReputationScan
 from ip_tools.serializers import IPReputationScanSerializer
 from ip_tools.services import check_ip_reputation_with_history
-from .models import Asset, AssetRiskSnapshot
+from .models import Asset, AssetAlert, AssetDnsChangeEvent, AssetDnsSnapshot, AssetRiskSnapshot
 from .serializers import (
+    AssetAlertSerializer,
+    AssetDnsChangeEventSerializer,
+    AssetDnsSnapshotSerializer,
     AssetLookupSerializer,
     AssetRiskSnapshotSerializer,
     AssetSerializer,
     normalize_asset_value,
 )
-from .services import apply_asset_signal_score
+from .services import apply_asset_signal_score, run_asset_dns_monitor
 
 
 def _build_default_asset_name(asset_type: str, value: str) -> str:
@@ -203,6 +209,7 @@ class AssetViewSet(viewsets.ModelViewSet):
                         'history': IPReputationScanSerializer(recent_history, many=True).data,
                     },
                     'github_health': None,
+                    'dns_monitor': None,
                 },
                 status=status.HTTP_200_OK,
             )
@@ -227,6 +234,40 @@ class AssetViewSet(viewsets.ModelViewSet):
                         'latest_result': CheckResultDetailSerializer(latest_result).data if latest_result else None,
                         'history': CheckResultSummarySerializer(recent_history, many=True).data,
                     },
+                    'dns_monitor': None,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        if asset.asset_type == Asset.AssetTypes.DOMAIN:
+            latest_snapshot = asset.dns_snapshots.first()
+            recent_snapshots = asset.dns_snapshots.all()[:10]
+            recent_changes = asset.dns_change_events.all()[:10]
+            recent_alerts = asset.alerts.filter(
+                alert_type=AssetAlert.AlertTypes.DNS_CHANGE
+            )[:10]
+            dns_health_history = DNSHealthScan.objects.filter(
+                organization=asset.organization,
+                user=request.user,
+                domain_name=asset.value,
+            )
+            latest_health_scan = dns_health_history.first()
+
+            return Response(
+                {
+                    'asset_type': asset.asset_type,
+                    'message': 'DNS monitoring is linked directly to this asset.',
+                    'ip_reputation': None,
+                    'github_health': None,
+                    'dns_monitor': {
+                        'lookup_value': asset.value,
+                        'latest_snapshot': AssetDnsSnapshotSerializer(latest_snapshot).data if latest_snapshot else None,
+                        'snapshots': AssetDnsSnapshotSerializer(recent_snapshots, many=True).data,
+                        'recent_changes': AssetDnsChangeEventSerializer(recent_changes, many=True).data,
+                        'alerts': AssetAlertSerializer(recent_alerts, many=True).data,
+                        'latest_health_check': DNSHealthScanSerializer(latest_health_scan).data if latest_health_scan else None,
+                        'health_history': DNSHealthScanSerializer(dns_health_history[:10], many=True).data,
+                    },
                 },
                 status=status.HTTP_200_OK,
             )
@@ -237,6 +278,7 @@ class AssetViewSet(viewsets.ModelViewSet):
                 'message': 'Automated related intelligence is not wired yet for this asset type.',
                 'ip_reputation': None,
                 'github_health': None,
+                'dns_monitor': None,
             },
             status=status.HTTP_200_OK,
         )
@@ -289,6 +331,68 @@ class AssetViewSet(viewsets.ModelViewSet):
                 )
 
         return Response(payload, status=response_status)
+
+    @action(detail=True, methods=['post'])
+    def run_dns_monitor(self, request, pk=None):
+        asset = self.get_object()
+        if asset.asset_type != Asset.AssetTypes.DOMAIN:
+            return Response(
+                {'error': 'DNS monitoring is only available for domain assets.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        snapshot, change_events, alert = run_asset_dns_monitor(asset)
+        health_result = dns_health_check(asset.value)
+        health_scan = DNSHealthScan.objects.create(
+            organization=asset.organization,
+            user=request.user,
+            domain_name=asset.value,
+            score=health_result.get('score', 0),
+            grade=health_result.get('grade', 'Unknown'),
+            checks=health_result.get('checks', {}),
+            recommendations=health_result.get('recommendations', []),
+        )
+        apply_asset_signal_score(
+            asset,
+            health_scan.score,
+            source='dns-health',
+            note='Score synced from DNS health check',
+            scanned_at=health_scan.scanned_at,
+        )
+
+        return Response(
+            {
+                'snapshot': AssetDnsSnapshotSerializer(snapshot).data,
+                'changes': AssetDnsChangeEventSerializer(change_events, many=True).data,
+                'alert': AssetAlertSerializer(alert).data if alert else None,
+                'health_check': DNSHealthScanSerializer(health_scan).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=['get'])
+    def dns_snapshots(self, request, pk=None):
+        asset = self.get_object()
+        if asset.asset_type != Asset.AssetTypes.DOMAIN:
+            return Response(
+                {'error': 'DNS monitoring snapshots are only available for domain assets.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        serializer = AssetDnsSnapshotSerializer(asset.dns_snapshots.all()[:30], many=True)
+        return Response({'entries': serializer.data}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'])
+    def dns_changes(self, request, pk=None):
+        asset = self.get_object()
+        if asset.asset_type != Asset.AssetTypes.DOMAIN:
+            return Response(
+                {'error': 'DNS monitoring changes are only available for domain assets.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        serializer = AssetDnsChangeEventSerializer(asset.dns_change_events.all()[:30], many=True)
+        return Response({'entries': serializer.data}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'])
     def risk_history(self, request, pk=None):
