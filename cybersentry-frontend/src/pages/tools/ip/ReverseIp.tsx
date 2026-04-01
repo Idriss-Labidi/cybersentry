@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Badge,
@@ -15,15 +15,54 @@ import {
   Title,
 } from '@mantine/core';
 import { IconAlertCircle, IconArrowsExchange, IconSearch } from '@tabler/icons-react';
+import { useNavigate } from 'react-router-dom';
+import AssetLinkActions from '../../../components/assets/AssetLinkActions';
+import { useAuth } from '../../../context/auth/useAuth';
 import ToolPageLayout from '../../../layouts/tools/ToolPageLayout';
+import { lookupAsset, type Asset, type AssetPayload } from '../../../services/assets';
 import { reverseIp, type ReverseIpResponse } from '../../../services/ip-tools';
 import { getApiErrorMessage } from '../../../utils/api-error';
 
-export const ReverseIp = () => {
+type ReverseIpProps = {
+  embedded?: boolean;
+};
+
+export const ReverseIp = ({ embedded = false }: ReverseIpProps) => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [ip, setIp] = useState('');
   const [result, setResult] = useState<ReverseIpResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [linkedAsset, setLinkedAsset] = useState<Asset | null>(null);
+  const [assetDefaults, setAssetDefaults] = useState<AssetPayload | null>(null);
+  const [assetLookupLoading, setAssetLookupLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated || !result?.ip) {
+      setLinkedAsset(null);
+      setAssetDefaults(null);
+      setAssetLookupLoading(false);
+      return;
+    }
+
+    const loadLinkedAsset = async () => {
+      setAssetLookupLoading(true);
+
+      try {
+        const response = await lookupAsset('ip', result.ip);
+        setLinkedAsset(response.data.asset);
+        setAssetDefaults(response.data.defaults);
+      } catch {
+        setLinkedAsset(null);
+        setAssetDefaults(null);
+      } finally {
+        setAssetLookupLoading(false);
+      }
+    };
+
+    void loadLinkedAsset();
+  }, [isAuthenticated, result?.ip]);
 
   const handleLookup = async () => {
     if (!ip.trim()) return;
@@ -47,28 +86,20 @@ export const ReverseIp = () => {
     }
   };
 
-  return (
-    <ToolPageLayout
-      icon={<IconArrowsExchange size={26} />}
-      eyebrow="Public tool"
-      title="Reverse IP lookup"
-      description="Resolve hosted domains and PTR context from a target IP without changing the underlying lookup logic."
-      metrics={[
-        { label: 'Target IP', value: ip.trim() || 'None', hint: 'Address under review' },
-        { label: 'Domains found', value: result ? String(result.domains_count) : '0', hint: 'Distinct domains returned' },
-        { label: 'PTR record', value: result?.hostname || 'Pending', hint: 'Resolved hostname when available' },
-      ]}
-      workflow={[
-        'Enter the IP address you want to investigate.',
-        'Review PTR and hosted domain counts first.',
-        'Use the domain list to decide whether the host requires deeper scrutiny.',
-      ]}
-      notes={[
-        'An empty domain list is still useful when confirming that an address is not broadly shared.',
-        'This page pairs well with IP reputation checks when triaging suspicious infrastructure.',
-      ]}
-      examples={['8.8.8.8', '1.1.1.1', '185.199.108.153']}
-    >
+  const handleSaveAsAsset = () => {
+    if (!assetDefaults) {
+      return;
+    }
+
+    navigate('/dashboard/assets', {
+      state: {
+        prefillAsset: assetDefaults,
+      },
+    });
+  };
+
+  const content = (
+    <>
       <Paper p="lg" radius="xl" pos="relative">
         <LoadingOverlay visible={loading} />
         <Group align="end">
@@ -136,6 +167,16 @@ export const ReverseIp = () => {
                 </Table.Tr>
               </Table.Tbody>
             </Table>
+
+            <Group mt="md">
+              <AssetLinkActions
+                linkedAsset={linkedAsset}
+                canSaveAsAsset={!!assetDefaults}
+                assetLookupLoading={assetLookupLoading}
+                onOpenLinkedAsset={(asset) => navigate(`/dashboard/assets/${asset.id}`)}
+                onSaveAsAsset={handleSaveAsAsset}
+              />
+            </Group>
           </Paper>
 
           {result.domains.length > 0 ? (
@@ -182,6 +223,36 @@ export const ReverseIp = () => {
           )}
         </Stack>
       ) : null}
+    </>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
+  return (
+    <ToolPageLayout
+      icon={<IconArrowsExchange size={26} />}
+      eyebrow="Public tool"
+      title="Reverse IP lookup"
+      description="Resolve hosted domains and PTR context from a target IP without changing the underlying lookup logic."
+      metrics={[
+        { label: 'Target IP', value: ip.trim() || 'None', hint: 'Address under review' },
+        { label: 'Domains found', value: result ? String(result.domains_count) : '0', hint: 'Distinct domains returned' },
+        { label: 'PTR record', value: result?.hostname || 'Pending', hint: 'Resolved hostname when available' },
+      ]}
+      workflow={[
+        'Enter the IP address you want to investigate.',
+        'Review PTR and hosted domain counts first.',
+        'Use the domain list to decide whether the host requires deeper scrutiny.',
+      ]}
+      notes={[
+        'An empty domain list is still useful when confirming that an address is not broadly shared.',
+        'This page pairs well with IP reputation checks when triaging suspicious infrastructure.',
+      ]}
+      examples={['8.8.8.8', '1.1.1.1', '185.199.108.153']}
+    >
+      {content}
     </ToolPageLayout>
   );
 };

@@ -17,6 +17,37 @@ def get_client_ip(request: HttpRequest) -> str | None:
         return forwarded_for.split(',')[0].strip()
     return request.META.get('REMOTE_ADDR')
 
+
+def ensure_user_organization(user: User) -> Organization:
+    if user.organization_id:
+        return user.organization
+
+    email_domain = user.email.split('@', 1)[1] if '@' in user.email else f'{user.username}.local'
+    workspace_label = user.get_full_name().strip() or user.username or user.email.split('@', 1)[0]
+    base_name = f'{workspace_label} Personal Workspace'
+    organization_name = base_name
+    suffix = 2
+
+    while Organization.objects.filter(name=organization_name).exists():
+        organization_name = f'{base_name} {suffix}'
+        suffix += 1
+
+    with transaction.atomic():
+        locked_user = user_model.objects.select_for_update().get(pk=user.pk)
+        if locked_user.organization_id:
+            user.organization = locked_user.organization
+            return locked_user.organization
+
+        organization = Organization.objects.create(
+            name=organization_name,
+            contact_email=locked_user.email,
+            allowed_domains=email_domain,
+        )
+        locked_user.organization = organization
+        locked_user.save(update_fields=['organization'])
+        user.organization = organization
+        return organization
+
 def create_organization_admins_and_notify(organization: Organization, admin_emails: list[str], request: HttpRequest) -> None:
     '''
         Create admin users for the organization

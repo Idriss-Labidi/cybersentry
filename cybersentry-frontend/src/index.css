@@ -2,44 +2,44 @@
 
 :root {
   color-scheme: dark;
-  --app-bg: #071319;
-  --app-bg-soft: #0d2028;
-  --app-header: rgba(6, 16, 22, 0.78);
-  --app-sidebar: rgba(4, 12, 17, 0.92);
-  --app-surface: rgba(12, 28, 37, 0.84);
-  --app-surface-strong: rgba(17, 37, 48, 0.96);
-  --app-surface-soft: rgba(8, 20, 27, 0.72);
-  --app-border: rgba(104, 245, 209, 0.16);
-  --app-border-strong: rgba(104, 245, 209, 0.28);
-  --app-text: #effffc;
-  --app-text-muted: rgba(239, 255, 252, 0.68);
-  --app-text-soft: rgba(239, 255, 252, 0.46);
-  --app-accent: #68f5d1;
-  --app-accent-strong: #16c1a0;
-  --app-accent-contrast: #061216;
-  --app-secondary: #99e66e;
-  --app-warning: #ffb35c;
-  --app-danger: #ff6b7a;
-  --app-success: #90ef88;
-  --app-info: #74b9ff;
-  --app-card-shadow: 0 24px 64px rgba(1, 10, 14, 0.28);
-  --app-card-shadow-lg: 0 30px 90px rgba(1, 10, 14, 0.34);
-  --app-grid: linear-gradient(rgba(104, 245, 209, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(104, 245, 209, 0.06) 1px, transparent 1px);
-  --app-page-gradient: radial-gradient(circle at top left, rgba(22, 193, 160, 0.14), transparent 28%),
-    radial-gradient(circle at 80% 12%, rgba(153, 230, 110, 0.14), transparent 24%),
-    linear-gradient(180deg, #071319 0%, #08171e 52%, #050c10 100%);
-  --app-hero-gradient: linear-gradient(140deg, rgba(14, 34, 44, 0.94), rgba(8, 20, 27, 0.98));
-  --app-panel-gradient: linear-gradient(180deg, rgba(14, 32, 41, 0.92), rgba(8, 20, 27, 0.94));
-  --app-overlay-gradient: linear-gradient(180deg, rgba(5, 12, 16, 0) 0%, rgba(5, 12, 16, 0.72) 100%);
-  --app-hover-fill: rgba(104, 245, 209, 0.08);
-  --app-active-fill: rgba(104, 245, 209, 0.14);
-  --app-input-bg: rgba(4, 14, 18, 0.74);
-  --app-code-bg: rgba(2, 10, 13, 0.92);
-  --app-table-stripe: rgba(255, 255, 255, 0.015);
-  --app-badge-fill: rgba(104, 245, 209, 0.12);
-  --app-hero-glow: radial-gradient(circle at top right, rgba(104, 245, 209, 0.18), transparent 34%),
-    radial-gradient(circle at bottom left, rgba(153, 230, 110, 0.12), transparent 28%);
+  --app-bg: #000c02;
+  --app-bg-soft: #011404;
+  --app-header: rgba(0, 8, 1, 0.82);
+  --app-sidebar: rgba(0, 6, 1, 0.94);
+  --app-surface: rgba(0, 18, 5, 0.86);
+  --app-surface-strong: rgba(0, 24, 7, 0.97);
+  --app-surface-soft: rgba(0, 14, 3, 0.74);
+  --app-border: rgba(0, 230, 65, 0.18);
+  --app-border-strong: rgba(0, 230, 65, 0.32);
+  --app-text: #e0ffe8;
+  --app-text-muted: rgba(224, 255, 232, 0.68);
+  --app-text-soft: rgba(224, 255, 232, 0.42);
+  --app-accent: #00e641;
+  --app-accent-strong: #00c436;
+  --app-accent-contrast: #000c02;
+  --app-secondary: #39ff8a;
+  --app-warning: #ffe033;
+  --app-danger: #ff3344;
+  --app-success: #00e641;
+  --app-info: #00d4ff;
+  --app-card-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  --app-card-shadow-lg: 0 32px 96px rgba(0, 0, 0, 0.72);
+  --app-grid: linear-gradient(rgba(0, 230, 65, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 230, 65, 0.07) 1px, transparent 1px);
+  --app-page-gradient: radial-gradient(circle at top left, rgba(0, 196, 54, 0.12), transparent 30%),
+    radial-gradient(circle at 85% 15%, rgba(57, 255, 138, 0.08), transparent 26%),
+    linear-gradient(180deg, #000c02 0%, #010f03 50%, #000802 100%);
+  --app-hero-gradient: linear-gradient(140deg, rgba(0, 20, 6, 0.96), rgba(0, 12, 2, 0.98));
+  --app-panel-gradient: linear-gradient(180deg, rgba(0, 22, 6, 0.94), rgba(0, 14, 3, 0.96));
+  --app-overlay-gradient: linear-gradient(180deg, rgba(0, 12, 2, 0) 0%, rgba(0, 12, 2, 0.82) 100%);
+  --app-hover-fill: rgba(0, 230, 65, 0.09);
+  --app-active-fill: rgba(0, 230, 65, 0.16);
+  --app-input-bg: rgba(0, 10, 2, 0.78);
+  --app-code-bg: rgba(0, 6, 1, 0.96);
+  --app-table-stripe: rgba(0, 230, 65, 0.018);
+  --app-badge-fill: rgba(0, 230, 65, 0.13);
+  --app-hero-glow: radial-gradient(circle at top right, rgba(0, 230, 65, 0.22), transparent 36%),
+    radial-gradient(circle at bottom left, rgba(57, 255, 138, 0.1), transparent 30%);
 }
 
 *,

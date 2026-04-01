@@ -2,6 +2,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from assets.models import Asset
+from assets.services import sync_linked_asset_score
 
 from .serializers import (
     WhoisLookupSerializer,
@@ -10,6 +12,7 @@ from .serializers import (
     TyposquattingDetectionSerializer,
     IPReputationScanSerializer,
 )
+from .models import IPReputationScan
 from .services import (
     WhoisLookupError,
     IpLookupError,
@@ -93,6 +96,15 @@ def advanced_ip_reputation(request):
     except IpLookupError as exc:
         return Response({'message': str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
+    sync_linked_asset_score(
+        request.user,
+        asset_type=Asset.AssetTypes.IP,
+        value=result['ip'],
+        score=result['score'],
+        source='ip-reputation',
+        note='Score synced from IP reputation scan',
+    )
+
     return Response(result, status=status.HTTP_200_OK)
 
 
@@ -134,4 +146,21 @@ def scan_history(request):
     return Response({
         'ip_scans': IPReputationScanSerializer(ip_scans, many=True).data,
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_scan_history_entry(request, scan_id):
+    """
+    Delete a saved IP reputation scan belonging to the authenticated user.
+    """
+    deleted, _ = IPReputationScan.objects.filter(id=scan_id, user=request.user).delete()
+
+    if deleted == 0:
+        return Response(
+            {'error': 'IP reputation scan not found.'},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    return Response(status=status.HTTP_204_NO_CONTENT)
 

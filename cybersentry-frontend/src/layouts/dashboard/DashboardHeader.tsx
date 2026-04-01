@@ -1,6 +1,5 @@
 import { Avatar, Badge, Breadcrumbs, Burger, Group, Menu, Paper, Text } from '@mantine/core';
 import {
-  IconBell,
   IconChevronRight,
   IconLogout,
   IconSettings,
@@ -9,15 +8,20 @@ import {
 } from '@tabler/icons-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/auth/useAuth';
+import NotificationMenuButton from '../../components/NotificationMenuButton';
 import ThemeToggleButton from '../../components/ThemeToggleButton';
+import { useDashboardBreadcrumb } from './DashboardBreadcrumbContext';
 
 interface DashboardHeaderProps {
   mobileOpened: boolean;
   setMobileOpened: (value: boolean) => void;
+  desktopOpened: boolean;
+  setDesktopOpened: (value: boolean) => void;
 }
 
 const labelMap: Record<string, string> = {
   dashboard: 'Overview',
+  assets: 'Assets',
   security: 'Security',
   profile: 'Profile',
   alerts: 'Alerts',
@@ -28,15 +32,26 @@ const labelMap: Record<string, string> = {
   'advanced-scanner': 'Advanced Scanner',
 };
 
-const DashboardHeader = ({ mobileOpened, setMobileOpened }: DashboardHeaderProps) => {
+const DashboardHeader = ({
+  mobileOpened,
+  setMobileOpened,
+  desktopOpened,
+  setDesktopOpened,
+}: DashboardHeaderProps) => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const { currentLabel } = useDashboardBreadcrumb();
 
   const pathSegments = location.pathname.split('/').filter(Boolean);
   const breadcrumbItems = pathSegments.map((segment, index) => {
     const href = `/${pathSegments.slice(0, index + 1).join('/')}`;
-    const label = labelMap[segment] || segment.replace(/-/g, ' ');
     const isLast = index === pathSegments.length - 1;
+    const previousSegment = index > 0 ? pathSegments[index - 1] : null;
+    const fallbackLabel =
+      previousSegment === 'assets' && /^\d+$/.test(segment)
+        ? 'Asset detail'
+        : labelMap[segment] || segment.replace(/-/g, ' ');
+    const label = isLast && currentLabel ? currentLabel : fallbackLabel;
 
     return isLast ? (
       <Text key={href} size="sm" fw={700}>
@@ -74,6 +89,13 @@ const DashboardHeader = ({ mobileOpened, setMobileOpened }: DashboardHeaderProps
           size="sm"
           aria-label="Toggle navigation menu"
         />
+        <Burger
+          opened={desktopOpened}
+          onClick={() => setDesktopOpened(!desktopOpened)}
+          visibleFrom="md"
+          size="sm"
+          aria-label="Toggle sidebar"
+        />
 
         <Paper
           px="sm"
@@ -99,6 +121,8 @@ const DashboardHeader = ({ mobileOpened, setMobileOpened }: DashboardHeaderProps
           System secure
         </Badge>
 
+        <NotificationMenuButton />
+
         <ThemeToggleButton />
 
         <Menu shadow="md" width={220} position="bottom-end">
@@ -111,7 +135,6 @@ const DashboardHeader = ({ mobileOpened, setMobileOpened }: DashboardHeaderProps
           <Menu.Dropdown>
             <Menu.Label>{user?.profile?.name || user?.profile?.preferred_username}</Menu.Label>
             <Menu.Divider />
-            <Menu.Item leftSection={<IconBell size={15} />}>Notifications</Menu.Item>
             <Menu.Item component={Link} to="/dashboard/profile" leftSection={<IconUser size={15} />}>
               Profile
             </Menu.Item>

@@ -4,12 +4,11 @@ import { getMantineTheme } from '../../styles/theme';
 import { ThemeContext, type ThemeContextValue } from './themeContextBase';
 import {
   DEFAULT_COLOR_SCHEME,
-  applyPreferredTheme,
   applyTheme,
   getStoredPreferredTheme,
   getStoredTheme,
-  persistPreferredTheme,
   persistTheme,
+  persistPreferredTheme,
 } from './themeRuntime';
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
@@ -17,14 +16,10 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [preferredTheme, setPreferredTheme] = useState(() => getStoredPreferredTheme());
 
   useEffect(() => {
-    applyTheme(colorScheme);
+    applyTheme(colorScheme, preferredTheme);
     persistTheme(colorScheme);
-  }, [colorScheme]);
-
-  useEffect(() => {
-    applyPreferredTheme(preferredTheme);
     persistPreferredTheme(preferredTheme);
-  }, [preferredTheme]);
+  }, [colorScheme, preferredTheme]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({
@@ -39,7 +34,10 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     [colorScheme, preferredTheme]
   );
 
-  const mantineTheme = useMemo(() => getMantineTheme(colorScheme), [colorScheme]);
+  const mantineTheme = useMemo(
+    () => getMantineTheme(colorScheme, preferredTheme),
+    [colorScheme, preferredTheme]
+  );
 
   return (
     <ThemeContext.Provider value={value}>

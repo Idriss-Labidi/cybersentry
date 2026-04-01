@@ -16,39 +16,12 @@ import { IconSettings } from '@tabler/icons-react';
 import DashboardPageLayout from '../../layouts/dashboard/DashboardPageLayout';
 import { useTheme } from '../../context/theme/useTheme';
 import { getUserSettings, updateUserSettings } from '../../services/settings';
-
-const LOCAL_NOTIFICATION_KEY = 'cybersentry-notification-preferences';
-
-type NotificationPreferences = {
-  highRisk: boolean;
-  failedChecks: boolean;
-};
-
-const defaultNotificationPreferences: NotificationPreferences = {
-  highRisk: true,
-  failedChecks: true,
-};
-
-const readNotificationPreferences = (): NotificationPreferences => {
-  if (typeof window === 'undefined') {
-    return defaultNotificationPreferences;
-  }
-
-  try {
-    const stored = window.localStorage.getItem(LOCAL_NOTIFICATION_KEY);
-    if (!stored) {
-      return defaultNotificationPreferences;
-    }
-
-    const parsed = JSON.parse(stored) as Partial<NotificationPreferences>;
-    return {
-      highRisk: parsed.highRisk ?? defaultNotificationPreferences.highRisk,
-      failedChecks: parsed.failedChecks ?? defaultNotificationPreferences.failedChecks,
-    };
-  } catch {
-    return defaultNotificationPreferences;
-  }
-};
+import { isPreferredTheme } from '../../styles/theme';
+import {
+  persistNotificationPreferences,
+  readNotificationPreferences,
+  type NotificationPreferences,
+} from '../../utils/notification-preferences';
 
 export const Settings = () => {
   const { preferredTheme, setPreferredTheme } = useTheme();
@@ -64,7 +37,6 @@ export const Settings = () => {
   const [enableLevel1, setEnableLevel1] = useState(true);
   const [enableLevel2, setEnableLevel2] = useState(true);
   const [enableLevel3, setEnableLevel3] = useState(true);
-
   const [notifications, setNotifications] = useState<NotificationPreferences>(
     readNotificationPreferences
   );
@@ -99,11 +71,7 @@ export const Settings = () => {
   }, [setPreferredTheme]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    window.localStorage.setItem(LOCAL_NOTIFICATION_KEY, JSON.stringify(notifications));
+    persistNotificationPreferences(notifications);
   }, [notifications]);
 
   const metrics = useMemo(
@@ -125,7 +93,7 @@ export const Settings = () => {
   );
 
   const handleThemeChange = (value: string | null) => {
-    if (!value || (value !== 'green' && value !== 'blue' && value !== 'purple')) {
+    if (!value || !isPreferredTheme(value)) {
       return;
     }
 
@@ -169,7 +137,7 @@ export const Settings = () => {
       icon={<IconSettings size={26} />}
       eyebrow="Settings"
       title="Workspace and integration settings"
-      description="Manage GitHub integration defaults, cache behavior, accent theme, and operational preferences in one place."
+      description="Manage GitHub integration defaults, cache behavior, accent theme, notifications, and workspace preferences in one place."
       metrics={metrics}
     >
       {errorMessage ? (
@@ -292,7 +260,7 @@ export const Settings = () => {
                   />
                 </Group>
                 <Text c="dimmed" size="sm">
-                  Notification preferences are stored locally in your browser.
+                  These preferences control which notifications appear in the dashboard header.
                 </Text>
               </Stack>
             </Card>

@@ -7,16 +7,18 @@ import DashboardLayout from './layouts/dashboard/DashboardLayout';
 import { OAuthCallback } from './pages/auth/OAuthCallback';
 import { Landing } from './pages/landing/Landing';
 import { Dashboard } from './pages/dashboard/Dashboard';
+import { AssetsList } from './pages/dashboard/assets/AssetsList';
+import { AssetDetail } from './pages/dashboard/assets/AssetDetail';
 import { Security } from './pages/dashboard/Security';
 import { Profile } from './pages/dashboard/Profile';
 import { Alerts } from './pages/dashboard/Alerts';
 import { Analytics } from './pages/dashboard/Analytics';
 import { Settings } from './pages/dashboard/Settings';
+import { Dns } from './pages/dashboard/dns-intelligence/Dns';
 import { DnsLookup } from './pages/tools/dns/DnsLookup';
 import { DnsHealthCheck } from './pages/tools/dns/DnsHealthCheck';
 import { DnsPropagation } from './pages/tools/dns/dns-propagation/DnsPropagation';
-import GitHubHealthCheck from './pages/dashboard/github-health/GitHubHealthCheck';
-import GitHubHealthCheckHistory from './pages/dashboard/github-health/GitHubHealthCheckHistory';
+import GitHub from './pages/dashboard/github-health/GitHub';
 import { WhoisLookup } from './pages/tools/domain/WhoisLookup';
 import { IpReputation } from './pages/tools/ip/IpReputation';
 import { ReverseIp } from './pages/tools/ip/ReverseIp';
@@ -55,14 +57,18 @@ function AppContent() {
         <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} isLoading={isLoading} />}>
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/assets" element={<AssetsList />} />
+            <Route path="/dashboard/assets/:id" element={<AssetDetail />} />
             <Route path="/dashboard/security" element={<Security />} />
             <Route path="/dashboard/profile" element={<Profile />} />
             <Route path="/dashboard/alerts" element={<Alerts />} />
             <Route path="/dashboard/analytics" element={<Analytics />} />
             <Route path="/dashboard/settings" element={<Settings />} />
-            <Route path="/dashboard/github" element={<GitHubHealthCheck />} />
-            <Route path="/dashboard/github/history" element={<GitHubHealthCheckHistory />} />
+            <Route path="/dashboard/dns-intelligence" element={<Dns />} />
+            <Route path="/dashboard/github" element={<GitHub />} />
+            <Route path="/dashboard/github/history" element={<GitHub initialTab="history" />} />
             <Route path="/dashboard/advanced-scanner" element={<AdvancedSecurityScanner />} />
+            <Route path="/dashboard/ip-intelligence" element={<AdvancedSecurityScanner />} />
           </Route>
         </Route>
         {/* Add other routes here */}

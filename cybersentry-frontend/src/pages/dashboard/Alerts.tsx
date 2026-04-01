@@ -1,12 +1,7 @@
 import { Badge, Group, Paper, Stack, Text } from '@mantine/core';
 import { IconAlertTriangle } from '@tabler/icons-react';
 import DashboardPageLayout, { DashboardStatCards } from '../../layouts/dashboard/DashboardPageLayout';
-
-const alerts = [
-  { title: 'Suspicious mail policy change', severity: 'High', detail: 'DMARC policy moved from quarantine to none on a monitored domain.' },
-  { title: 'Resolver divergence', severity: 'Medium', detail: 'A record mismatch across public resolver groups in two regions.' },
-  { title: 'Repository hygiene drift', severity: 'Low', detail: 'Default branch protection missing after a recent repo configuration update.' },
-];
+import { dashboardNotifications } from '../../data/dashboard-notifications';
 
 export const Alerts = () => {
   return (
@@ -31,13 +26,16 @@ export const Alerts = () => {
       />
 
       <Stack gap="lg">
-        {alerts.map((alert) => (
-          <Paper key={alert.title} p="lg">
+        {dashboardNotifications.map((alert) => (
+          <Paper key={alert.id} p="lg">
             <Group justify="space-between" align="flex-start">
               <div>
                 <Text fw={800}>{alert.title}</Text>
                 <Text c="dimmed" mt="sm">
                   {alert.detail}
+                </Text>
+                <Text c="dimmed" size="sm" mt="sm">
+                  {alert.timeLabel}
                 </Text>
               </div>
               <Badge color={alert.severity === 'High' ? 'red' : alert.severity === 'Medium' ? 'yellow' : 'blue'}>

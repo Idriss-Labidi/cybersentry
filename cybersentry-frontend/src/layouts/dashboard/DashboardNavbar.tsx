@@ -4,9 +4,10 @@ import {
   IconAnalyze,
   IconBrandGithub,
   IconDashboard,
-  IconSettings,
+  IconServer2,
   IconShield,
   IconShieldCheck,
+  IconWorldWww,
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
 import { Link, useLocation } from 'react-router-dom';
@@ -29,24 +30,17 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { id: 'dashboard', icon: IconDashboard, label: 'Dashboard', href: '/dashboard' },
+  { id: 'assets', icon: IconServer2, label: 'Assets', href: '/dashboard/assets' },
   { id: 'security', icon: IconShield, label: 'Security', href: '/dashboard/security' },
   { id: 'alerts', icon: IconAlertTriangle, label: 'Alerts', href: '/dashboard/alerts' },
   { id: 'analytics', icon: IconAnalyze, label: 'Analytics', href: '/dashboard/analytics' },
-  { id: 'settings', icon: IconSettings, label: 'Settings', href: '/dashboard/settings' },
-  {
-    id: 'github',
-    icon: IconBrandGithub,
-    label: 'GitHub',
-    children: [
-      { id: 'github-health', label: 'Health Check', href: '/dashboard/github' },
-      { id: 'github-history', label: 'History', href: '/dashboard/github/history' },
-    ],
-  },
+  { id: 'github', icon: IconBrandGithub, label: 'GitHub', href: '/dashboard/github' },
+  { id: 'dns-intelligence', icon: IconWorldWww, label: 'DNS Intelligence', href: '/dashboard/dns-intelligence' },
   {
     id: 'advanced-security',
     icon: IconShieldCheck,
-    label: 'Advanced Security',
-    href: '/dashboard/advanced-scanner',
+    label: 'IP Intelligence',
+    href: '/dashboard/ip-intelligence',
   },
 ];
 
@@ -92,8 +86,13 @@ const DashboardNavBar = () => {
         <Stack gap="xs">
           {navItems.map((item) => {
             const Icon = item.icon;
+            const matchesItemHref =
+              !!item.href &&
+              (location.pathname === item.href ||
+                (item.href !== '/dashboard' && location.pathname.startsWith(`${item.href}/`)) ||
+                (item.id === 'advanced-security' && location.pathname === '/dashboard/advanced-scanner'));
             const isActiveParent = item.href
-              ? location.pathname === item.href
+              ? matchesItemHref
               : item.children?.some((child) => location.pathname === child.href);
             const isOpen = item.children
               ? openedSections[item.id] ?? item.children.some((child) => location.pathname.startsWith(child.href))
