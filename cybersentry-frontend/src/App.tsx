@@ -27,6 +27,8 @@ import { TyposquattingDetection } from './pages/tools/domain/TyposquattingDetect
 import { AdvancedSecurityScanner } from './pages/dashboard/advanced-security-scanner/AdvancedSecurityScanner';
 import { useAuth } from './context/auth/useAuth';
 import LandingLayout from './layouts/landing/LandingLayout';
+import { IncidentsList } from './pages/dashboard/incidents/IncidentsList';
+import { IncidentDetail } from './pages/dashboard/incidents/IncidentDetail';
 
 // other css files are required only if
 // you are using components from the corresponding package
@@ -62,6 +64,8 @@ function AppContent() {
             <Route path="/dashboard/security" element={<Security />} />
             <Route path="/dashboard/profile" element={<Profile />} />
             <Route path="/dashboard/alerts" element={<Alerts />} />
+            <Route path="/dashboard/incidents" element={<IncidentsList />} />
+            <Route path="/dashboard/incidents/:id" element={<IncidentDetail />} />
             <Route path="/dashboard/analytics" element={<Analytics />} />
             <Route path="/dashboard/settings" element={<Settings />} />
             <Route path="/dashboard/dns-intelligence" element={<Dns />} />

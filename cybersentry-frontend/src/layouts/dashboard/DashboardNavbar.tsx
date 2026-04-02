@@ -8,6 +8,7 @@ import {
   IconShield,
   IconShieldCheck,
   IconWorldWww,
+  IconTicket,
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
 import { Link, useLocation } from 'react-router-dom';
@@ -33,6 +34,7 @@ const navItems: NavItem[] = [
   { id: 'assets', icon: IconServer2, label: 'Assets', href: '/dashboard/assets' },
   { id: 'security', icon: IconShield, label: 'Security', href: '/dashboard/security' },
   { id: 'alerts', icon: IconAlertTriangle, label: 'Alerts', href: '/dashboard/alerts' },
+  { id: 'incidents', icon: IconTicket, label: 'Incidents', href: '/dashboard/incidents' },
   { id: 'analytics', icon: IconAnalyze, label: 'Analytics', href: '/dashboard/analytics' },
   { id: 'github', icon: IconBrandGithub, label: 'GitHub', href: '/dashboard/github' },
   { id: 'dns-intelligence', icon: IconWorldWww, label: 'DNS Intelligence', href: '/dashboard/dns-intelligence' },

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'oidc_provider',
     'accounts',
     'assets',
+    'incidents',
     'github_health_check',
     'dns_tools',
     'ip_tools',

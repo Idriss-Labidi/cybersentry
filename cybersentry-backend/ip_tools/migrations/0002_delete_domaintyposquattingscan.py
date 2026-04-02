@@ -10,7 +10,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.DeleteModel(
-            name='DomainTyposquattingScan',
+        migrations.RunSQL(
+            sql='DROP TABLE IF EXISTS ip_tools_domaintyposquattingscan;',
+            reverse_sql=migrations.RunSQL.noop,
         ),
     ]
