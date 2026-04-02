@@ -20,6 +20,9 @@ from github_health_check.views import normalize_github_repository_url, run_repos
 from ip_tools.models import IPReputationScan
 from ip_tools.serializers import IPReputationScanSerializer
 from ip_tools.services import check_ip_reputation_with_history
+from notifications.models import NotificationEvent
+from notifications.serializers import NotificationEventSerializer
+from notifications.services import dispatch_asset_test_notification
 from .models import Asset, AssetAlert, AssetDnsChangeEvent, AssetDnsSnapshot, AssetRiskSnapshot
 from .serializers import (
     AssetAlertSerializer,
@@ -300,7 +303,25 @@ class AssetViewSet(viewsets.ModelViewSet):
             note='Score synced from IP reputation scan',
         )
 
-        return Response({'result': result}, status=status.HTTP_200_OK)
+        notification = dispatch_asset_test_notification(
+            user=request.user,
+            asset=asset,
+            test_type=NotificationEvent.TestTypes.IP_REPUTATION,
+            score=result['score'],
+            detail=f'IP reputation check returned {result["score"]}/100 for {asset.value}.',
+            metadata={
+                'risk_level': result.get('risk_level'),
+                'risk_factors': result.get('risk_factors', []),
+            },
+        )
+
+        return Response(
+            {
+                'result': result,
+                'notification': NotificationEventSerializer(notification).data if notification else None,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=True, methods=['post'])
     def run_github_health(self, request, pk=None):
@@ -329,6 +350,22 @@ class AssetViewSet(viewsets.ModelViewSet):
                     note='Score synced from GitHub health check',
                     scanned_at=result.get('check_timestamp'),
                 )
+
+                notification = dispatch_asset_test_notification(
+                    user=request.user,
+                    asset=asset,
+                    test_type=NotificationEvent.TestTypes.GITHUB_HEALTH,
+                    score=result['risk_score'],
+                    detail=(
+                        f'GitHub health check returned {result["risk_score"]}/100 '
+                        f'for repository {asset.value}.'
+                    ),
+                    metadata={
+                        'summary': result.get('summary'),
+                    },
+                )
+                if notification:
+                    payload['notification'] = NotificationEventSerializer(notification).data
 
         return Response(payload, status=response_status)
 
@@ -359,6 +396,17 @@ class AssetViewSet(viewsets.ModelViewSet):
             note='Score synced from DNS health check',
             scanned_at=health_scan.scanned_at,
         )
+        notification = dispatch_asset_test_notification(
+            user=request.user,
+            asset=asset,
+            test_type=NotificationEvent.TestTypes.DNS_HEALTH,
+            score=health_scan.score,
+            detail=f'DNS health check returned {health_scan.score}/100 for {asset.value}.',
+            metadata={
+                'grade': health_scan.grade,
+                'recommendations_count': len(health_scan.recommendations or []),
+            },
+        )
 
         return Response(
             {
@@ -366,6 +414,7 @@ class AssetViewSet(viewsets.ModelViewSet):
                 'changes': AssetDnsChangeEventSerializer(change_events, many=True).data,
                 'alert': AssetAlertSerializer(alert).data if alert else None,
                 'health_check': DNSHealthScanSerializer(health_scan).data,
+                'notification': NotificationEventSerializer(notification).data if notification else None,
             },
             status=status.HTTP_200_OK,
         )

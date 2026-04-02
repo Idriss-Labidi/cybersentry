@@ -40,6 +40,10 @@ class UserSettingsUpdateSerializer(serializers.ModelSerializer):
     github_token = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     use_cache = serializers.BooleanField(required=False)
     cache_duration = serializers.IntegerField(required=False, min_value=1, max_value=1440)
+    notifications_email_enabled = serializers.BooleanField(required=False)
+    notifications_webhook_enabled = serializers.BooleanField(required=False)
+    slack_webhook_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
+    teams_webhook_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
     preferred_theme = serializers.ChoiceField(
         choices=UserSettings.PreferredThemes.choices,
         required=False,
@@ -47,6 +51,15 @@ class UserSettingsUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserSettings
-        fields = ['github_token', 'use_cache', 'cache_duration', 'preferred_theme']
+        fields = [
+            'github_token',
+            'use_cache',
+            'cache_duration',
+            'notifications_email_enabled',
+            'notifications_webhook_enabled',
+            'slack_webhook_url',
+            'teams_webhook_url',
+            'preferred_theme',
+        ]
 
 

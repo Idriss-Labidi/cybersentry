@@ -17,11 +17,6 @@ import DashboardPageLayout from '../../layouts/dashboard/DashboardPageLayout';
 import { useTheme } from '../../context/theme/useTheme';
 import { getUserSettings, updateUserSettings } from '../../services/settings';
 import { isPreferredTheme } from '../../styles/theme';
-import {
-  persistNotificationPreferences,
-  readNotificationPreferences,
-  type NotificationPreferences,
-} from '../../utils/notification-preferences';
 
 export const Settings = () => {
   const { preferredTheme, setPreferredTheme } = useTheme();
@@ -37,9 +32,10 @@ export const Settings = () => {
   const [enableLevel1, setEnableLevel1] = useState(true);
   const [enableLevel2, setEnableLevel2] = useState(true);
   const [enableLevel3, setEnableLevel3] = useState(true);
-  const [notifications, setNotifications] = useState<NotificationPreferences>(
-    readNotificationPreferences
-  );
+  const [notificationsEmailEnabled, setNotificationsEmailEnabled] = useState(true);
+  const [notificationsWebhookEnabled, setNotificationsWebhookEnabled] = useState(false);
+  const [slackWebhookUrl, setSlackWebhookUrl] = useState('');
+  const [teamsWebhookUrl, setTeamsWebhookUrl] = useState('');
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -60,6 +56,10 @@ export const Settings = () => {
         setCacheDuration(data.cache_duration);
         setThemeChoice(data.preferred_theme);
         setPreferredTheme(data.preferred_theme);
+        setNotificationsEmailEnabled(data.notifications_email_enabled);
+        setNotificationsWebhookEnabled(data.notifications_webhook_enabled);
+        setSlackWebhookUrl(data.slack_webhook_url ?? '');
+        setTeamsWebhookUrl(data.teams_webhook_url ?? '');
       } catch {
         setErrorMessage('Failed to load settings. Please refresh and try again.');
       } finally {
@@ -69,10 +69,6 @@ export const Settings = () => {
 
     void loadSettings();
   }, [setPreferredTheme]);
-
-  useEffect(() => {
-    persistNotificationPreferences(notifications);
-  }, [notifications]);
 
   const metrics = useMemo(
     () => [
@@ -88,8 +84,26 @@ export const Settings = () => {
         value: githubToken ? 'Updated' : maskedGithubToken ? 'Configured' : 'Not set',
         hint: 'Used for authenticated API checks',
       },
+      {
+        label: 'Email alerts',
+        value: notificationsEmailEnabled ? 'Enabled' : 'Disabled',
+        hint: 'Low-score asset test notifications',
+      },
+      {
+        label: 'Webhooks',
+        value: notificationsWebhookEnabled ? 'Enabled' : 'Disabled',
+        hint: 'Slack and Teams destinations',
+      },
     ],
-    [themeChoice, useCache, cacheDuration, githubToken, maskedGithubToken]
+    [
+      themeChoice,
+      useCache,
+      cacheDuration,
+      githubToken,
+      maskedGithubToken,
+      notificationsEmailEnabled,
+      notificationsWebhookEnabled,
+    ]
   );
 
   const handleThemeChange = (value: string | null) => {
@@ -116,6 +130,10 @@ export const Settings = () => {
       const payload = {
         use_cache: useCache,
         cache_duration: cacheDuration,
+        notifications_email_enabled: notificationsEmailEnabled,
+        notifications_webhook_enabled: notificationsWebhookEnabled,
+        slack_webhook_url: slackWebhookUrl || '',
+        teams_webhook_url: teamsWebhookUrl || '',
         preferred_theme: themeChoice,
         ...(githubToken ? { github_token: githubToken } : {}),
       };
@@ -124,6 +142,10 @@ export const Settings = () => {
       setMaskedGithubToken(response.data.github_token);
       setGithubToken('');
       setPreferredTheme(response.data.preferred_theme);
+      setNotificationsEmailEnabled(response.data.notifications_email_enabled);
+      setNotificationsWebhookEnabled(response.data.notifications_webhook_enabled);
+      setSlackWebhookUrl(response.data.slack_webhook_url ?? '');
+      setTeamsWebhookUrl(response.data.teams_webhook_url ?? '');
       setStatusMessage('Settings saved successfully.');
     } catch {
       setErrorMessage('Could not save settings. Please try again.');
@@ -236,31 +258,27 @@ export const Settings = () => {
               <Stack gap="md">
                 <Text fw={800}>Notifications</Text>
                 <Group justify="space-between">
-                  <Text>Notify on high-risk repositories</Text>
-                  <Switch
-                    checked={notifications.highRisk}
-                    onChange={(event) =>
-                      setNotifications((current) => ({
-                        ...current,
-                        highRisk: event.currentTarget.checked,
-                      }))
-                    }
-                  />
+                  <Text>Enable email notifications</Text>
+                  <Switch checked={notificationsEmailEnabled} onChange={(event) => setNotificationsEmailEnabled(event.currentTarget.checked)} />
                 </Group>
                 <Group justify="space-between">
-                  <Text>Notify on failed checks</Text>
-                  <Switch
-                    checked={notifications.failedChecks}
-                    onChange={(event) =>
-                      setNotifications((current) => ({
-                        ...current,
-                        failedChecks: event.currentTarget.checked,
-                      }))
-                    }
-                  />
+                  <Text>Enable webhook notifications</Text>
+                  <Switch checked={notificationsWebhookEnabled} onChange={(event) => setNotificationsWebhookEnabled(event.currentTarget.checked)} />
                 </Group>
+                <TextInput
+                  label="Slack webhook URL"
+                  placeholder="https://hooks.slack.com/services/..."
+                  value={slackWebhookUrl}
+                  onChange={(event) => setSlackWebhookUrl(event.currentTarget.value)}
+                />
+                <TextInput
+                  label="Teams webhook URL"
+                  placeholder="https://...office.com/webhook/..."
+                  value={teamsWebhookUrl}
+                  onChange={(event) => setTeamsWebhookUrl(event.currentTarget.value)}
+                />
                 <Text c="dimmed" size="sm">
-                  These preferences control which notifications appear in the dashboard header.
+                  Notifications are sent only when an asset test score is 30/100 or lower.
                 </Text>
               </Stack>
             </Card>

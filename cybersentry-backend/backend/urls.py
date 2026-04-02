@@ -29,4 +29,5 @@ urlpatterns = [
     path('github-health/', include('github_health_check.urls')),
     path('ip-tools/', include('ip_tools.urls', namespace='ip_tools')),
     path('email-tools/', include('email_tools.urls', namespace='email_tools')),
+    path('', include('notifications.urls')),
 ]

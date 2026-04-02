@@ -1,23 +1,15 @@
 import { Badge, Button, Divider, Group, Menu, Stack, Text } from '@mantine/core';
 import { IconBell } from '@tabler/icons-react';
-import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  getVisibleDashboardNotifications,
-  type DashboardNotification,
-} from '../data/dashboard-notifications';
-import {
-  NOTIFICATION_PREFERENCES_EVENT,
-  readNotificationPreferences,
-  type NotificationPreferences,
-} from '../utils/notification-preferences';
+import { useNotifications } from '../hooks/notifications/useNotifications';
+import type { NotificationSeverity } from '../services/notifications';
 
-function getSeverityColor(severity: DashboardNotification['severity']) {
-  if (severity === 'High') {
+function getSeverityColor(severity: NotificationSeverity) {
+  if (severity === 'high') {
     return 'red';
   }
 
-  if (severity === 'Medium') {
+  if (severity === 'medium') {
     return 'yellow';
   }
 
@@ -25,36 +17,7 @@ function getSeverityColor(severity: DashboardNotification['severity']) {
 }
 
 export default function NotificationMenuButton() {
-  const [preferences, setPreferences] = useState<NotificationPreferences>(
-    readNotificationPreferences
-  );
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const syncPreferences = () => {
-      setPreferences(readNotificationPreferences());
-    };
-
-    const handleStorage = () => {
-      syncPreferences();
-    };
-
-    window.addEventListener(NOTIFICATION_PREFERENCES_EVENT, syncPreferences);
-    window.addEventListener('storage', handleStorage);
-
-    return () => {
-      window.removeEventListener(NOTIFICATION_PREFERENCES_EVENT, syncPreferences);
-      window.removeEventListener('storage', handleStorage);
-    };
-  }, []);
-
-  const notifications = useMemo(
-    () => getVisibleDashboardNotifications(preferences).slice(0, 4),
-    [preferences]
-  );
+  const { notifications, summary, isLoading, markRead } = useNotifications(4);
 
   return (
     <Menu shadow="md" width={340} position="bottom-end">
@@ -64,8 +27,8 @@ export default function NotificationMenuButton() {
           leftSection={<IconBell size={16} />}
           aria-label="Open notifications"
         >
-          {notifications.length > 0
-            ? `(${notifications.length})`
+          {summary.unread > 0
+            ? `(${summary.unread})`
             : ''}
         </Button>
       </Menu.Target>
@@ -76,14 +39,15 @@ export default function NotificationMenuButton() {
             <Text size="sm" fw={800}>
               Recent notifications
             </Text>
-            <Text size="xs" c="dimmed" mt={4}>
-              Filtered by the notification preferences set in Settings.
-            </Text>
           </div>
 
-          {notifications.length === 0 ? (
+          {isLoading ? (
             <Text size="sm" c="dimmed">
-              No notifications match your current preferences.
+              Loading notifications...
+            </Text>
+          ) : notifications.length === 0 ? (
+            <Text size="sm" c="dimmed">
+              No notifications yet.
             </Text>
           ) : (
             notifications.map((notification, index) => (
@@ -95,15 +59,22 @@ export default function NotificationMenuButton() {
                       {notification.title}
                     </Text>
                     <Badge color={getSeverityColor(notification.severity)}>
-                      {notification.severity}
+                      {notification.severity.toUpperCase()}
                     </Badge>
                   </Group>
                   <Text size="xs" c="dimmed">
                     {notification.detail}
                   </Text>
                   <Text size="xs" c="dimmed">
-                    {notification.timeLabel}
+                    {new Date(notification.created_at).toLocaleString()}
                   </Text>
+                  {!notification.is_read ? (
+                    <Group justify="flex-end">
+                      <Button variant="subtle" size="compact-xs" onClick={() => void markRead(notification.id)}>
+                        Mark as read
+                      </Button>
+                    </Group>
+                  ) : null}
                 </Stack>
               </div>
             ))

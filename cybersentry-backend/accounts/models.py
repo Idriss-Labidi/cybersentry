@@ -56,6 +56,10 @@ class UserSettings(models.Model):
     github_token = models.TextField(null=True, blank=True)
     use_cache = models.BooleanField(default=True)
     cache_duration = models.IntegerField(default=60)
+    notifications_email_enabled = models.BooleanField(default=True)
+    notifications_webhook_enabled = models.BooleanField(default=False)
+    slack_webhook_url = models.URLField(blank=True)
+    teams_webhook_url = models.URLField(blank=True)
     preferred_theme = models.CharField(
         max_length=20,
         choices=PreferredThemes.choices,
