@@ -1,7 +1,13 @@
 import axiosInstance from '../utils/axios-instance';
 
 export type NotificationSeverity = 'low' | 'medium' | 'high';
-export type NotificationTestType = 'dns_health' | 'ip_reputation' | 'github_health';
+export type NotificationTestType =
+  | 'dns_health'
+  | 'dns_change'
+  | 'ip_reputation'
+  | 'website_content_change'
+  | 'github_health'
+  | 'github_secret_exposure';
 
 export interface NotificationEvent {
   id: number;

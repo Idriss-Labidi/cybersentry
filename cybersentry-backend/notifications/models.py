@@ -7,8 +7,11 @@ from django.utils import timezone
 class NotificationEvent(models.Model):
     class TestTypes(models.TextChoices):
         DNS_HEALTH = 'dns_health', 'DNS health check'
+        DNS_CHANGE = 'dns_change', 'DNS change detection'
         IP_REPUTATION = 'ip_reputation', 'IP reputation check'
+        WEBSITE_CONTENT_CHANGE = 'website_content_change', 'Website content change detection'
         GITHUB_HEALTH = 'github_health', 'GitHub health check'
+        GITHUB_SECRET_EXPOSURE = 'github_secret_exposure', 'GitHub secret exposure detection'
 
     class Severities(models.TextChoices):
         LOW = 'low', 'Low'
