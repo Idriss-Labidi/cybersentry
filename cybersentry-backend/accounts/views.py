@@ -169,17 +169,21 @@ class OrganizationUserViewSet(viewsets.ModelViewSet):
     serializer_class = OrganizationUserSerializer
     permission_classes = [IsAuthenticated, IsOrganizationAdmin]
 
-    def get_queryset(self):
+    def _organization_user_queryset(self, include_request_user: bool = True):
         organization = self.request.user.organization
 
         if not organization:
             return user_model.objects.none()
 
-        return (
-            user_model.objects.filter(organization=organization)
-            .select_related('organization')
-            .order_by('email')
-        )
+        queryset = user_model.objects.filter(organization=organization).select_related('organization').order_by('email')
+
+        if not include_request_user:
+            queryset = queryset.exclude(pk=self.request.user.pk)
+
+        return queryset
+
+    def get_queryset(self):
+        return self._organization_user_queryset(include_request_user=False)
 
     def perform_create(self, serializer):
         serializer.save(organization=self.request.user.organization)
@@ -194,7 +198,7 @@ class OrganizationUserViewSet(viewsets.ModelViewSet):
             )
 
         if user.role == User.Roles.ADMIN:
-            admin_count = self.get_queryset().filter(role=User.Roles.ADMIN).count()
+            admin_count = self._organization_user_queryset(include_request_user=True).filter(role=User.Roles.ADMIN).count()
             if admin_count <= 1:
                 return Response(
                     {'detail': 'Each organization must keep at least one admin.'},
@@ -208,7 +212,11 @@ class OrganizationUserViewSet(viewsets.ModelViewSet):
         proposed_is_active = serializer.validated_data.get('is_active', existing_user.is_active)
 
         if existing_user.role == User.Roles.ADMIN and existing_user.is_active and not proposed_is_active:
-            active_admins = self.get_queryset().filter(role=User.Roles.ADMIN, is_active=True).exclude(pk=existing_user.pk)
+            active_admins = (
+                self._organization_user_queryset(include_request_user=True)
+                .filter(role=User.Roles.ADMIN, is_active=True)
+                .exclude(pk=existing_user.pk)
+            )
             if not active_admins.exists():
                 raise DRFValidationError({'is_active': 'Each organization must keep at least one active admin.'})
 

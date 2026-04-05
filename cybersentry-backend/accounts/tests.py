@@ -146,7 +146,7 @@ class OrganizationUserManagementApiTests(APITestCase):
 
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		emails = [item['email'] for item in response.data]
-		self.assertIn(self.admin.email, emails)
+		self.assertNotIn(self.admin.email, emails)
 		self.assertIn(self.viewer.email, emails)
 		self.assertNotIn(self.foreign_user.email, emails)
 

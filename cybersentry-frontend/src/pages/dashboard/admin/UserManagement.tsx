@@ -339,12 +339,18 @@ export const UserManagement = () => {
             <TextInput
               label="First name"
               value={formState.first_name}
-              onChange={(event) => setFormState((current) => ({ ...current, first_name: event.currentTarget.value }))}
+              onChange={(event) => {
+                const value = event.currentTarget.value;
+                setFormState((current) => ({ ...current, first_name: value }));
+              }}
             />
             <TextInput
               label="Last name"
               value={formState.last_name}
-              onChange={(event) => setFormState((current) => ({ ...current, last_name: event.currentTarget.value }))}
+              onChange={(event) => {
+                const value = event.currentTarget.value;
+                setFormState((current) => ({ ...current, last_name: value }));
+              }}
             />
           </SimpleGrid>
 
@@ -352,13 +358,19 @@ export const UserManagement = () => {
             <TextInput
               label="Username"
               value={formState.username}
-              onChange={(event) => setFormState((current) => ({ ...current, username: event.currentTarget.value }))}
+              onChange={(event) => {
+                const value = event.currentTarget.value;
+                setFormState((current) => ({ ...current, username: value }));
+              }}
               placeholder="Leave blank to auto-generate"
             />
             <TextInput
               label="Email"
               value={formState.email}
-              onChange={(event) => setFormState((current) => ({ ...current, email: event.currentTarget.value }))}
+              onChange={(event) => {
+                const value = event.currentTarget.value;
+                setFormState((current) => ({ ...current, email: value }));
+              }}
               required
             />
           </SimpleGrid>
@@ -373,7 +385,10 @@ export const UserManagement = () => {
             <PasswordInput
               label={editingUser ? 'New password (optional)' : 'Password'}
               value={formState.password}
-              onChange={(event) => setFormState((current) => ({ ...current, password: event.currentTarget.value }))}
+              onChange={(event) => {
+                const value = event.currentTarget.value;
+                setFormState((current) => ({ ...current, password: value }));
+              }}
               placeholder={editingUser ? 'Leave blank to keep the current password' : ''}
             />
           </SimpleGrid>
@@ -381,7 +396,10 @@ export const UserManagement = () => {
           <Switch
             label="Account active"
             checked={formState.is_active}
-            onChange={(event) => setFormState((current) => ({ ...current, is_active: event.currentTarget.checked }))}
+            onChange={(event) => {
+              const checked = event.currentTarget.checked;
+              setFormState((current) => ({ ...current, is_active: checked }));
+            }}
           />
 
           <Group justify="flex-end" mt="sm">
