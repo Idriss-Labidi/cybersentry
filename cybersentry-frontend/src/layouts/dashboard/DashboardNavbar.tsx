@@ -2,13 +2,11 @@ import { Divider, NavLink, Paper, ScrollArea, Stack, Text } from '@mantine/core'
 import {
   IconAlertTriangle,
   IconAnalyze,
-  IconBrandGithub,
   IconDashboard,
   IconServer2,
   IconShield,
   IconShieldCheck,
   IconUsers,
-  IconWorldWww,
   IconTicket,
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
@@ -38,18 +36,25 @@ const navItems: NavItem[] = [
   { id: 'alerts', icon: IconAlertTriangle, label: 'Alerts', href: '/dashboard/alerts' },
   { id: 'incidents', icon: IconTicket, label: 'Incidents', href: '/dashboard/incidents' },
   { id: 'analytics', icon: IconAnalyze, label: 'Analytics', href: '/dashboard/analytics' },
-  { id: 'github', icon: IconBrandGithub, label: 'GitHub', href: '/dashboard/github' },
-  { id: 'dns-intelligence', icon: IconWorldWww, label: 'DNS Intelligence', href: '/dashboard/dns-intelligence' },
   {
-    id: 'advanced-security',
+    id: 'tools',
     icon: IconShieldCheck,
-    label: 'IP Intelligence',
-    href: '/dashboard/ip-intelligence',
+    label: 'Tools',
+    children: [
+      { id: 'github', label: 'GitHub', href: '/dashboard/github' },
+      { id: 'dns-intelligence', label: 'DNS Intelligence', href: '/dashboard/dns-intelligence' },
+      { id: 'ip-intelligence', label: 'IP Intelligence', href: '/dashboard/ip-intelligence' },
+    ],
   },
 ];
 
 const DashboardNavBar = () => {
   const location = useLocation();
+  const isChildActive = (child: NavChild) =>
+    location.pathname === child.href ||
+    location.pathname.startsWith(`${child.href}/`) ||
+    (child.id === 'ip-intelligence' && location.pathname === '/dashboard/advanced-scanner');
+
   const [isOrganizationAdmin, setIsOrganizationAdmin] = useState(false);
   const [openedSections, setOpenedSections] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
@@ -59,7 +64,7 @@ const DashboardNavBar = () => {
         return;
       }
 
-      initial[item.id] = item.children.some((child) => location.pathname === child.href);
+      initial[item.id] = item.children.some((child) => isChildActive(child));
     });
 
     return initial;
@@ -107,13 +112,12 @@ const DashboardNavBar = () => {
             const matchesItemHref =
               !!item.href &&
               (location.pathname === item.href ||
-                (item.href !== '/dashboard' && location.pathname.startsWith(`${item.href}/`)) ||
-                (item.id === 'advanced-security' && location.pathname === '/dashboard/advanced-scanner'));
+                (item.href !== '/dashboard' && location.pathname.startsWith(`${item.href}/`)));
             const isActiveParent = item.href
               ? matchesItemHref
-              : item.children?.some((child) => location.pathname === child.href);
+              : item.children?.some((child) => isChildActive(child));
             const isOpen = item.children
-              ? openedSections[item.id] ?? item.children.some((child) => location.pathname.startsWith(child.href))
+              ? openedSections[item.id] ?? item.children.some((child) => isChildActive(child))
               : false;
 
             if (item.children) {
@@ -139,13 +143,13 @@ const DashboardNavBar = () => {
                       component={Link}
                       to={child.href}
                       label={child.label}
-                      active={location.pathname === child.href}
+                      active={isChildActive(child)}
                       styles={{
                         root: {
                           background:
-                            location.pathname === child.href ? 'var(--app-active-fill)' : 'transparent',
+                            isChildActive(child) ? 'var(--app-active-fill)' : 'transparent',
                           borderColor:
-                            location.pathname === child.href ? 'var(--app-border-strong)' : 'transparent',
+                            isChildActive(child) ? 'var(--app-border-strong)' : 'transparent',
                         },
                       }}
                     />
