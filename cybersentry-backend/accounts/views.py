@@ -7,19 +7,24 @@ from django.utils import timezone
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from typing import cast
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
 
-from .models import LoginHistory, UserSettings
+from .models import LoginHistory, User, UserSettings
 from .serializers import (
+    OrganizationUserSerializer,
     LoginHistorySerializer,
     PasswordChangeSerializer,
     ProfileSerializer,
     UserSettingsUpdateSerializer,
     mask_github_token,
 )
+from .permissions import IsOrganizationAdmin
 from .services import get_client_ip
 
 user_model = get_user_model()
@@ -73,7 +78,7 @@ def change_password(request):
         return Response({'old_password': ['Current password is incorrect.']}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        validate_password(new_password, request.user)
+        validate_password(new_password, cast(User, request.user))
     except ValidationError as exc:
         return Response({'new_password': list(exc.messages)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -158,5 +163,56 @@ def user_settings(request):
         },
         status=status.HTTP_200_OK,
     )
-    
+
+
+class OrganizationUserViewSet(viewsets.ModelViewSet):
+    serializer_class = OrganizationUserSerializer
+    permission_classes = [IsAuthenticated, IsOrganizationAdmin]
+
+    def get_queryset(self):
+        organization = self.request.user.organization
+
+        if not organization:
+            return user_model.objects.none()
+
+        return (
+            user_model.objects.filter(organization=organization)
+            .select_related('organization')
+            .order_by('email')
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(organization=self.request.user.organization)
+
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+
+        if user.pk == request.user.pk:
+            return Response(
+                {'detail': 'You cannot delete your own account from this screen.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if user.role == User.Roles.ADMIN:
+            admin_count = self.get_queryset().filter(role=User.Roles.ADMIN).count()
+            if admin_count <= 1:
+                return Response(
+                    {'detail': 'Each organization must keep at least one admin.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        return super().destroy(request, *args, **kwargs)
+
+    def perform_update(self, serializer):
+        existing_user = serializer.instance
+        proposed_is_active = serializer.validated_data.get('is_active', existing_user.is_active)
+
+        if existing_user.role == User.Roles.ADMIN and existing_user.is_active and not proposed_is_active:
+            active_admins = self.get_queryset().filter(role=User.Roles.ADMIN, is_active=True).exclude(pk=existing_user.pk)
+            if not active_admins.exists():
+                raise DRFValidationError({'is_active': 'Each organization must keep at least one active admin.'})
+
+        serializer.save()
+
+
 

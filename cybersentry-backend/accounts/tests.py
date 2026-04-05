@@ -104,6 +104,118 @@ class ProfileApiTests(APITestCase):
 		self.assertIn('cache_duration', response.data)
 
 
+class OrganizationUserManagementApiTests(APITestCase):
+	def setUp(self):
+		self.organization = Organization.objects.create(
+			name='Acme Security',
+			contact_email='contact@acme.test',
+			allowed_domains='acme.test',
+		)
+		self.other_organization = Organization.objects.create(
+			name='Other Security',
+			contact_email='contact@other.test',
+			allowed_domains='other.test',
+		)
+		self.admin = User.objects.create_user(
+			username='admin-user',
+			email='admin@acme.test',
+			password='AdminPass123!',
+			role=User.Roles.ADMIN,
+			organization=self.organization,
+		)
+		self.viewer = User.objects.create_user(
+			username='viewer-user',
+			email='viewer@acme.test',
+			password='ViewerPass123!',
+			role=User.Roles.VIEWER,
+			organization=self.organization,
+		)
+		self.foreign_user = User.objects.create_user(
+			username='foreign-user',
+			email='foreign@other.test',
+			password='ForeignPass123!',
+			role=User.Roles.VIEWER,
+			organization=self.other_organization,
+		)
+		self.client = APIClient()
+
+	def test_admin_can_list_only_organization_users(self):
+		self.client.force_authenticate(user=self.admin)
+
+		response = self.client.get('/api/admin/users/')
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		emails = [item['email'] for item in response.data]
+		self.assertIn(self.admin.email, emails)
+		self.assertIn(self.viewer.email, emails)
+		self.assertNotIn(self.foreign_user.email, emails)
+
+	def test_admin_can_create_user_in_their_organization(self):
+		self.client.force_authenticate(user=self.admin)
+
+		response = self.client.post(
+			'/api/admin/users/',
+			{
+				'email': 'new.member@acme.test',
+				'first_name': 'New',
+				'last_name': 'Member',
+				'role': User.Roles.ANALYST,
+				'password': 'NewUserPass123!',
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+		created_user = User.objects.get(email='new.member@acme.test')
+		self.assertEqual(created_user.organization, self.organization)
+		self.assertEqual(created_user.role, User.Roles.ANALYST)
+		self.assertTrue(created_user.check_password('NewUserPass123!'))
+
+	def test_admin_can_update_existing_user(self):
+		self.client.force_authenticate(user=self.admin)
+
+		response = self.client.patch(
+			f'/api/admin/users/{self.viewer.pk}/',
+			{
+				'first_name': 'Updated',
+				'role': User.Roles.ANALYST,
+			},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_200_OK)
+		self.viewer.refresh_from_db()
+		self.assertEqual(self.viewer.first_name, 'Updated')
+		self.assertEqual(self.viewer.role, User.Roles.ANALYST)
+
+	def test_admin_can_delete_user(self):
+		self.client.force_authenticate(user=self.admin)
+
+		response = self.client.delete(f'/api/admin/users/{self.viewer.pk}/')
+
+		self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+		self.assertFalse(User.objects.filter(pk=self.viewer.pk).exists())
+
+	def test_admin_cannot_deactivate_the_last_active_admin(self):
+		self.client.force_authenticate(user=self.admin)
+
+		response = self.client.patch(
+			f'/api/admin/users/{self.admin.pk}/',
+			{'is_active': False},
+			format='json',
+		)
+
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		self.assertIn('is_active', response.data)
+
+	def test_non_admin_cannot_access_user_management(self):
+		self.client.force_authenticate(user=self.viewer)
+
+		response = self.client.get('/api/admin/users/')
+
+		self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
 class LoginHistorySignalTests(TestCase):
 	def setUp(self):
 		self.organization = Organization.objects.create(

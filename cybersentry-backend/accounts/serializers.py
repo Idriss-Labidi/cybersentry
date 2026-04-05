@@ -1,3 +1,6 @@
+import re
+from typing import cast
+
 from rest_framework import serializers
 
 from .models import LoginHistory, User, UserSettings
@@ -45,7 +48,7 @@ class UserSettingsUpdateSerializer(serializers.ModelSerializer):
     slack_webhook_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
     teams_webhook_url = serializers.URLField(required=False, allow_blank=True, allow_null=True)
     preferred_theme = serializers.ChoiceField(
-        choices=UserSettings.PreferredThemes.choices,
+        choices=list(UserSettings.PreferredThemes.choices),
         required=False,
     )
 
@@ -61,5 +64,100 @@ class UserSettingsUpdateSerializer(serializers.ModelSerializer):
             'teams_webhook_url',
             'preferred_theme',
         ]
+
+
+class OrganizationUserSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+    organization = serializers.SerializerMethodField()
+    role_display = serializers.CharField(source='get_role_display', read_only=True)
+    username = serializers.CharField(required=False, allow_blank=True)
+    password = serializers.CharField(required=False, write_only=True, allow_blank=False, trim_whitespace=False)
+
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'full_name',
+            'role',
+            'role_display',
+            'is_active',
+            'organization',
+            'date_joined',
+            'last_login',
+            'password',
+        ]
+        read_only_fields = ['id', 'full_name', 'role_display', 'organization', 'date_joined', 'last_login']
+
+    def get_full_name(self, obj: User) -> str:
+        full_name = obj.get_full_name().strip()
+        return full_name if full_name else obj.username
+
+    def get_organization(self, obj: User) -> str | None:
+        return obj.organization.name if obj.organization else None
+
+    def _build_unique_username(self, email: str) -> str:
+        base = re.sub(r'[^a-zA-Z0-9.@+_-]+', '', email.split('@', 1)[0] if '@' in email else email).strip('._+-')
+        base = base or 'user'
+        max_length = User._meta.get_field('username').max_length
+        candidate = base[:max_length]
+        suffix = 2
+
+        while User.objects.filter(username=candidate).exists():
+            suffix_text = f'-{suffix}'
+            candidate = f'{base[: max_length - len(suffix_text)]}{suffix_text}'
+            suffix += 1
+
+        return candidate
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+
+        if self.instance is None:
+            if not attrs.get('password'):
+                raise serializers.ValidationError({'password': 'Password is required when creating a user.'})
+
+            if not attrs.get('username'):
+                attrs['username'] = self._build_unique_username(attrs.get('email', 'user'))
+
+        elif request and request.user == self.instance:
+            for field in ('role', 'is_active'):
+                if field in attrs and attrs[field] != getattr(self.instance, field):
+                    raise serializers.ValidationError({field: 'You cannot change your own access level or status here.'})
+
+        if self.instance and self.instance.organization_id and self.instance.role == User.Roles.ADMIN:
+            incoming_role = attrs.get('role', self.instance.role)
+            if incoming_role != User.Roles.ADMIN:
+                remaining_admins = (
+                    User.objects.filter(organization=self.instance.organization, role=User.Roles.ADMIN)
+                    .exclude(pk=self.instance.pk)
+                    .exists()
+                )
+                if not remaining_admins:
+                    raise serializers.ValidationError({'role': 'Each organization must keep at least one admin.'})
+
+        return attrs
+
+    def create(self, validated_data):
+        password = validated_data.pop('password')
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+        return user
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if password:
+            cast(User, instance).set_password(password)
+
+        instance.save()
+        return instance
 
 

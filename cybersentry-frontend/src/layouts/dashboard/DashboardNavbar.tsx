@@ -7,13 +7,15 @@ import {
   IconServer2,
   IconShield,
   IconShieldCheck,
+  IconUsers,
   IconWorldWww,
   IconTicket,
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
 import { Link, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import BrandMark from '../../components/BrandMark';
+import { getProfileInfo } from '../../services/profile';
 
 type NavChild = {
   id: string;
@@ -48,6 +50,7 @@ const navItems: NavItem[] = [
 
 const DashboardNavBar = () => {
   const location = useLocation();
+  const [isOrganizationAdmin, setIsOrganizationAdmin] = useState(false);
   const [openedSections, setOpenedSections] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
 
@@ -61,6 +64,19 @@ const DashboardNavBar = () => {
 
     return initial;
   });
+
+  useEffect(() => {
+    const loadRole = async () => {
+      try {
+        const response = await getProfileInfo();
+        setIsOrganizationAdmin(response.data.role.toLowerCase() === 'admin');
+      } catch {
+        setIsOrganizationAdmin(false);
+      }
+    };
+
+    void loadRole();
+  }, []);
 
   const handleSectionToggle = (id: string, value: boolean) => {
     setOpenedSections((prev) => ({ ...prev, [id]: value }));
@@ -159,6 +175,31 @@ const DashboardNavBar = () => {
               />
             );
           })}
+
+          {isOrganizationAdmin ? (
+            <>
+              <Divider my="sm" />
+
+              <Text size="xs" tt="uppercase" fw={800} c="dimmed" style={{ letterSpacing: '0.08em' }}>
+                Administration
+              </Text>
+
+              <NavLink
+                component={Link}
+                to="/dashboard/admin/users"
+                label="User management"
+                leftSection={<IconUsers size="1rem" />}
+                active={location.pathname === '/dashboard/admin/users'}
+                styles={{
+                  root: {
+                    background: location.pathname === '/dashboard/admin/users' ? 'var(--app-active-fill)' : 'transparent',
+                    borderColor:
+                      location.pathname === '/dashboard/admin/users' ? 'var(--app-border-strong)' : 'transparent',
+                  },
+                }}
+              />
+            </>
+          ) : null}
         </Stack>
       </ScrollArea>
     </Stack>

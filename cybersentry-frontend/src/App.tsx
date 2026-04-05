@@ -14,6 +14,7 @@ import { Profile } from './pages/dashboard/Profile';
 import { Alerts } from './pages/dashboard/Alerts';
 import { Analytics } from './pages/dashboard/Analytics';
 import { Settings } from './pages/dashboard/Settings';
+import { UserManagement } from './pages/dashboard/admin/UserManagement';
 import { Dns } from './pages/dashboard/dns-intelligence/Dns';
 import { DnsLookup } from './pages/tools/dns/DnsLookup';
 import { DnsHealthCheck } from './pages/tools/dns/DnsHealthCheck';
@@ -68,6 +69,7 @@ function AppContent() {
             <Route path="/dashboard/incidents/:id" element={<IncidentDetail />} />
             <Route path="/dashboard/analytics" element={<Analytics />} />
             <Route path="/dashboard/settings" element={<Settings />} />
+            <Route path="/dashboard/admin/users" element={<UserManagement />} />
             <Route path="/dashboard/dns-intelligence" element={<Dns />} />
             <Route path="/dashboard/github" element={<GitHub />} />
             <Route path="/dashboard/github/history" element={<GitHub initialTab="history" />} />
