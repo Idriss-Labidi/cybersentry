@@ -14,6 +14,8 @@ import { Link } from 'react-router-dom';
 import type { LandingNavLink } from './LandingLayout';
 import BrandMark from '../../components/BrandMark';
 import ThemeToggleButton from '../../components/ThemeToggleButton';
+import {useAuth} from "../../context/auth/useAuth.ts";
+import {IconArrowRight} from "@tabler/icons-react";
 
 interface LandingHeaderProps {
   mobileOpened: boolean;
@@ -26,6 +28,8 @@ export const LandingHeader: FC<LandingHeaderProps> = ({
   setMobileOpened,
   links,
 }) => {
+  const { isAuthenticated, user, login } = useAuth();
+
   return (
     <Paper
       radius={0}
@@ -83,9 +87,12 @@ export const LandingHeader: FC<LandingHeaderProps> = ({
             )}
 
             <ThemeToggleButton />
-            <Button component={Link} to="/login" variant="light">
-              Sign in
-            </Button>
+            {(isAuthenticated && user) ? <Button component={Link} to="/dashboard" variant="light">
+              My dashboard
+            </Button> : <Button onClick={() => void login()} rightSection={<IconArrowRight size={16} />}>
+              Sign In
+            </Button> }
+
             <Button component="a" href="/#contact">
               Talk to sales
             </Button>
