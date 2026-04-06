@@ -12,6 +12,9 @@ class User(AbstractUser):
     email = models.EmailField(unique=True, validators=[validate_email])
     organization = models.ForeignKey('Organization', on_delete=models.CASCADE, related_name='users', null=True, blank=True)
     password_changed_at = models.DateTimeField(null=True, blank=True)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
         
 
 class Organization(models.Model):
