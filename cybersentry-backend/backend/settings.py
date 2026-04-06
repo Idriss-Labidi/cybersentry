@@ -304,3 +304,43 @@ GITHUB_RISK_SCORING_WEIGHTS = {
     'level2_code_quality': 0.10,
     'level3_security': 0.05,
 }
+
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def _env_int(name: str, default: int | None = None) -> int | None:
+    value = os.getenv(name)
+    if value is None or value.strip() == '':
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        return default
+
+
+# Celery
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', CELERY_BROKER_URL)
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+
+# Automated asset health checks (scheduled via Celery beat)
+AUTOMATED_ASSET_HEALTH_CHECK_ENABLED = _env_bool('AUTOMATED_ASSET_HEALTH_CHECK_ENABLED', True)
+AUTOMATED_ASSET_HEALTH_CHECK_ORGANIZATION_ID = _env_int('AUTOMATED_ASSET_HEALTH_CHECK_ORGANIZATION_ID', None)
+AUTOMATED_ASSET_HEALTH_CHECK_FORCE = _env_bool('AUTOMATED_ASSET_HEALTH_CHECK_FORCE', False)
+AUTOMATED_ASSET_HEALTH_CHECK_INTERVAL_SECONDS = _env_int('AUTOMATED_ASSET_HEALTH_CHECK_INTERVAL_SECONDS', 24 * 60 * 60)
+
+CELERY_BEAT_SCHEDULE = {}
+if AUTOMATED_ASSET_HEALTH_CHECK_ENABLED:
+    CELERY_BEAT_SCHEDULE['automated-asset-health-checks'] = {
+        'task': 'assets.tasks.run_automated_asset_health_checks_task',
+        'schedule': AUTOMATED_ASSET_HEALTH_CHECK_INTERVAL_SECONDS,
+    }
+
