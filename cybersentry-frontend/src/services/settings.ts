@@ -5,6 +5,10 @@ export interface UserSettingsResponse {
   github_token: string;
   use_cache: boolean;
   cache_duration: number;
+  notifications_email_enabled: boolean;
+  notifications_webhook_enabled: boolean;
+  slack_webhook_url: string;
+  teams_webhook_url: string;
   preferred_theme: PreferredTheme;
 }
 
@@ -12,6 +16,10 @@ export interface UpdateUserSettingsPayload {
   github_token?: string | null;
   use_cache?: boolean;
   cache_duration?: number;
+  notifications_email_enabled?: boolean;
+  notifications_webhook_enabled?: boolean;
+  slack_webhook_url?: string | null;
+  teams_webhook_url?: string | null;
   preferred_theme?: PreferredTheme;
 }
 

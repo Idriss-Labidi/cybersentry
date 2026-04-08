@@ -11,7 +11,17 @@ from accounts.models import Organization
 from dns_tools.models import DNSHealthScan
 from github_health_check.models import GithubRepository, RepositoryCheckResult
 from ip_tools.models import IPReputationScan
-from .models import Asset, AssetAlert, AssetDnsChangeEvent, AssetDnsSnapshot, AssetRiskSnapshot
+from .models import (
+    Asset,
+    AssetAlert,
+    AssetAutomatedScanRun,
+    AssetDnsChangeEvent,
+    AssetDnsSnapshot,
+    AssetRiskSnapshot,
+    AssetWebsiteChangeEvent,
+    AssetWebsiteSnapshot,
+)
+from .services import run_all_organizations_automated_health_checks
 
 
 class AssetApiTests(APITestCase):
@@ -455,3 +465,156 @@ class AssetApiTests(APITestCase):
         self.assertEqual(dns_response.status_code, status.HTTP_409_CONFLICT)
         self.assertEqual(dns_snapshots_response.status_code, status.HTTP_409_CONFLICT)
         self.assertEqual(dns_changes_response.status_code, status.HTTP_409_CONFLICT)
+
+
+class AutomatedAssetHealthChecksTests(APITestCase):
+    def setUp(self):
+        self.organization = Organization.objects.create(
+            name='Automation Org',
+            contact_email='ops@automation.test',
+            allowed_domains='automation.test',
+        )
+        self.user = get_user_model().objects.create_user(
+            username='automation-admin',
+            email='admin@automation.test',
+            password='StrongPassword123!',
+            role='admin',
+            organization=self.organization,
+        )
+        self.domain_asset = Asset.objects.create(
+            organization=self.organization,
+            created_by=self.user,
+            name='Domain Asset',
+            asset_type='domain',
+            value='example.automation.test',
+            category='production',
+            risk_score=10,
+        )
+        self.website_asset = Asset.objects.create(
+            organization=self.organization,
+            created_by=self.user,
+            name='Website Asset',
+            asset_type='website',
+            value='https://app.automation.test',
+            category='production',
+            risk_score=10,
+        )
+        self.github_asset = Asset.objects.create(
+            organization=self.organization,
+            created_by=self.user,
+            name='GitHub Asset',
+            asset_type='github_repo',
+            value='https://github.com/octocat/automation-repo',
+            category='production',
+            risk_score=10,
+        )
+
+    @patch('github_health_check.views.run_repository_health_check')
+    @patch('assets.services.requests.get')
+    @patch('assets.services.perform_dns_lookup')
+    @patch('assets.services.dns_health_check')
+    def test_automated_checks_create_history_for_due_assets(self, dns_health_mock, dns_lookup_mock, get_mock, github_mock):
+        dns_lookup_mock.return_value = {
+            'A': ['1.1.1.1'],
+            'AAAA': [],
+            'CNAME': [],
+            'MX': [],
+            'TXT': [],
+            'NS': ['ns1.automation.test.'],
+            'SOA': [],
+        }
+        dns_health_mock.return_value = {
+            'score': 77,
+            'grade': 'B',
+            'checks': {},
+            'recommendations': [],
+        }
+
+        class FakeResponse:
+            status_code = 200
+            text = '<html><head><title>Automation</title></head><body>Healthy website</body></html>'
+
+        get_mock.return_value = FakeResponse()
+        github_mock.return_value = (
+            {
+                'result': {
+                    'id': 10,
+                    'risk_score': 24,
+                    'summary': 'Moderate risk',
+                    'level3_data': {
+                        'secret_scanning': {
+                            'has_exposed_secrets': True,
+                            'total_secrets_found': 2,
+                        }
+                    },
+                }
+            },
+            status.HTTP_201_CREATED,
+        )
+
+        report = run_all_organizations_automated_health_checks(organization_id=self.organization.id, force=True)
+
+        self.assertEqual(len(report), 1)
+        self.assertEqual(report[0]['failed'], 0)
+        self.assertEqual(
+            AssetAutomatedScanRun.objects.filter(organization=self.organization).count(),
+            3,
+        )
+        self.assertTrue(AssetDnsSnapshot.objects.filter(asset=self.domain_asset).exists())
+        self.assertTrue(AssetWebsiteSnapshot.objects.filter(asset=self.website_asset).exists())
+        self.assertTrue(
+            AssetAlert.objects.filter(
+                asset=self.github_asset,
+                alert_type=AssetAlert.AlertTypes.GITHUB_SECRET_EXPOSURE,
+            ).exists()
+        )
+
+    @patch('github_health_check.views.run_repository_health_check')
+    @patch('assets.services.requests.get')
+    @patch('assets.services.perform_dns_lookup')
+    @patch('assets.services.dns_health_check')
+    def test_automated_checks_skip_assets_with_recent_scan(self, dns_health_mock, dns_lookup_mock, get_mock, github_mock):
+        self.domain_asset.last_scanned_at = timezone.now()
+        self.domain_asset.save(update_fields=['last_scanned_at'])
+        self.website_asset.last_scanned_at = timezone.now()
+        self.website_asset.save(update_fields=['last_scanned_at'])
+        self.github_asset.last_scanned_at = timezone.now()
+        self.github_asset.save(update_fields=['last_scanned_at'])
+
+        report = run_all_organizations_automated_health_checks(organization_id=self.organization.id, force=False)
+
+        self.assertEqual(report[0]['scanned'], 0)
+        self.assertEqual(report[0]['skipped'], 3)
+        dns_lookup_mock.assert_not_called()
+        get_mock.assert_not_called()
+        github_mock.assert_not_called()
+
+    @patch('assets.services.requests.get')
+    def test_website_monitor_detects_content_change_and_alerts(self, get_mock):
+        first_html = '<html><head><title>Portal</title></head><body>Version A</body></html>'
+        second_html = '<html><head><title>Portal</title></head><body>Version B</body></html>'
+
+        class FakeResponse:
+            def __init__(self, body):
+                self.status_code = 200
+                self.text = body
+
+        get_mock.side_effect = [FakeResponse(first_html), FakeResponse(second_html)]
+
+        run_all_organizations_automated_health_checks(organization_id=self.organization.id, force=True)
+        run_all_organizations_automated_health_checks(organization_id=self.organization.id, force=True)
+
+        self.assertTrue(
+            AssetWebsiteChangeEvent.objects.filter(
+                asset=self.website_asset,
+                change_type=AssetWebsiteChangeEvent.ChangeTypes.CONTENT,
+            ).exists()
+        )
+        self.assertTrue(
+            AssetAlert.objects.filter(
+                asset=self.website_asset,
+                alert_type=AssetAlert.AlertTypes.WEBSITE_CONTENT_CHANGE,
+            ).exists()
+        )
+
+

@@ -12,6 +12,9 @@ class User(AbstractUser):
     email = models.EmailField(unique=True, validators=[validate_email])
     organization = models.ForeignKey('Organization', on_delete=models.CASCADE, related_name='users', null=True, blank=True)
     password_changed_at = models.DateTimeField(null=True, blank=True)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
         
 
 class Organization(models.Model):
@@ -56,6 +59,10 @@ class UserSettings(models.Model):
     github_token = models.TextField(null=True, blank=True)
     use_cache = models.BooleanField(default=True)
     cache_duration = models.IntegerField(default=60)
+    notifications_email_enabled = models.BooleanField(default=True)
+    notifications_webhook_enabled = models.BooleanField(default=False)
+    slack_webhook_url = models.URLField(blank=True)
+    teams_webhook_url = models.URLField(blank=True)
     preferred_theme = models.CharField(
         max_length=20,
         choices=PreferredThemes.choices,

@@ -14,6 +14,7 @@ import { Profile } from './pages/dashboard/Profile';
 import { Alerts } from './pages/dashboard/Alerts';
 import { Analytics } from './pages/dashboard/Analytics';
 import { Settings } from './pages/dashboard/Settings';
+import { UserManagement } from './pages/dashboard/admin/UserManagement';
 import { Dns } from './pages/dashboard/dns-intelligence/Dns';
 import { DnsLookup } from './pages/tools/dns/DnsLookup';
 import { DnsHealthCheck } from './pages/tools/dns/DnsHealthCheck';
@@ -27,6 +28,8 @@ import { TyposquattingDetection } from './pages/tools/domain/TyposquattingDetect
 import { AdvancedSecurityScanner } from './pages/dashboard/advanced-security-scanner/AdvancedSecurityScanner';
 import { useAuth } from './context/auth/useAuth';
 import LandingLayout from './layouts/landing/LandingLayout';
+import { IncidentsList } from './pages/dashboard/incidents/IncidentsList';
+import { IncidentDetail } from './pages/dashboard/incidents/IncidentDetail';
 
 // other css files are required only if
 // you are using components from the corresponding package
@@ -62,8 +65,11 @@ function AppContent() {
             <Route path="/dashboard/security" element={<Security />} />
             <Route path="/dashboard/profile" element={<Profile />} />
             <Route path="/dashboard/alerts" element={<Alerts />} />
+            <Route path="/dashboard/incidents" element={<IncidentsList />} />
+            <Route path="/dashboard/incidents/:id" element={<IncidentDetail />} />
             <Route path="/dashboard/analytics" element={<Analytics />} />
             <Route path="/dashboard/settings" element={<Settings />} />
+            <Route path="/dashboard/admin/users" element={<UserManagement />} />
             <Route path="/dashboard/dns-intelligence" element={<Dns />} />
             <Route path="/dashboard/github" element={<GitHub />} />
             <Route path="/dashboard/github/history" element={<GitHub initialTab="history" />} />

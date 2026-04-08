@@ -19,8 +19,6 @@ export default function DashboardPageLayout({
   eyebrow,
   title,
   description,
-  metrics = [],
-  guidance = [],
   actions,
   children,
 }: DashboardPageLayoutProps) {
@@ -32,8 +30,6 @@ export default function DashboardPageLayout({
           eyebrow={eyebrow}
           title={title}
           description={description}
-          supplementary={<GuidanceGroup items={guidance} />}
-          metrics={metrics}
           actions={actions}
         />
         {children}

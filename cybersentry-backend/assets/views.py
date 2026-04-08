@@ -1,12 +1,13 @@
 from urllib.parse import urlparse
+from typing import cast
 
 from django.db.models import Avg, Q
-from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from accounts.models import User
 from accounts.services import ensure_user_organization
 from dns_tools.models import DNSHealthScan
 from dns_tools.serializers import DNSHealthScanSerializer
@@ -20,17 +21,28 @@ from github_health_check.views import normalize_github_repository_url, run_repos
 from ip_tools.models import IPReputationScan
 from ip_tools.serializers import IPReputationScanSerializer
 from ip_tools.services import check_ip_reputation_with_history
-from .models import Asset, AssetAlert, AssetDnsChangeEvent, AssetDnsSnapshot, AssetRiskSnapshot
+from notifications.models import NotificationEvent
+from notifications.serializers import NotificationEventSerializer
+from notifications.services import dispatch_asset_test_notification
+from .models import Asset, AssetAlert, AssetRiskSnapshot
 from .serializers import (
     AssetAlertSerializer,
+    AssetAutomatedScanRunSerializer,
     AssetDnsChangeEventSerializer,
     AssetDnsSnapshotSerializer,
     AssetLookupSerializer,
     AssetRiskSnapshotSerializer,
     AssetSerializer,
+    AssetWebsiteChangeEventSerializer,
+    AssetWebsiteSnapshotSerializer,
     normalize_asset_value,
 )
-from .services import apply_asset_signal_score, run_asset_dns_monitor
+from .services import (
+    apply_asset_signal_score,
+    run_all_organizations_automated_health_checks,
+    run_asset_dns_monitor,
+    run_asset_website_monitor,
+)
 
 
 def _build_default_asset_name(asset_type: str, value: str) -> str:
@@ -70,7 +82,15 @@ class AssetViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def _get_user_organization(self):
-        return ensure_user_organization(self.request.user)
+        return ensure_user_organization(cast(User, self.request.user))
+
+    @staticmethod
+    def _coerce_bool(value) -> bool:
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, str):
+            return value.strip().lower() in {'true', '1', 'yes', 'on'}
+        return bool(value)
 
     def get_queryset(self):
         organization = self._get_user_organization()
@@ -103,7 +123,7 @@ class AssetViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = self.request.user
         organization = self._get_user_organization()
-        asset = serializer.save(organization=organization, created_by=user)
+        asset = cast(Asset, serializer.save(organization=organization, created_by=user))
         AssetRiskSnapshot.objects.create(
             asset=asset,
             score=asset.risk_score,
@@ -112,8 +132,8 @@ class AssetViewSet(viewsets.ModelViewSet):
         )
 
     def perform_update(self, serializer):
-        previous_score = serializer.instance.risk_score
-        asset = serializer.save()
+        previous_score = cast(Asset, serializer.instance).risk_score
+        asset = cast(Asset, serializer.save())
 
         if asset.risk_score != previous_score:
             AssetRiskSnapshot.objects.create(
@@ -210,6 +230,7 @@ class AssetViewSet(viewsets.ModelViewSet):
                     },
                     'github_health': None,
                     'dns_monitor': None,
+                    'website_monitor': None,
                 },
                 status=status.HTTP_200_OK,
             )
@@ -235,6 +256,7 @@ class AssetViewSet(viewsets.ModelViewSet):
                         'history': CheckResultSummarySerializer(recent_history, many=True).data,
                     },
                     'dns_monitor': None,
+                    'website_monitor': None,
                 },
                 status=status.HTTP_200_OK,
             )
@@ -268,6 +290,33 @@ class AssetViewSet(viewsets.ModelViewSet):
                         'latest_health_check': DNSHealthScanSerializer(latest_health_scan).data if latest_health_scan else None,
                         'health_history': DNSHealthScanSerializer(dns_health_history[:10], many=True).data,
                     },
+                    'website_monitor': None,
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        if asset.asset_type == Asset.AssetTypes.WEBSITE:
+            latest_snapshot = asset.website_snapshots.first()
+            recent_snapshots = asset.website_snapshots.all()[:10]
+            recent_changes = asset.website_change_events.all()[:10]
+            recent_alerts = asset.alerts.filter(
+                alert_type=AssetAlert.AlertTypes.WEBSITE_CONTENT_CHANGE
+            )[:10]
+
+            return Response(
+                {
+                    'asset_type': asset.asset_type,
+                    'message': 'Website integrity monitoring is linked directly to this asset.',
+                    'ip_reputation': None,
+                    'github_health': None,
+                    'dns_monitor': None,
+                    'website_monitor': {
+                        'lookup_value': asset.value,
+                        'latest_snapshot': AssetWebsiteSnapshotSerializer(latest_snapshot).data if latest_snapshot else None,
+                        'snapshots': AssetWebsiteSnapshotSerializer(recent_snapshots, many=True).data,
+                        'recent_changes': AssetWebsiteChangeEventSerializer(recent_changes, many=True).data,
+                        'alerts': AssetAlertSerializer(recent_alerts, many=True).data,
+                    },
                 },
                 status=status.HTTP_200_OK,
             )
@@ -279,9 +328,19 @@ class AssetViewSet(viewsets.ModelViewSet):
                 'ip_reputation': None,
                 'github_health': None,
                 'dns_monitor': None,
+                'website_monitor': None,
             },
             status=status.HTTP_200_OK,
         )
+
+    @action(detail=False, methods=['post'])
+    def run_automated_health_checks(self, request):
+        organization = self._get_user_organization()
+        report = run_all_organizations_automated_health_checks(
+            organization_id=organization.id,
+            force=self._coerce_bool(request.data.get('force', False)),
+        )
+        return Response({'results': report}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def run_ip_reputation(self, request, pk=None):
@@ -300,7 +359,25 @@ class AssetViewSet(viewsets.ModelViewSet):
             note='Score synced from IP reputation scan',
         )
 
-        return Response({'result': result}, status=status.HTTP_200_OK)
+        notification = dispatch_asset_test_notification(
+            user=request.user,
+            asset=asset,
+            test_type=NotificationEvent.TestTypes.IP_REPUTATION,
+            score=result['score'],
+            detail=f'IP reputation check returned {result["score"]}/100 for {asset.value}.',
+            metadata={
+                'risk_level': result.get('risk_level'),
+                'risk_factors': result.get('risk_factors', []),
+            },
+        )
+
+        return Response(
+            {
+                'result': result,
+                'notification': NotificationEventSerializer(notification).data if notification else None,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=True, methods=['post'])
     def run_github_health(self, request, pk=None):
@@ -329,6 +406,22 @@ class AssetViewSet(viewsets.ModelViewSet):
                     note='Score synced from GitHub health check',
                     scanned_at=result.get('check_timestamp'),
                 )
+
+                notification = dispatch_asset_test_notification(
+                    user=request.user,
+                    asset=asset,
+                    test_type=NotificationEvent.TestTypes.GITHUB_HEALTH,
+                    score=result['risk_score'],
+                    detail=(
+                        f'GitHub health check returned {result["risk_score"]}/100 '
+                        f'for repository {asset.value}.'
+                    ),
+                    metadata={
+                        'summary': result.get('summary'),
+                    },
+                )
+                if notification:
+                    payload['notification'] = NotificationEventSerializer(notification).data
 
         return Response(payload, status=response_status)
 
@@ -359,6 +452,17 @@ class AssetViewSet(viewsets.ModelViewSet):
             note='Score synced from DNS health check',
             scanned_at=health_scan.scanned_at,
         )
+        notification = dispatch_asset_test_notification(
+            user=request.user,
+            asset=asset,
+            test_type=NotificationEvent.TestTypes.DNS_HEALTH,
+            score=health_scan.score,
+            detail=f'DNS health check returned {health_scan.score}/100 for {asset.value}.',
+            metadata={
+                'grade': health_scan.grade,
+                'recommendations_count': len(health_scan.recommendations or []),
+            },
+        )
 
         return Response(
             {
@@ -366,6 +470,7 @@ class AssetViewSet(viewsets.ModelViewSet):
                 'changes': AssetDnsChangeEventSerializer(change_events, many=True).data,
                 'alert': AssetAlertSerializer(alert).data if alert else None,
                 'health_check': DNSHealthScanSerializer(health_scan).data,
+                'notification': NotificationEventSerializer(notification).data if notification else None,
             },
             status=status.HTTP_200_OK,
         )
@@ -394,9 +499,70 @@ class AssetViewSet(viewsets.ModelViewSet):
         serializer = AssetDnsChangeEventSerializer(asset.dns_change_events.all()[:30], many=True)
         return Response({'entries': serializer.data}, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['post'])
+    def run_website_monitor(self, request, pk=None):
+        asset = self.get_object()
+        if asset.asset_type != Asset.AssetTypes.WEBSITE:
+            return Response(
+                {'error': 'Website monitoring is only available for website assets.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        snapshot, change_events, alert = run_asset_website_monitor(asset)
+        score = 90 if snapshot.status == 'failed' else (80 if change_events else 20)
+        apply_asset_signal_score(
+            asset,
+            score,
+            source='website-monitor',
+            note='Score synced from website integrity check',
+            scanned_at=snapshot.scanned_at,
+        )
+
+        return Response(
+            {
+                'snapshot': AssetWebsiteSnapshotSerializer(snapshot).data,
+                'changes': AssetWebsiteChangeEventSerializer(change_events, many=True).data,
+                'alert': AssetAlertSerializer(alert).data if alert else None,
+                'score': score,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=['get'])
+    def website_snapshots(self, request, pk=None):
+        asset = self.get_object()
+        if asset.asset_type != Asset.AssetTypes.WEBSITE:
+            return Response(
+                {'error': 'Website monitoring snapshots are only available for website assets.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        serializer = AssetWebsiteSnapshotSerializer(asset.website_snapshots.all()[:30], many=True)
+        return Response({'entries': serializer.data}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'])
+    def website_changes(self, request, pk=None):
+        asset = self.get_object()
+        if asset.asset_type != Asset.AssetTypes.WEBSITE:
+            return Response(
+                {'error': 'Website monitoring changes are only available for website assets.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        serializer = AssetWebsiteChangeEventSerializer(asset.website_change_events.all()[:30], many=True)
+        return Response({'entries': serializer.data}, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['get'])
     def risk_history(self, request, pk=None):
         asset = self.get_object()
         snapshots = asset.risk_snapshots.all()[:30]
         serializer = AssetRiskSnapshotSerializer(snapshots, many=True)
         return Response({'entries': serializer.data}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'])
+    def automated_scan_history(self, request, pk=None):
+        asset = self.get_object()
+        runs = asset.automated_scan_runs.all()[:30]
+        serializer = AssetAutomatedScanRunSerializer(runs, many=True)
+        return Response({'entries': serializer.data}, status=status.HTTP_200_OK)
+

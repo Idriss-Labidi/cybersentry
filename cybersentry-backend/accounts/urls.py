@@ -11,4 +11,14 @@ urlpatterns = [
     path('api/profile/login-history/', views.login_history, name='profile-login-history'),
     path('api/profile/security-status/', views.security_status, name='profile-security-status'),
     path('api/settings/', views.user_settings, name='user-settings'),
+    path(
+        'api/admin/users/',
+        views.OrganizationUserViewSet.as_view({'get': 'list', 'post': 'create'}),
+        name='admin-user-list',
+    ),
+    path(
+        'api/admin/users/<int:pk>/',
+        views.OrganizationUserViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}),
+        name='admin-user-detail',
+    ),
 ]
