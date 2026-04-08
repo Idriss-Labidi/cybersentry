@@ -31,6 +31,7 @@ import {
   IconWorldWww,
 } from '@tabler/icons-react';
 import type { AxiosError } from 'axios';
+import { GuidanceGroup, type GuidanceItem } from '../../../components/guidance/GuidanceHoverCard';
 import DnsHealthResult from '../../../components/dns-intelligence/DnsHealthResult';
 import { DnsHealthCheck } from '../../tools/dns/DnsHealthCheck';
 import { DnsLookup } from '../../tools/dns/DnsLookup';
@@ -71,6 +72,31 @@ const formatDate = (value?: string | null) => {
 };
 
 export const Dns = () => {
+  const guidanceItems: GuidanceItem[] = [
+    {
+      label: 'What this page covers',
+      title: 'DNS intelligence overview',
+      description:
+        'This page groups the main domain and DNS investigation tools so analysts can move from raw lookup to posture review without leaving the dashboard.',
+      bullets: [
+        'DNS Health scores configuration quality and highlights remediation items.',
+        'DNS Lookup and Propagation help verify raw records and resolver consistency.',
+        'WHOIS, Typosquatting, and Email Security add ownership and abuse context.',
+      ],
+      badge: 'DNS',
+    },
+    {
+      label: 'How to read results',
+      title: 'Interpreting DNS output',
+      description:
+        'Use DNS Health for prioritization, then confirm suspicious findings with the lower-level tools before escalating.',
+      bullets: [
+        'A low DNS Health score usually means missing controls like SPF, DMARC, NS redundancy, or basic resolution issues.',
+        'Propagation mismatches indicate resolver divergence, not always a broken zone.',
+        'History shows previously saved authenticated health checks for comparison over time.',
+      ],
+    },
+  ];
   const [history, setHistory] = useState<DnsHealthHistoryEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
@@ -127,6 +153,7 @@ export const Dns = () => {
           <Text c="dimmed" fz="sm">
             Run domain and DNS analysis from the dashboard, then use DNS health as the score source for linked domain assets.
           </Text>
+          <GuidanceGroup items={guidanceItems} />
         </div>
 
         <Tabs defaultValue="health">

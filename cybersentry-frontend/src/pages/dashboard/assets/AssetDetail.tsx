@@ -8,6 +8,7 @@ import { AssetGitHubIntelligenceCard } from '../../../components/assets/AssetGit
 import { AssetIdentityCard } from '../../../components/assets/AssetIdentityCard';
 import { AssetIpIntelligenceCard } from '../../../components/assets/AssetIpIntelligenceCard';
 import { AssetRiskHistoryCard } from '../../../components/assets/AssetRiskHistoryCard';
+import type { GuidanceItem } from '../../../components/guidance/GuidanceHoverCard';
 import { useAssetDetail } from '../../../hooks/assets/useAssetDetail';
 import { useDashboardBreadcrumb } from '../../../layouts/dashboard/DashboardBreadcrumbContext';
 import DashboardPageLayout from '../../../layouts/dashboard/DashboardPageLayout';
@@ -31,6 +32,31 @@ export const AssetDetail = () => {
     handleRunIpReputation,
     handleRunGitHubHealth,
   } = useAssetDetail(assetId);
+
+  const guidanceItems: GuidanceItem[] = [
+    {
+      label: 'What this page does',
+      title: 'Asset detail overview',
+      description:
+        'This page combines identity, baseline risk history, and any linked intelligence for the selected asset type.',
+      bullets: [
+        'The upper section explains what the asset is and how it is classified.',
+        'The lower sections change depending on whether the asset is a domain, IP, or GitHub repository.',
+      ],
+      badge: 'Detail',
+    },
+    {
+      label: 'How to read results',
+      title: 'Interpreting asset intelligence',
+      description:
+        'Treat the baseline risk as the current working score, then use the linked intelligence below to understand why the asset looks risky or stable.',
+      bullets: [
+        'Domains show DNS monitoring and DNS health context.',
+        'IPs show reputation, flags, and scan history.',
+        'GitHub repositories show health checks and warnings over time.',
+      ],
+    },
+  ];
 
   useEffect(() => {
     setCurrentLabel(asset?.name ?? null);
@@ -75,6 +101,7 @@ export const AssetDetail = () => {
           : 'Loading asset details and linked intelligence.'
       }
       metrics={metrics}
+      guidance={guidanceItems}
       actions={
         <Group gap="sm">
           <Button

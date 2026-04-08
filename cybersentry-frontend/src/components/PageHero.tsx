@@ -22,6 +22,7 @@ type PageHeroProps = {
   eyebrow?: string;
   title: string;
   description: string;
+  supplementary?: ReactNode;
   actions?: ReactNode;
   metrics?: HeroMetric[];
 };
@@ -31,6 +32,7 @@ export default function PageHero({
   eyebrow,
   title,
   description,
+  supplementary,
   actions,
   metrics = [],
 }: PageHeroProps) {
@@ -69,6 +71,7 @@ export default function PageHero({
               <Text mt="sm" size="md" c="dimmed" maw={680}>
                 {description}
               </Text>
+              {supplementary}
             </div>
           </Stack>
 

@@ -5,10 +5,34 @@ import AssetFormModal from '../../../components/assets/AssetFormModal';
 import AssetsFilters from '../../../components/assets/AssetsFilters';
 import AssetsMobileList from '../../../components/assets/AssetsMobileList';
 import AssetsTable from '../../../components/assets/AssetsTable';
+import type { GuidanceItem } from '../../../components/guidance/GuidanceHoverCard';
 import { useAssets } from '../../../hooks/assets/useAssets';
 import DashboardPageLayout, { DashboardStatCards } from '../../../layouts/dashboard/DashboardPageLayout';
 
 export const AssetsList = () => {
+  const guidanceItems: GuidanceItem[] = [
+    {
+      label: 'What this page does',
+      title: 'Asset inventory overview',
+      description:
+        'This page is the central inventory for domains, IPs, websites, and GitHub repositories managed by the authenticated user.',
+      bullets: [
+        'Create and classify assets by type, category, and status.',
+        'Use the asset detail page as the entry point for linked intelligence.',
+      ],
+      badge: 'Assets',
+    },
+    {
+      label: 'How to use it',
+      title: 'Working with the inventory',
+      description:
+        'Use the list as a navigation and triage layer rather than a place to read every technical detail.',
+      bullets: [
+        'Filter and search first, then open the asset detail for deeper analysis.',
+        'The baseline risk is the current working score for the asset until broader automated scoring is added.',
+      ],
+    },
+  ];
   const {
     summary,
     metrics,
@@ -49,6 +73,7 @@ export const AssetsList = () => {
         title="Managed assets and attack surface inventory"
         description="Add, classify, and maintain the attack surface inventory, then open each asset as the central entry point for linked IP and GitHub intelligence."
         metrics={metrics}
+        guidance={guidanceItems}
         actions={
           <Button leftSection={<IconPlus size={16} />} onClick={() => openCreateModal()}>
             Add asset

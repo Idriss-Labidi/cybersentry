@@ -1,5 +1,6 @@
 import { Alert, Container, Stack, Tabs, Text, Title } from '@mantine/core';
 import { IconAlertCircle, IconHistory, IconShieldCheck, IconSearch } from '@tabler/icons-react';
+import { GuidanceGroup, type GuidanceItem } from '../../../components/guidance/GuidanceHoverCard';
 import { useNavigate } from 'react-router-dom';
 import IpHistorySection from '../../../components/ip-intelligence/IpHistorySection';
 import IpScanDetailsModal from '../../../components/ip-intelligence/IpScanDetailsModal';
@@ -11,6 +12,30 @@ import { HISTORY_PAGE_SIZE } from '../../../utils/ip-intelligence';
 
 export const AdvancedSecurityScanner = () => {
   const navigate = useNavigate();
+  const guidanceItems: GuidanceItem[] = [
+    {
+      label: 'What this page covers',
+      title: 'IP intelligence overview',
+      description:
+        'This page helps you investigate a single IP address from two angles: reputation scoring and reverse IP discovery.',
+      bullets: [
+        'Use New Scan to assess risk, flags, geolocation, and network ownership.',
+        'Use Reverse IP to see what domains are associated with the same address.',
+      ],
+      badge: 'IP',
+    },
+    {
+      label: 'How to read results',
+      title: 'Interpreting IP output',
+      description:
+        'The risk score is a triage signal, not a final verdict. Combine it with flags, ASN, ISP, and reverse DNS context.',
+      bullets: [
+        'High risk usually means suspicious infrastructure or abuse indicators.',
+        'Proxy, hosting, and mobile flags explain why a score may be elevated.',
+        'History helps you spot drift or repeated suspicious observations.',
+      ],
+    },
+  ];
   const {
     ipInput,
     ipResult,
@@ -50,6 +75,7 @@ export const AdvancedSecurityScanner = () => {
           <Text c="dimmed" fz="sm">
             Run IP reputation checks, investigate reverse IP data, review historical scans, and link results to managed assets.
           </Text>
+          <GuidanceGroup items={guidanceItems} />
         </div>
 
         <Tabs defaultValue="scan">

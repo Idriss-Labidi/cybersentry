@@ -12,6 +12,7 @@ import {
 } from '@mantine/core';
 import type { HeroMetric } from '../../components/PageHero';
 import PageHero from '../../components/PageHero';
+import { GuidanceGroup, type GuidanceItem } from '../../components/guidance/GuidanceHoverCard';
 
 type ToolPageLayoutProps = {
   icon: ReactNode;
@@ -19,6 +20,7 @@ type ToolPageLayoutProps = {
   title: string;
   description: string;
   metrics?: HeroMetric[];
+  guidance?: GuidanceItem[];
   workflow?: string[];
   notes?: string[];
   examples?: string[];
@@ -56,6 +58,7 @@ export default function ToolPageLayout({
   title,
   description,
   metrics = [],
+  guidance = [],
   workflow = [],
   notes = [],
   examples = [],
@@ -64,6 +67,35 @@ export default function ToolPageLayout({
   mainSpan = 8,
 }: ToolPageLayoutProps) {
   const showAside = workflow.length > 0 || notes.length > 0 || examples.length > 0;
+  const defaultGuidance: GuidanceItem[] = [
+    {
+      label: 'What it does',
+      title: `${title}: overview`,
+      description,
+      badge: eyebrow || 'Tool',
+    },
+    ...(workflow.length > 0
+      ? [
+          {
+            label: 'How to use it',
+            title: 'Recommended workflow',
+            description: 'Use this sequence to get clean output and avoid misreading the result.',
+            bullets: workflow,
+          } satisfies GuidanceItem,
+        ]
+      : []),
+    ...(notes.length > 0
+      ? [
+          {
+            label: 'How to read results',
+            title: 'Result interpretation',
+            description: 'These notes explain what the most important output means in practice.',
+            bullets: notes,
+          } satisfies GuidanceItem,
+        ]
+      : []),
+  ];
+  const guidanceItems = guidance.length > 0 ? guidance : defaultGuidance;
 
   return (
     <Container size="xl" py="xl" className="app-page">
@@ -73,6 +105,7 @@ export default function ToolPageLayout({
           eyebrow={eyebrow}
           title={title}
           description={description}
+          supplementary={<GuidanceGroup items={guidanceItems} />}
           metrics={metrics}
           actions={actions}
         />
