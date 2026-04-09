@@ -1,4 +1,5 @@
 import { Alert, Container, Stack, Tabs, Text, Title } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { IconAlertCircle, IconHistory, IconShieldCheck, IconSearch } from '@tabler/icons-react';
 import { GuidanceGroup, type GuidanceItem } from '../../../components/guidance/GuidanceHoverCard';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +9,10 @@ import IpScanForm from '../../../components/ip-intelligence/IpScanForm';
 import IpScanResult from '../../../components/ip-intelligence/IpScanResult';
 import { useIpIntelligence } from '../../../hooks/ip-intelligence/useIpIntelligence';
 import { ReverseIp } from '../../tools/ip/ReverseIp';
+import type { IPReputationScanHistory } from '../../../services/ip-tools';
+import { downloadReport, type ReportExportFormat } from '../../../utils/assets/assetScanExport';
+import { printReport } from '../../../utils/assets/assetScanPrint';
+import { createStandaloneIpScanReport } from '../../../utils/assets/assetScanReport';
 import { HISTORY_PAGE_SIZE } from '../../../utils/ip-intelligence';
 
 export const AdvancedSecurityScanner = () => {
@@ -63,6 +68,25 @@ export const AdvancedSecurityScanner = () => {
     handleSaveAsAsset,
     handleSaveSelectedScanAsAsset,
   } = useIpIntelligence();
+
+  const handleReportAction = (scan: IPReputationScanHistory, action: 'print' | ReportExportFormat) => {
+    try {
+      const report = createStandaloneIpScanReport(scan);
+
+      if (action === 'print') {
+        printReport(report);
+        return;
+      }
+
+      downloadReport(report, action);
+    } catch {
+      notifications.show({
+        color: 'red',
+        title: 'Report action failed',
+        message: `The IP scan report could not be ${action === 'print' ? 'opened for printing' : `exported as ${action.toUpperCase()}`}.`,
+      });
+    }
+  };
 
   return (
     <Container size="xl" py="xl">
@@ -131,6 +155,8 @@ export const AdvancedSecurityScanner = () => {
               canLoadMore={canLoadMoreHistory}
               deletingScanId={deletingScanId}
               onLoadMore={() => setHistoryLimit((current) => current + HISTORY_PAGE_SIZE)}
+              onPrint={(scan) => handleReportAction(scan, 'print')}
+              onExport={handleReportAction}
               onViewDetails={handleViewDetails}
               onDelete={(scanId) => void handleDeleteScan(scanId)}
             />

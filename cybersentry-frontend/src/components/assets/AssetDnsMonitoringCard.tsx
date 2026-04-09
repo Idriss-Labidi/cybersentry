@@ -13,11 +13,16 @@ import {
   Table,
   Text,
 } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { IconExternalLink, IconWorld } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
+import { ReportActionButtons } from '../reports/ReportActionButtons';
 import DnsHealthResult from '../dns-intelligence/DnsHealthResult';
 import { DashboardStatCards } from '../../layouts/dashboard/DashboardPageLayout';
-import type { AssetRelatedContextResponse } from '../../services/assets';
+import type { Asset, AssetRelatedContextResponse } from '../../services/assets';
+import { downloadReport, type ReportExportFormat } from '../../utils/assets/assetScanExport';
+import { printReport } from '../../utils/assets/assetScanPrint';
+import { createAssetDnsHealthReport, createAssetDnsSnapshotReport } from '../../utils/assets/assetScanReport';
 import {
   formatDateTime,
   formatDnsValues,
@@ -27,6 +32,7 @@ import {
 } from '../../utils/assets/assetDetail';
 
 type AssetDnsMonitoringCardProps = {
+  asset: Asset;
   dnsContext: AssetRelatedContextResponse['dns_monitor'];
   isLoading: boolean;
   isRunningDns: boolean;
@@ -34,6 +40,7 @@ type AssetDnsMonitoringCardProps = {
 };
 
 export const AssetDnsMonitoringCard = ({
+  asset,
   dnsContext,
   isLoading,
   isRunningDns,
@@ -41,6 +48,50 @@ export const AssetDnsMonitoringCard = ({
 }: AssetDnsMonitoringCardProps) => {
   const latestSnapshot = dnsContext?.latest_snapshot;
   const latestHealthCheck = dnsContext?.latest_health_check;
+
+  const handleSnapshotReportAction = (
+    snapshot: NonNullable<AssetRelatedContextResponse['dns_monitor']>['snapshots'][number],
+    action: 'print' | ReportExportFormat,
+  ) => {
+    try {
+      const report = createAssetDnsSnapshotReport(asset, snapshot);
+
+      if (action === 'print') {
+        printReport(report);
+        return;
+      }
+
+      downloadReport(report, action);
+    } catch {
+      notifications.show({
+        color: 'red',
+        title: 'Report action failed',
+        message: `The DNS snapshot report could not be ${action === 'print' ? 'opened for printing' : `exported as ${action.toUpperCase()}`}.`,
+      });
+    }
+  };
+
+  const handleHealthReportAction = (
+    entry: NonNullable<AssetRelatedContextResponse['dns_monitor']>['health_history'][number],
+    action: 'print' | ReportExportFormat,
+  ) => {
+    try {
+      const report = createAssetDnsHealthReport(asset, entry);
+
+      if (action === 'print') {
+        printReport(report);
+        return;
+      }
+
+      downloadReport(report, action);
+    } catch {
+      notifications.show({
+        color: 'red',
+        title: 'Report action failed',
+        message: `The DNS health report could not be ${action === 'print' ? 'opened for printing' : `exported as ${action.toUpperCase()}`}.`,
+      });
+    }
+  };
 
   return (
     <Paper p="lg" radius="xl" pos="relative">
@@ -234,6 +285,7 @@ export const AssetDnsMonitoringCard = ({
                     <Table.Th>Status</Table.Th>
                     <Table.Th>Scanned at</Table.Th>
                     <Table.Th>Error</Table.Th>
+                    <Table.Th style={{ textAlign: 'center' }}>Actions</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -246,6 +298,15 @@ export const AssetDnsMonitoringCard = ({
                       </Table.Td>
                       <Table.Td>{formatDateTime(snapshot.scanned_at)}</Table.Td>
                       <Table.Td>{snapshot.error_message || 'None'}</Table.Td>
+                      <Table.Td style={{ textAlign: 'center' }}>
+                        <Group justify="center">
+                          <ReportActionButtons
+                            onPrint={() => handleSnapshotReportAction(snapshot, 'print')}
+                            onExport={(format) => handleSnapshotReportAction(snapshot, format)}
+                            printTitle="Print snapshot report"
+                          />
+                        </Group>
+                      </Table.Td>
                     </Table.Tr>
                   ))}
                 </Table.Tbody>
@@ -262,6 +323,7 @@ export const AssetDnsMonitoringCard = ({
                     <Table.Th>Score</Table.Th>
                     <Table.Th>Grade</Table.Th>
                     <Table.Th>Scanned at</Table.Th>
+                    <Table.Th style={{ textAlign: 'center' }}>Actions</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -273,7 +335,16 @@ export const AssetDnsMonitoringCard = ({
                       <Table.Td>
                         <Badge variant="light">{entry.grade}</Badge>
                       </Table.Td>
-                      <Table.Td>{formatDateTime(entry.scanned_at)}</Table.Td>
+                      <Table.Td>{formatDateTime(entry.scanned_at)}</Table.Td>                     
+                      <Table.Td style={{ textAlign: 'center' }}>
+                        <Group justify="center">
+                          <ReportActionButtons
+                            onPrint={() => handleHealthReportAction(entry, 'print')}
+                            onExport={(format) => handleHealthReportAction(entry, format)}
+                            printTitle="Print health report"
+                          />
+                        </Group>
+                      </Table.Td>
                     </Table.Tr>
                   ))}
                 </Table.Tbody>

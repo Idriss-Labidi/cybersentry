@@ -17,6 +17,7 @@ import {
   Title,
   Tabs,
 } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import {
   IconAlertCircle,
   IconEye,
@@ -32,6 +33,7 @@ import {
 } from '@tabler/icons-react';
 import type { AxiosError } from 'axios';
 import { GuidanceGroup, type GuidanceItem } from '../../../components/guidance/GuidanceHoverCard';
+import { ReportActionButtons } from '../../../components/reports/ReportActionButtons';
 import DnsHealthResult from '../../../components/dns-intelligence/DnsHealthResult';
 import { DnsHealthCheck } from '../../tools/dns/DnsHealthCheck';
 import { DnsLookup } from '../../tools/dns/DnsLookup';
@@ -44,6 +46,9 @@ import {
   getDnsHealthHistory,
   type DnsHealthHistoryEntry,
 } from '../../../services/dns-tools';
+import { downloadReport, type ReportExportFormat } from '../../../utils/assets/assetScanExport';
+import { printReport } from '../../../utils/assets/assetScanPrint';
+import { createStandaloneDnsHealthReport } from '../../../utils/assets/assetScanReport';
 
 const gradeColor = (grade: string) => {
   switch (grade) {
@@ -139,6 +144,25 @@ export const Dns = () => {
       setHistoryError('Failed to delete DNS health scan.');
     } finally {
       setDeletingScanId(null);
+    }
+  };
+
+  const handleReportAction = (entry: DnsHealthHistoryEntry, action: 'print' | ReportExportFormat) => {
+    try {
+      const report = createStandaloneDnsHealthReport(entry);
+
+      if (action === 'print') {
+        printReport(report);
+        return;
+      }
+
+      downloadReport(report, action);
+    } catch {
+      notifications.show({
+        color: 'red',
+        title: 'Report action failed',
+        message: `The DNS health report could not be ${action === 'print' ? 'opened for printing' : `exported as ${action.toUpperCase()}`}.`,
+      });
     }
   };
 
@@ -297,6 +321,10 @@ export const Dns = () => {
                             <Table.Td style={{ textAlign: 'center' }}>
                               <Center>
                                 <Group gap="xs" wrap="nowrap">
+                                  <ReportActionButtons
+                                    onPrint={() => handleReportAction(entry, 'print')}
+                                    onExport={(format) => handleReportAction(entry, format)}
+                                  />
                                   <ActionIcon
                                     color="blue"
                                     variant="light"

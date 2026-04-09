@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Container, Group, Paper, SimpleGrid, Stack, Text } from '@mantine/core';
 import PageHero, { type HeroMetric } from '../../components/PageHero';
-import { GuidanceGroup, type GuidanceItem } from '../../components/guidance/GuidanceHoverCard';
+import type { GuidanceItem } from '../../components/guidance/GuidanceHoverCard';
 
 type DashboardPageLayoutProps = {
   icon: ReactNode;

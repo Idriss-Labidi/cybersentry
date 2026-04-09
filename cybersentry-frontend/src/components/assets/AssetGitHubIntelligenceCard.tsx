@@ -1,11 +1,32 @@
-import { Alert, Badge, Button, Code, Group, List, LoadingOverlay, Paper, SimpleGrid, Stack, Table, Text } from '@mantine/core';
+import { useState } from 'react';
+import {
+  Alert,
+  Badge,
+  Button,
+  Code,
+  Group,
+  List,
+  LoadingOverlay,
+  Paper,
+  SimpleGrid,
+  Stack,
+  Table,
+  Text,
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { IconAlertTriangle, IconBrandGithub, IconExternalLink } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
+import { ReportActionButtons } from '../reports/ReportActionButtons';
 import { DashboardStatCards } from '../../layouts/dashboard/DashboardPageLayout';
-import type { AssetRelatedContextResponse } from '../../services/assets';
+import { getRepositoryCheckResult } from '../../services/github-tools';
+import type { Asset, AssetRelatedContextResponse, GitHubCheckResultDetail } from '../../services/assets';
+import { downloadReport, type ReportExportFormat } from '../../utils/assets/assetScanExport';
+import { printReport } from '../../utils/assets/assetScanPrint';
+import { createAssetGitHubScanReport } from '../../utils/assets/assetScanReport';
 import { formatDateTime, getRiskColor } from '../../utils/assets/assetDetail';
 
 type AssetGitHubIntelligenceCardProps = {
+  asset: Asset;
   githubContext: AssetRelatedContextResponse['github_health'];
   isLoading: boolean;
   isRunningGitHub: boolean;
@@ -13,12 +34,45 @@ type AssetGitHubIntelligenceCardProps = {
 };
 
 export const AssetGitHubIntelligenceCard = ({
+  asset,
   githubContext,
   isLoading,
   isRunningGitHub,
   onRunGitHubHealth,
 }: AssetGitHubIntelligenceCardProps) => {
   const latestResult = githubContext?.latest_result;
+  const [activeResultId, setActiveResultId] = useState<number | null>(null);
+
+  const handleReportAction = async (resultId: number, action: 'print' | ReportExportFormat) => {
+    setActiveResultId(resultId);
+
+    try {
+      const fullResult =
+        latestResult?.id === resultId
+          ? latestResult
+          : (await getRepositoryCheckResult<GitHubCheckResultDetail>(resultId)).data;
+
+      const report = createAssetGitHubScanReport(asset, fullResult);
+
+      if (action === 'print') {
+        printReport(report);
+        return;
+      }
+
+      downloadReport(report, action);
+    } catch {
+      notifications.show({
+        color: 'red',
+        title: 'Report action failed',
+        message:
+          action === 'print'
+            ? 'The full GitHub check could not be loaded for printing.'
+            : `The full GitHub check could not be exported as ${action.toUpperCase()}.`,
+      });
+    } finally {
+      setActiveResultId(null);
+    }
+  };
 
   return (
     <Paper p="lg" radius="xl" pos="relative">
@@ -130,25 +184,35 @@ export const AssetGitHubIntelligenceCard = ({
             </Group>
             <Table striped highlightOnHover withTableBorder>
               <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Risk</Table.Th>
-                  <Table.Th>Summary</Table.Th>
-                  <Table.Th>Checked at</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {(githubContext?.history ?? []).map((entry) => (
-                  <Table.Tr key={entry.id}>
+              <Table.Tr>
+                <Table.Th>Risk</Table.Th>
+                <Table.Th>Summary</Table.Th>
+                <Table.Th>Checked at</Table.Th>
+                <Table.Th style={{ textAlign: 'center' }}>Actions</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {(githubContext?.history ?? []).map((entry) => (
+                <Table.Tr key={entry.id}>
                     <Table.Td>
                       <Badge color={getRiskColor(entry.risk_score)}>{entry.risk_score}/100</Badge>
-                    </Table.Td>
-                    <Table.Td>{entry.summary}</Table.Td>
-                    <Table.Td>{formatDateTime(entry.check_timestamp)}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Paper>
+                  </Table.Td>
+                  <Table.Td>{entry.summary}</Table.Td>
+                  <Table.Td>{formatDateTime(entry.check_timestamp)}</Table.Td>
+                  <Table.Td style={{ textAlign: 'center' }}>
+                    <Group justify="center">
+                      <ReportActionButtons
+                        onPrint={() => void handleReportAction(entry.id, 'print')}
+                        onExport={(format) => void handleReportAction(entry.id, format)}
+                        loading={activeResultId === entry.id}
+                      />
+                    </Group>
+                  </Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Paper>
         </Stack>
       ) : (
         <Alert color="blue" variant="light" title="No GitHub health data yet">
