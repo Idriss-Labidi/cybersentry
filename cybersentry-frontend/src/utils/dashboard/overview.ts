@@ -82,19 +82,19 @@ const assetTypeLabels: Record<AssetType, string> = {
 };
 
 const assetTypeColors: Record<AssetType, string> = {
-  domain: '#00c2ff',
-  ip: '#1f6dff',
-  website: '#ffd23f',
-  github_repo: '#ff7a45',
+  domain: '#0f8dcf',
+  ip: '#2a5de0',
+  website: '#c98600',
+  github_repo: '#d4541f',
 };
 
 const categoryColors: Record<keyof AssetSummaryResponse['by_category'], string> = {
-  production: '#00e641',
-  development: '#00d4ff',
-  test: '#ffe033',
+  production: '#159f4a',
+  development: '#0f8dcf',
+  test: '#c98600',
 };
 
-const riskBandColors = ['#00e641', '#39ff8a', '#ffe033', '#ff3344'];
+const riskBandColors = ['#159f4a', '#5b9a35', '#c98600', '#cf3344'];
 
 const activeIncidentStatuses: IncidentStatus[] = ['new', 'triaged', 'in_progress', 'on_hold'];
 
@@ -277,6 +277,8 @@ export function buildPulse(
   const coveragePenalty = (unscannedAssets / totalAssets) * 26;
   const incidentPenalty = Math.min(activeIncidents.length * 5 + criticalIncidents.length * 6, 24);
   const alertPenalty = Math.min(notificationSummary.critical * 4 + notificationSummary.unread * 1.5, 20);
+  const averageRisk = Math.round(summary.average_risk_score);
+  const externalSurfaces = summary.by_type.domain + summary.by_type.website;
 
   const score = Math.round(clamp(100 - highRiskPenalty - coveragePenalty - incidentPenalty - alertPenalty, 8, 98));
 
@@ -309,10 +311,26 @@ export function buildPulse(
             ? 'The workspace needs attention now. Risk, alert volume, or incident load are high enough to slow response quality.'
             : 'The workspace is under heavy pressure. Operators should focus on the priority queue and critical asset coverage first.',
     highlights: [
-      { label: 'Scan coverage', value: `${Math.round((scannedAssets / totalAssets) * 100)}%`, tone: scannedAssets === summary.total_assets ? 'green' : 'yellow' },
-      { label: 'High-risk assets', value: String(summary.high_risk_assets), tone: summary.high_risk_assets > 0 ? 'orange' : 'green' },
-      { label: 'Active incidents', value: String(activeIncidents.length), tone: activeIncidents.length > 0 ? 'red' : 'green' },
-      { label: 'Unread alerts', value: String(notificationSummary.unread), tone: notificationSummary.unread > 0 ? 'yellow' : 'green' },
+      {
+        label: 'Scan coverage',
+        value: `${Math.round((scannedAssets / totalAssets) * 100)}%`,
+        tone: scannedAssets === summary.total_assets ? 'green' : 'yellow',
+      },
+      {
+        label: 'Average risk',
+        value: `${averageRisk}/100`,
+        tone: getAssetRiskTone(averageRisk),
+      },
+      {
+        label: 'External surfaces',
+        value: String(externalSurfaces),
+        tone: externalSurfaces > 0 ? 'blue' : 'gray',
+      },
+      {
+        label: 'High-risk assets',
+        value: String(summary.high_risk_assets),
+        tone: summary.high_risk_assets > 0 ? 'orange' : 'green',
+      },
     ],
   };
 }

@@ -38,6 +38,7 @@ export const Dashboard = () => {
       value: 0,
       color: '#00e641',
     }).label;
+  const assetClassCount = assetTypeDistribution.length;
 
   const uncoveredAssets = Math.max(summary.total_assets - scannedAssetsCount, 0);
 
@@ -54,16 +55,17 @@ export const Dashboard = () => {
       hint: `${summary.by_type.domain + summary.by_type.website} external surfaces currently tracked`,
     },
     {
-      label: 'Active incidents',
-      value: String(incidentSnapshot.active.length),
-      hint: `${incidentSnapshot.criticalCount} critical and ${incidentSnapshot.breachedCount} breached SLA`,
-      tone: incidentSnapshot.criticalCount > 0 ? 'red' : incidentSnapshot.active.length > 0 ? 'yellow' : 'green',
+      label: 'Asset classes',
+      value: String(assetClassCount),
+      hint: assetTypeDistribution.length > 0
+        ? assetTypeDistribution.map((entry) => entry.label).join(' / ')
+        : 'No surface classes tracked yet',
     },
     {
-      label: 'Unread alerts',
-      value: String(notificationSummary.unread),
-      hint: `${notificationSummary.critical} critical alerts in the queue`,
-      tone: notificationSummary.critical > 0 ? 'red' : notificationSummary.unread > 0 ? 'yellow' : 'green',
+      label: 'Production assets',
+      value: String(summary.by_category.production),
+      hint: `${summary.by_category.development} development and ${summary.by_category.test} test assets`,
+      tone: summary.by_category.production > 0 ? 'green' : undefined,
     },
   ];
 
@@ -146,8 +148,8 @@ export const Dashboard = () => {
           <DashboardPulseCard
             className="dashboard-span-6"
             pulse={pulse}
-            totalAssets={summary.total_assets}
-            mostExposedSurface={mostExposedSurface}
+            assetClassCount={assetClassCount}
+            dominantSurface={mostExposedSurface}
             lastUpdatedAt={lastUpdatedAt}
           />
 
@@ -158,7 +160,7 @@ export const Dashboard = () => {
             unreadAlerts={notificationSummary.unread}
             criticalAlerts={notificationSummary.critical}
             uncoveredAssets={uncoveredAssets}
-            mostExposedSurface={mostExposedSurface}
+            dominantSurface={mostExposedSurface}
           />
 
           <DashboardDistributionPanel

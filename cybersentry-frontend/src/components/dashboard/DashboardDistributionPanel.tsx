@@ -104,7 +104,7 @@ export function DashboardDistributionPanel({
                             className="dashboard-chart-fill"
                             style={{
                               width: `${Math.max(relativeWidth, entry.value > 0 ? 10 : 0)}%`,
-                              background: `linear-gradient(90deg, ${entry.color}, rgba(255,255,255,0.22))`,
+                              background: entry.color,
                             }}
                           />
                         </div>
@@ -179,7 +179,7 @@ export function DashboardDistributionPanel({
                             className="dashboard-risk-bar-fill"
                             style={{
                               height: `${Math.max(relativeHeight, entry.value > 0 ? 14 : 0)}%`,
-                              background: `linear-gradient(180deg, rgba(255,255,255,0.2), ${entry.color})`,
+                              background: entry.color,
                             }}
                           />
                         </div>

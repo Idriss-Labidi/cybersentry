@@ -1,12 +1,12 @@
-import { Badge, Group, Paper, RingProgress, SimpleGrid, Stack, Text, ThemeIcon } from '@mantine/core';
+import { Group, Paper, RingProgress, SimpleGrid, Stack, Text, ThemeIcon } from '@mantine/core';
 import { IconHeartbeat, IconShieldLock, IconSparkles } from '@tabler/icons-react';
 import type { DashboardPulse, DashboardTone } from '../../utils/dashboard/overview';
 import { formatRelativeTime } from '../../utils/dashboard/overview';
 
 type DashboardPulseCardProps = {
   pulse: DashboardPulse;
-  totalAssets: number;
-  mostExposedSurface: string;
+  assetClassCount: number;
+  dominantSurface: string;
   lastUpdatedAt: string | null;
   className?: string;
 };
@@ -30,14 +30,14 @@ function toneColor(tone: DashboardTone) {
 
 export function DashboardPulseCard({
   pulse,
-  totalAssets,
-  mostExposedSurface,
+  assetClassCount,
+  dominantSurface,
   lastUpdatedAt,
   className,
 }: DashboardPulseCardProps) {
   const pressureDrivers = [
-    { label: 'Tracked surfaces', value: `${totalAssets}` },
-    { label: 'Dominant surface', value: mostExposedSurface },
+    { label: 'Asset classes', value: `${assetClassCount}` },
+    { label: 'Dominant surface', value: dominantSurface },
     { label: 'Last refresh', value: formatRelativeTime(lastUpdatedAt) },
   ];
 
@@ -76,17 +76,6 @@ export function DashboardPulseCard({
             ))}
           </SimpleGrid>
 
-          <Group gap="xs">
-            <Badge variant="light" color="brand">
-              {totalAssets} assets tracked
-            </Badge>
-            <Badge variant="light" color="dark">
-              Most exposed surface: {mostExposedSurface}
-            </Badge>
-            <Badge variant="outline" color="gray">
-              Updated {formatRelativeTime(lastUpdatedAt)}
-            </Badge>
-          </Group>
         </Stack>
 
         <Group align="stretch" gap="md" className="dashboard-pulse-lower" wrap="nowrap">

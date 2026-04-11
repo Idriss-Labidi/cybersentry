@@ -18,7 +18,7 @@ type DashboardCommandDeckProps = {
   unreadAlerts: number;
   criticalAlerts: number;
   uncoveredAssets: number;
-  mostExposedSurface: string;
+  dominantSurface: string;
   className?: string;
 };
 
@@ -41,7 +41,7 @@ export function DashboardCommandDeck({
   unreadAlerts,
   criticalAlerts,
   uncoveredAssets,
-  mostExposedSurface,
+  dominantSurface,
   className,
 }: DashboardCommandDeckProps) {
   return (
@@ -78,7 +78,7 @@ export function DashboardCommandDeck({
             <Group gap="xs" mb={6}>
               <IconAlertTriangle size={16} />
               <Text size="xs" tt="uppercase" fw={700} c="dimmed" style={{ letterSpacing: '0.08em' }}>
-                Unread alerts
+                Alert queue
               </Text>
             </Group>
             <Text size="xl" fw={900} c={unreadAlerts > 0 ? 'yellow' : undefined}>
@@ -90,7 +90,7 @@ export function DashboardCommandDeck({
             <Group gap="xs" mb={6}>
               <IconRadar2 size={16} />
               <Text size="xs" tt="uppercase" fw={700} c="dimmed" style={{ letterSpacing: '0.08em' }}>
-                Coverage gaps
+                Visibility gaps
               </Text>
             </Group>
             <Text size="xl" fw={900} c={uncoveredAssets > 0 ? 'orange' : undefined}>
@@ -102,11 +102,11 @@ export function DashboardCommandDeck({
             <Group gap="xs" mb={6}>
               <IconPackages size={16} />
               <Text size="xs" tt="uppercase" fw={700} c="dimmed" style={{ letterSpacing: '0.08em' }}>
-                Exposed surface
+                Dominant surface
               </Text>
             </Group>
             <Text size="lg" fw={900}>
-              {mostExposedSurface}
+              {dominantSurface}
             </Text>
           </Paper>
         </SimpleGrid>
