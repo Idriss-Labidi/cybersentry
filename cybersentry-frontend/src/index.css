@@ -22,8 +22,8 @@
   --app-danger: #ff3344;
   --app-success: #00e641;
   --app-info: #00d4ff;
-  --app-card-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-  --app-card-shadow-lg: 0 32px 96px rgba(0, 0, 0, 0.72);
+  --app-card-shadow: 0 10px 28px rgba(0, 0, 0, 0.34);
+  --app-card-shadow-lg: 0 16px 44px rgba(0, 0, 0, 0.46);
   --app-grid: linear-gradient(rgba(0, 230, 65, 0.07) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 230, 65, 0.07) 1px, transparent 1px);
   --app-page-gradient: radial-gradient(circle at top left, rgba(0, 196, 54, 0.12), transparent 30%),
@@ -50,10 +50,10 @@
   --dashboard-soft-fill-strong: rgba(0, 14, 3, 0.72);
   --dashboard-chart-track-bg: rgba(255, 255, 255, 0.06);
   --dashboard-chart-track-border: rgba(255, 255, 255, 0.04);
-  --dashboard-chart-fill-shadow: 0 0 22px rgba(255, 255, 255, 0.08);
+  --dashboard-chart-fill-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
   --dashboard-risk-shell-bg: rgba(255, 255, 255, 0.04);
   --dashboard-risk-shell-border: rgba(255, 255, 255, 0.05);
-  --dashboard-risk-fill-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  --dashboard-risk-fill-shadow: 0 6px 14px rgba(0, 0, 0, 0.16);
   --dashboard-orb-bg:
     radial-gradient(circle at center, rgba(0, 230, 65, 0.08), transparent 58%),
     rgba(0, 10, 2, 0.68);
@@ -73,10 +73,10 @@ html[data-theme='light'] {
   --dashboard-soft-fill-strong: rgba(247, 252, 249, 0.92);
   --dashboard-chart-track-bg: rgba(6, 26, 12, 0.08);
   --dashboard-chart-track-border: rgba(6, 26, 12, 0.1);
-  --dashboard-chart-fill-shadow: 0 4px 14px rgba(20, 158, 74, 0.14);
+  --dashboard-chart-fill-shadow: 0 2px 8px rgba(20, 158, 74, 0.08);
   --dashboard-risk-shell-bg: rgba(6, 26, 12, 0.05);
   --dashboard-risk-shell-border: rgba(6, 26, 12, 0.08);
-  --dashboard-risk-fill-shadow: 0 10px 20px rgba(6, 26, 12, 0.12);
+  --dashboard-risk-fill-shadow: 0 5px 12px rgba(6, 26, 12, 0.08);
   --dashboard-orb-bg:
     radial-gradient(circle at center, rgba(20, 158, 74, 0.09), transparent 58%),
     rgba(255, 255, 255, 0.92);
