@@ -17,7 +17,6 @@ import {
   Table,
   Text,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import {
   IconAlertCircle,
   IconCalendar,
@@ -48,6 +47,7 @@ import {
 import { downloadReport, type ReportExportFormat } from '../../../utils/assets/assetScanExport';
 import { printReport } from '../../../utils/assets/assetScanPrint';
 import { createStandaloneGitHubScanReport } from '../../../utils/assets/assetScanReport';
+import { notifyError, notifySuccess } from '../../../utils/ui-notify';
 
 type GitHubHealthCheckHistoryProps = {
   refreshToken?: number;
@@ -138,6 +138,7 @@ const GitHubHealthCheckHistory = ({ refreshToken = 0 }: GitHubHealthCheckHistory
     try {
       await deleteRepositoryCheckResult(resultId);
       setHistory((current) => current.filter((entry) => entry.id !== resultId));
+      notifySuccess('GitHub scan deleted', 'The GitHub check result was removed from history.');
 
       if (selectedResult?.id === resultId) {
         setDetailsOpen(false);
@@ -145,6 +146,7 @@ const GitHubHealthCheckHistory = ({ refreshToken = 0 }: GitHubHealthCheckHistory
       }
     } catch {
       setHistoryError('Failed to delete check result.');
+      notifyError('GitHub deletion failed', 'The GitHub check result could not be deleted.');
     }
   };
 
@@ -170,11 +172,7 @@ const GitHubHealthCheckHistory = ({ refreshToken = 0 }: GitHubHealthCheckHistory
           ? 'The full GitHub check could not be loaded for printing.'
           : `The full GitHub check could not be exported as ${action.toUpperCase()}.`);
 
-      notifications.show({
-        color: 'red',
-        title: 'Report action failed',
-        message,
-      });
+      notifyError('Report action failed', message);
     } finally {
       setPrintingResultId(null);
     }

@@ -13,7 +13,6 @@ import {
   Table,
   Text,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import { IconExternalLink, IconWorld } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { ReportActionButtons } from '../reports/ReportActionButtons';
@@ -23,6 +22,7 @@ import type { Asset, AssetRelatedContextResponse } from '../../services/assets';
 import { downloadReport, type ReportExportFormat } from '../../utils/assets/assetScanExport';
 import { printReport } from '../../utils/assets/assetScanPrint';
 import { createAssetDnsHealthReport, createAssetDnsSnapshotReport } from '../../utils/assets/assetScanReport';
+import { notifyError } from '../../utils/ui-notify';
 import {
   formatDateTime,
   formatDnsValues,
@@ -63,11 +63,10 @@ export const AssetDnsMonitoringCard = ({
 
       downloadReport(report, action);
     } catch {
-      notifications.show({
-        color: 'red',
-        title: 'Report action failed',
-        message: `The DNS snapshot report could not be ${action === 'print' ? 'opened for printing' : `exported as ${action.toUpperCase()}`}.`,
-      });
+      notifyError(
+        'Report action failed',
+        `The DNS snapshot report could not be ${action === 'print' ? 'opened for printing' : `exported as ${action.toUpperCase()}`}.`
+      );
     }
   };
 
@@ -85,11 +84,10 @@ export const AssetDnsMonitoringCard = ({
 
       downloadReport(report, action);
     } catch {
-      notifications.show({
-        color: 'red',
-        title: 'Report action failed',
-        message: `The DNS health report could not be ${action === 'print' ? 'opened for printing' : `exported as ${action.toUpperCase()}`}.`,
-      });
+      notifyError(
+        'Report action failed',
+        `The DNS health report could not be ${action === 'print' ? 'opened for printing' : `exported as ${action.toUpperCase()}`}.`
+      );
     }
   };
 

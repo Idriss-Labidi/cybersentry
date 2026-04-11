@@ -17,7 +17,6 @@ import {
   Title,
   Tabs,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import {
   IconAlertCircle,
   IconEye,
@@ -49,6 +48,7 @@ import {
 import { downloadReport, type ReportExportFormat } from '../../../utils/assets/assetScanExport';
 import { printReport } from '../../../utils/assets/assetScanPrint';
 import { createStandaloneDnsHealthReport } from '../../../utils/assets/assetScanReport';
+import { notifyError, notifySuccess } from '../../../utils/ui-notify';
 
 const gradeColor = (grade: string) => {
   switch (grade) {
@@ -135,6 +135,7 @@ export const Dns = () => {
     try {
       await deleteDnsHealthHistoryEntry(scanId);
       setHistory((current) => current.filter((entry) => entry.id !== scanId));
+      notifySuccess('DNS scan deleted', 'The DNS health history entry was removed.');
 
       if (selectedScan?.id === scanId) {
         setSelectedScan(null);
@@ -142,6 +143,7 @@ export const Dns = () => {
       }
     } catch {
       setHistoryError('Failed to delete DNS health scan.');
+      notifyError('DNS deletion failed', 'The DNS health history entry could not be removed.');
     } finally {
       setDeletingScanId(null);
     }
@@ -158,11 +160,10 @@ export const Dns = () => {
 
       downloadReport(report, action);
     } catch {
-      notifications.show({
-        color: 'red',
-        title: 'Report action failed',
-        message: `The DNS health report could not be ${action === 'print' ? 'opened for printing' : `exported as ${action.toUpperCase()}`}.`,
-      });
+      notifyError(
+        'Report action failed',
+        `The DNS health report could not be ${action === 'print' ? 'opened for printing' : `exported as ${action.toUpperCase()}`}.`
+      );
     }
   };
 

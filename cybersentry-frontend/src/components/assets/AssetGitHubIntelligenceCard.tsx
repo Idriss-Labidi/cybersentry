@@ -13,7 +13,6 @@ import {
   Table,
   Text,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import { IconAlertTriangle, IconBrandGithub, IconExternalLink } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { ReportActionButtons } from '../reports/ReportActionButtons';
@@ -24,6 +23,7 @@ import { downloadReport, type ReportExportFormat } from '../../utils/assets/asse
 import { printReport } from '../../utils/assets/assetScanPrint';
 import { createAssetGitHubScanReport } from '../../utils/assets/assetScanReport';
 import { formatDateTime, getRiskColor } from '../../utils/assets/assetDetail';
+import { notifyError } from '../../utils/ui-notify';
 
 type AssetGitHubIntelligenceCardProps = {
   asset: Asset;
@@ -61,14 +61,12 @@ export const AssetGitHubIntelligenceCard = ({
 
       downloadReport(report, action);
     } catch {
-      notifications.show({
-        color: 'red',
-        title: 'Report action failed',
-        message:
-          action === 'print'
-            ? 'The full GitHub check could not be loaded for printing.'
-            : `The full GitHub check could not be exported as ${action.toUpperCase()}.`,
-      });
+      notifyError(
+        'Report action failed',
+        action === 'print'
+          ? 'The full GitHub check could not be loaded for printing.'
+          : `The full GitHub check could not be exported as ${action.toUpperCase()}.`
+      );
     } finally {
       setActiveResultId(null);
     }

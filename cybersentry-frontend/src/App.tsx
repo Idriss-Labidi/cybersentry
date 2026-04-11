@@ -1,5 +1,6 @@
 import { AuthProvider } from './context/auth/AuthContext';
 import { ThemeProvider } from './context/theme/ThemeContext';
+import { Notifications } from '@mantine/notifications';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Login } from './pages/auth/Login';
 import ProtectedRoute from './pages/auth/ProtectedRoute';
@@ -86,6 +87,7 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
+      <Notifications position="top-right" zIndex={3000} limit={5} />
       <AuthProvider>
         <AppContent />
       </AuthProvider>

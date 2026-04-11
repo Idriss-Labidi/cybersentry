@@ -25,6 +25,7 @@ import { checkRepositoryHealth } from '../../../services/github-tools';
 import { getUserSettings } from '../../../services/settings';
 import { getRiskColor, getRiskLabel } from '../../../utils/githubHealthUtils';
 import type { CheckResponse } from '../../../utils/githubHealthPage';
+import { notifyError, notifySuccess } from '../../../utils/ui-notify';
 
 type GitHubHealthCheckProps = {
   onCheckComplete?: () => void;
@@ -111,10 +112,16 @@ const GitHubHealthCheck = ({ onCheckComplete }: GitHubHealthCheckProps) => {
         use_cache: useCache,
       });
       setResult(response.data);
+      notifySuccess(
+        'GitHub check completed',
+        `${response.data.result.repository.owner}/${response.data.result.repository.name} was analyzed successfully.`
+      );
       onCheckComplete?.();
     } catch (requestError: unknown) {
       const axiosError = requestError as AxiosError<{ error?: string }>;
-      setError(axiosError.response?.data?.error ?? 'Failed to check repository.');
+      const message = axiosError.response?.data?.error ?? 'Failed to check repository.';
+      setError(message);
+      notifyError('GitHub check failed', message);
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,4 @@
 import { Alert, Container, Stack, Tabs, Text, Title } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import { IconAlertCircle, IconHistory, IconShieldCheck, IconSearch } from '@tabler/icons-react';
 import { GuidanceGroup, type GuidanceItem } from '../../../components/guidance/GuidanceHoverCard';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +13,7 @@ import { downloadReport, type ReportExportFormat } from '../../../utils/assets/a
 import { printReport } from '../../../utils/assets/assetScanPrint';
 import { createStandaloneIpScanReport } from '../../../utils/assets/assetScanReport';
 import { HISTORY_PAGE_SIZE } from '../../../utils/ip-intelligence';
+import { notifyError } from '../../../utils/ui-notify';
 
 export const AdvancedSecurityScanner = () => {
   const navigate = useNavigate();
@@ -80,11 +80,10 @@ export const AdvancedSecurityScanner = () => {
 
       downloadReport(report, action);
     } catch {
-      notifications.show({
-        color: 'red',
-        title: 'Report action failed',
-        message: `The IP scan report could not be ${action === 'print' ? 'opened for printing' : `exported as ${action.toUpperCase()}`}.`,
-      });
+      notifyError(
+        'Report action failed',
+        `The IP scan report could not be ${action === 'print' ? 'opened for printing' : `exported as ${action.toUpperCase()}`}.`
+      );
     }
   };
 

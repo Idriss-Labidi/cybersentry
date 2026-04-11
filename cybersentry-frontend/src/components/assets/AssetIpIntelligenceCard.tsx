@@ -1,5 +1,4 @@
 import { Alert, Badge, Button, Code, Group, List, LoadingOverlay, Paper, SimpleGrid, Stack, Table, Text } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
 import { IconAlertTriangle, IconExternalLink, IconRadar2 } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { ReportActionButtons } from '../reports/ReportActionButtons';
@@ -9,6 +8,7 @@ import { downloadReport, type ReportExportFormat } from '../../utils/assets/asse
 import { printReport } from '../../utils/assets/assetScanPrint';
 import { createAssetIpScanReport } from '../../utils/assets/assetScanReport';
 import { formatDateTime, getRiskColor } from '../../utils/assets/assetDetail';
+import { notifyError } from '../../utils/ui-notify';
 
 type AssetIpIntelligenceCardProps = {
   asset: Asset;
@@ -39,11 +39,10 @@ export const AssetIpIntelligenceCard = ({
 
       downloadReport(report, action);
     } catch {
-      notifications.show({
-        color: 'red',
-        title: 'Report action failed',
-        message: `The IP scan report could not be ${action === 'print' ? 'opened for printing' : `exported as ${action.toUpperCase()}`}.`,
-      });
+      notifyError(
+        'Report action failed',
+        `The IP scan report could not be ${action === 'print' ? 'opened for printing' : `exported as ${action.toUpperCase()}`}.`
+      );
     }
   };
 

@@ -10,6 +10,7 @@ import {
   type IncidentTicket,
 } from '../../services/incidents';
 import { getApiErrorMessage } from '../../utils/api-error';
+import { notifyError, notifySuccess } from '../../utils/ui-notify';
 import {
   buildIncidentPayload,
   defaultIncidentForm,
@@ -125,39 +126,41 @@ export const useIncidents = () => {
       const payload = buildIncidentPayload(form);
       if (editingIncidentId) {
         await updateIncident(editingIncidentId, payload);
+        notifySuccess('Incident updated', `Changes to ${payload.title} were saved.`);
       } else {
         await createIncident(payload);
+        notifySuccess('Incident created', `${payload.title} was added to the queue.`);
       }
       closeEditorModal();
       await loadIncidents();
     } catch (submitError: unknown) {
-      setError(
-        getApiErrorMessage(
-          submitError,
-          [
-            'title',
-            'short_code',
-            'incident_type',
-            'category',
-            'subcategory',
-            'affected_asset',
-            'status',
-            'priority',
-            'severity',
-            'impact',
-            'urgency',
-            'sla_policy',
-            'due_at',
-            'reporter_email',
-            'environment',
-            'tags',
-            'assigned_to',
-            'non_field_errors',
-            'detail',
-          ],
-          'Failed to save incident ticket.'
-        )
+      const message = getApiErrorMessage(
+        submitError,
+        [
+          'title',
+          'short_code',
+          'incident_type',
+          'category',
+          'subcategory',
+          'affected_asset',
+          'status',
+          'priority',
+          'severity',
+          'impact',
+          'urgency',
+          'sla_policy',
+          'due_at',
+          'reporter_email',
+          'environment',
+          'tags',
+          'assigned_to',
+          'non_field_errors',
+          'detail',
+        ],
+        'Failed to save incident ticket.'
       );
+      setError(message);
+      notifyError('Incident save failed', message);
     } finally {
       setIsSubmitting(false);
     }
@@ -177,10 +180,13 @@ export const useIncidents = () => {
 
     try {
       await deleteIncident(deleteModalIncident.id);
+      notifySuccess('Incident deleted', `${deleteModalIncident.title} was removed.`);
       setDeleteModalIncident(null);
       await loadIncidents();
     } catch (deleteError: unknown) {
-      setError(getApiErrorMessage(deleteError, [], 'Failed to delete incident ticket.'));
+      const message = getApiErrorMessage(deleteError, [], 'Failed to delete incident ticket.');
+      setError(message);
+      notifyError('Incident deletion failed', message);
     } finally {
       setIsDeleting(false);
     }
