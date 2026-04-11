@@ -1,135 +1,190 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Alert, Group, Paper, SimpleGrid, Stack, Text, ThemeIcon } from '@mantine/core';
-import { IconActivityHeartbeat, IconRadar2, IconServer2, IconShieldCheck } from '@tabler/icons-react';
-import DashboardPageLayout, { DashboardStatCards } from '../../layouts/dashboard/DashboardPageLayout';
-import { getAssetSummary, type AssetSummaryResponse } from '../../services/assets';
-
-const emptySummary: AssetSummaryResponse = {
-  total_assets: 0,
-  high_risk_assets: 0,
-  average_risk_score: 0,
-  by_category: {
-    production: 0,
-    development: 0,
-    test: 0,
-  },
-  by_type: {
-    domain: 0,
-    ip: 0,
-    website: 0,
-    github_repo: 0,
-  },
-};
+import { Alert, Button, Center, Group, Loader, Stack, Text } from '@mantine/core';
+import { IconAlertTriangle, IconArrowRight, IconLayoutDashboard, IconRefresh } from '@tabler/icons-react';
+import { Link } from 'react-router-dom';
+import { DashboardActivityFeed } from '../../components/dashboard/DashboardActivityFeed';
+import { DashboardCommandDeck } from '../../components/dashboard/DashboardCommandDeck';
+import { DashboardDistributionPanel } from '../../components/dashboard/DashboardDistributionPanel';
+import { DashboardPulseCard } from '../../components/dashboard/DashboardPulseCard';
+import { DashboardQueuePanel } from '../../components/dashboard/DashboardQueuePanel';
+import { DashboardRankingPanel } from '../../components/dashboard/DashboardRankingPanel';
+import type { GuidanceItem } from '../../components/guidance/GuidanceHoverCard';
+import { useDashboardOverview } from '../../hooks/dashboard/useDashboardOverview';
+import DashboardPageLayout from '../../layouts/dashboard/DashboardPageLayout';
 
 export const Dashboard = () => {
-  const [summary, setSummary] = useState<AssetSummaryResponse>(emptySummary);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    summary,
+    notificationSummary,
+    pulse,
+    incidentSnapshot,
+    assetTypeDistribution,
+    categoryDistribution,
+    riskBandDistribution,
+    topRiskAssets,
+    staleAssets,
+    actionQueue,
+    activityFeed,
+    scannedAssetsCount,
+    isLoading,
+    isRefreshing,
+    error,
+    lastUpdatedAt,
+    refresh,
+  } = useDashboardOverview();
 
-  useEffect(() => {
-    const loadSummary = async () => {
-      try {
-        const response = await getAssetSummary();
-        setSummary(response.data);
-      } catch {
-        setError('Unable to load live asset KPIs.');
-      }
-    };
+  const mostExposedSurface =
+    assetTypeDistribution.reduce((current, entry) => (entry.value > current.value ? entry : current), {
+      label: 'No assets',
+      value: 0,
+      color: '#00e641',
+    }).label;
 
-    void loadSummary();
-  }, []);
+  const uncoveredAssets = Math.max(summary.total_assets - scannedAssetsCount, 0);
 
-  const heroMetrics = useMemo(
-    () => [
-      { label: 'Managed assets', value: String(summary.total_assets), hint: 'Tracked in the authenticated workspace' },
-      { label: 'High risk assets', value: String(summary.high_risk_assets), hint: 'Currently scored at 70/100 or above' },
-      {
-        label: 'Average baseline risk',
-        value: `${summary.average_risk_score}/100`,
-        hint: 'Rolling manual baseline for monitored assets',
-      },
-    ],
-    [summary]
-  );
+  const heroMetrics = [
+    {
+      label: 'Security pulse',
+      value: `${pulse.score}/100`,
+      hint: `Current workspace stance: ${pulse.label}`,
+      tone: pulse.tone === 'red' ? 'red' : pulse.tone === 'orange' ? 'orange' : pulse.tone === 'yellow' ? 'yellow' : 'green',
+    },
+    {
+      label: 'Managed assets',
+      value: String(summary.total_assets),
+      hint: `${summary.by_type.domain + summary.by_type.website} external surfaces currently tracked`,
+    },
+    {
+      label: 'Active incidents',
+      value: String(incidentSnapshot.active.length),
+      hint: `${incidentSnapshot.criticalCount} critical and ${incidentSnapshot.breachedCount} breached SLA`,
+      tone: incidentSnapshot.criticalCount > 0 ? 'red' : incidentSnapshot.active.length > 0 ? 'yellow' : 'green',
+    },
+    {
+      label: 'Unread alerts',
+      value: String(notificationSummary.unread),
+      hint: `${notificationSummary.critical} critical alerts in the queue`,
+      tone: notificationSummary.critical > 0 ? 'red' : notificationSummary.unread > 0 ? 'yellow' : 'green',
+    },
+  ];
+
+  const guidanceItems: GuidanceItem[] = [
+    {
+      label: 'What this page is for',
+      title: 'Operations cockpit',
+      description:
+        'This dashboard is a current-state command surface. It tells operators what matters now and where to go next.',
+      bullets: [
+        'Use the pulse, queue, and rankings to decide what to open first.',
+        'Use Analytics for long-term trends and reporting, not this page.',
+      ],
+      badge: 'Dashboard',
+    },
+    {
+      label: 'How to read it',
+      title: 'Prioritize by pressure',
+      description:
+        'The dashboard intentionally blends posture, incidents, alerts, and coverage gaps so the next action is obvious.',
+      bullets: [
+        'Red and orange elements indicate immediate operational pressure.',
+        'Coverage gaps highlight assets that risk falling out of visibility.',
+      ],
+    },
+  ];
 
   return (
     <DashboardPageLayout
-      icon={<IconRadar2 size={26} />}
+      icon={<IconLayoutDashboard size={26} />}
       eyebrow="Overview"
-      title="Operational security overview"
-      description="Track your authenticated asset inventory, risk posture, and upcoming automation targets from a single dashboard surface."
+      title="Security operations cockpit"
+      description="A live snapshot of asset exposure, alert pressure, incident load, and operator priorities across the workspace."
       metrics={heroMetrics}
+      guidance={guidanceItems}
+      actions={
+        <Group gap="xs">
+          <Button
+            variant="subtle"
+            color="gray"
+            size="sm"
+            onClick={() => void refresh()}
+            loading={isRefreshing}
+            leftSection={<IconRefresh size={14} />}
+          >
+            Refresh
+          </Button>
+          <Button
+            component={Link}
+            to="/dashboard/assets"
+            size="sm"
+            rightSection={<IconArrowRight size={14} />}
+          >
+            Open assets
+          </Button>
+        </Group>
+      }
     >
       {error ? (
-        <Alert color="yellow" variant="light">
+        <Alert
+          color="yellow"
+          variant="light"
+          radius="sm"
+          icon={<IconAlertTriangle size={16} />}
+          mb="md"
+        >
           {error}
         </Alert>
       ) : null}
 
-      <DashboardStatCards
-        items={[
-          { label: 'Domains', value: String(summary.by_type.domain), hint: 'Registered domains under watch' },
-          { label: 'IPs', value: String(summary.by_type.ip), hint: 'Addresses attached to the workspace' },
-          { label: 'Websites', value: String(summary.by_type.website), hint: 'Web properties prepared for scanning' },
-          { label: 'GitHub repos', value: String(summary.by_type.github_repo), hint: 'Repositories integrated into the asset layer' },
-        ]}
-      />
-
-      <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="lg">
-        <Paper p="lg">
-          <Group gap="sm" mb="md">
-            <ThemeIcon size={42} radius="xl" variant="light" color="brand">
-              <IconActivityHeartbeat size={20} />
-            </ThemeIcon>
-            <div>
-              <Text fw={800}>Environment coverage</Text>
-              <Text size="sm" c="dimmed">
-                Asset mix across the authenticated workspace.
-              </Text>
-            </div>
-          </Group>
-          <Stack gap="sm">
-            <Text>Production assets: {summary.by_category.production}</Text>
-            <Text>Development assets: {summary.by_category.development}</Text>
-            <Text>Test assets: {summary.by_category.test}</Text>
+      {isLoading ? (
+        <Center py={80}>
+          <Stack align="center" gap="sm">
+            <Loader size="sm" type="dots" />
+            <Text size="sm" c="dimmed">Loading workspace overview...</Text>
           </Stack>
-        </Paper>
+        </Center>
+      ) : (
+        <div className="dashboard-page-grid">
+          <DashboardPulseCard
+            className="dashboard-span-6"
+            pulse={pulse}
+            totalAssets={summary.total_assets}
+            mostExposedSurface={mostExposedSurface}
+            lastUpdatedAt={lastUpdatedAt}
+          />
 
-        <Paper p="lg">
-          <Group gap="sm" mb="md">
-            <ThemeIcon size={42} radius="xl" variant="light" color="brand">
-              <IconShieldCheck size={20} />
-            </ThemeIcon>
-            <div>
-              <Text fw={800}>Control health</Text>
-              <Text size="sm" c="dimmed">
-                Baseline risk posture before automated scans land.
-              </Text>
-            </div>
-          </Group>
-          <Stack gap="sm">
-            <Text>Average asset risk currently sits at {summary.average_risk_score}/100</Text>
-            <Text>{summary.high_risk_assets} assets already need closer review</Text>
-            <Text>Risk history snapshots are now persisted for future trend views</Text>
-          </Stack>
-        </Paper>
+          <DashboardCommandDeck
+            className="dashboard-span-6"
+            criticalIncidents={incidentSnapshot.criticalCount}
+            breachedIncidents={incidentSnapshot.breachedCount}
+            unreadAlerts={notificationSummary.unread}
+            criticalAlerts={notificationSummary.critical}
+            uncoveredAssets={uncoveredAssets}
+            mostExposedSurface={mostExposedSurface}
+          />
 
-        <Paper p="lg">
-          <Group gap="sm" mb="md">
-            <ThemeIcon size={42} radius="xl" variant="light" color="brand">
-              <IconServer2 size={20} />
-            </ThemeIcon>
-            <div>
-              <Text fw={800}>Next operator focus</Text>
-              <Text size="sm" c="dimmed">
-                Ready follow-up work for the next dashboard phases.
-              </Text>
-            </div>
-          </Group>
-          <Text c="dimmed">
-            The asset inventory foundation is now in place. The next logical additions are scheduled DNS monitoring, website content diffing, and cross-channel alert delivery.
-          </Text>
-        </Paper>
-      </SimpleGrid>
+          <DashboardDistributionPanel
+            className="dashboard-span-7"
+            assetTypeDistribution={assetTypeDistribution}
+            categoryDistribution={categoryDistribution}
+            riskBandDistribution={riskBandDistribution}
+          />
+
+          <DashboardRankingPanel
+            className="dashboard-span-5"
+            topRiskAssets={topRiskAssets}
+            staleAssets={staleAssets}
+          />
+
+          <DashboardQueuePanel className="dashboard-span-6" items={actionQueue} />
+
+          <DashboardActivityFeed
+            className="dashboard-span-6"
+            items={activityFeed}
+            unreadAlerts={notificationSummary.unread}
+            criticalAlerts={notificationSummary.critical}
+            activeIncidents={incidentSnapshot.active.length}
+          />
+        </div>
+      )}
     </DashboardPageLayout>
   );
 };
