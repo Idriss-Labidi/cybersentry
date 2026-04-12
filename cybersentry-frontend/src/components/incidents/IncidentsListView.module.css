@@ -1,0 +1,23 @@
+.incidentRow {
+  transition: all 0.2s ease;
+  border-color: var(--app-border);
+  background-color: var(--app-surface);
+
+  &:hover {
+    border-color: var(--app-primary);
+    box-shadow: 0 2px 8px rgba(var(--app-primary-rgb), 0.1);
+  }
+}
+
+.titleLink {
+  color: var(--app-text);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--app-primary);
+    text-decoration: underline;
+  }
+}
+
