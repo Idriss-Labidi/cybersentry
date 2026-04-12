@@ -9,11 +9,6 @@ export const Analytics = () => {
       eyebrow="Analytics"
       title="Trends, posture, and reporting"
       description="The analytics surface is still lightweight on logic, but the redesigned page now reads like a product destination instead of placeholder copy."
-      metrics={[
-        { label: 'Coverage trend', value: '+6%', hint: 'Compared to last reporting window' },
-        { label: 'Mean triage time', value: '7m', hint: 'Median analyst response' },
-        { label: 'Findings closed', value: '24', hint: 'Closed during the current cycle' },
-      ]}
     >
       <SimpleGrid cols={{ base: 1, lg: 3 }} spacing="lg">
         {[

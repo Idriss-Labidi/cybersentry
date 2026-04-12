@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
@@ -70,42 +70,6 @@ export const Settings = () => {
     void loadSettings();
   }, [setPreferredTheme]);
 
-  const metrics = useMemo(
-    () => [
-      { label: 'Theme', value: themeChoice, hint: 'Brand accent preference' },
-      { label: 'Cache', value: useCache ? 'Enabled' : 'Disabled', hint: 'GitHub check caching mode' },
-      {
-        label: 'Duration',
-        value: `${cacheDuration || 0} min`,
-        hint: 'Cached result validity window',
-      },
-      {
-        label: 'GitHub token',
-        value: githubToken ? 'Updated' : maskedGithubToken ? 'Configured' : 'Not set',
-        hint: 'Used for authenticated API checks',
-      },
-      {
-        label: 'Email alerts',
-        value: notificationsEmailEnabled ? 'Enabled' : 'Disabled',
-        hint: 'Low-score asset test notifications',
-      },
-      {
-        label: 'Webhooks',
-        value: notificationsWebhookEnabled ? 'Enabled' : 'Disabled',
-        hint: 'Slack and Teams destinations',
-      },
-    ],
-    [
-      themeChoice,
-      useCache,
-      cacheDuration,
-      githubToken,
-      maskedGithubToken,
-      notificationsEmailEnabled,
-      notificationsWebhookEnabled,
-    ]
-  );
-
   const handleThemeChange = (value: string | null) => {
     if (!value || !isPreferredTheme(value)) {
       return;
@@ -161,7 +125,6 @@ export const Settings = () => {
       eyebrow="Settings"
       title="Workspace and integration settings"
       description="Manage GitHub integration defaults, cache behavior, accent theme, notifications, and workspace preferences in one place."
-      metrics={metrics}
     >
       {errorMessage ? (
         <Alert color="red" title="Save error" variant="light">

@@ -11,7 +11,6 @@ export const IncidentsList = () => {
   const {
     incidents,
     filteredIncidents,
-    metrics,
     isLoading,
     isSubmitting,
     isDeleting,
@@ -46,7 +45,6 @@ export const IncidentsList = () => {
         eyebrow="Incidents"
         title="Incident tickets and SLA tracking"
         description="Create and manage incident tickets manually today, with a model that already supports automated incident ingestion in future phases."
-        metrics={metrics}
         actions={
           <Button leftSection={<IconPlus size={16} />} onClick={() => openCreateModal()}>
             Create ticket

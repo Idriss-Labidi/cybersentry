@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { Alert, Button, Group } from '@mantine/core';
 import { IconArrowLeft, IconRefresh, IconServer2 } from '@tabler/icons-react';
 import { Link, useParams } from 'react-router-dom';
@@ -12,7 +12,6 @@ import type { GuidanceItem } from '../../../components/guidance/GuidanceHoverCar
 import { useAssetDetail } from '../../../hooks/assets/useAssetDetail';
 import { useDashboardBreadcrumb } from '../../../layouts/dashboard/DashboardBreadcrumbContext';
 import DashboardPageLayout from '../../../layouts/dashboard/DashboardPageLayout';
-import { formatDateTime } from '../../../utils/assets/assetDetail';
 
 export const AssetDetail = () => {
   const { id } = useParams();
@@ -66,30 +65,6 @@ export const AssetDetail = () => {
     };
   }, [asset?.name, setCurrentLabel]);
 
-  const metrics = useMemo(() => {
-    if (!asset) {
-      return [];
-    }
-
-    return [
-      {
-        label: 'Current baseline risk',
-        value: `${asset.risk_score}/100`,
-        hint: 'Manual baseline score until automated scoring is introduced.',
-      },
-      {
-        label: 'Last scan',
-        value: asset.last_scanned_at ? 'Available' : 'Pending',
-        hint: formatDateTime(asset.last_scanned_at),
-      },
-      {
-        label: 'Risk snapshots',
-        value: String(riskHistory.length),
-        hint: 'Historical baseline score checkpoints for this asset.',
-      },
-    ];
-  }, [asset, riskHistory.length]);
-
   return (
     <DashboardPageLayout
       icon={<IconServer2 size={26} />}
@@ -100,7 +75,6 @@ export const AssetDetail = () => {
           ? `Central asset view for ${asset.value} with its baseline risk history and linked intelligence.`
           : 'Loading asset details and linked intelligence.'
       }
-      metrics={metrics}
       guidance={guidanceItems}
       actions={
         <Group gap="sm">

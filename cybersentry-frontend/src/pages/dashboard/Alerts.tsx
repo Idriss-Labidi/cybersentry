@@ -22,11 +22,6 @@ export const Alerts = () => {
       eyebrow="Alerts"
       title="Security alerts and notifications"
       description="Review low-score test alerts and notification delivery status."
-      metrics={[
-        { label: 'Open alerts', value: String(summary.unread), hint: 'Unread in-app notifications' },
-        { label: 'Critical', value: String(summary.critical), hint: 'High severity low-score events' },
-        { label: 'Total', value: String(summary.total), hint: 'Stored notification events' },
-      ]}
     >
       <DashboardStatCards
         items={[

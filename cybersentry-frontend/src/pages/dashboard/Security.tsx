@@ -9,11 +9,6 @@ export const Security = () => {
       eyebrow="Security"
       title="Security controls and policy posture"
       description="A cleaner security page makes room for policy state, review summaries, and future configuration controls without changing the current navigation model."
-      metrics={[
-        { label: 'Policies monitored', value: '27', hint: 'Across DNS, mail, IP, and repo checks' },
-        { label: 'Healthy controls', value: '22', hint: 'Passing current evaluation criteria' },
-        { label: 'Needs review', value: '05', hint: 'Recommended for manual validation' },
-      ]}
     >
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
         {[

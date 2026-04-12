@@ -35,7 +35,6 @@ export const AssetsList = () => {
   ];
   const {
     summary,
-    metrics,
     filteredAssets,
     isLoading,
     isSubmitting,
@@ -72,7 +71,6 @@ export const AssetsList = () => {
         eyebrow="Assets"
         title="Managed assets and attack surface inventory"
         description="Add, classify, and maintain the attack surface inventory, then open each asset as the central entry point for linked IP and GitHub intelligence."
-        metrics={metrics}
         guidance={guidanceItems}
         actions={
           <Button leftSection={<IconPlus size={16} />} onClick={() => openCreateModal()}>

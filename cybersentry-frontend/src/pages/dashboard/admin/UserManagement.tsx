@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { AxiosError } from 'axios';
 import {
   Alert,
@@ -104,20 +104,6 @@ export const UserManagement = () => {
   useEffect(() => {
     void loadUsers();
   }, []);
-
-  const metrics = useMemo(
-    () => [
-      { label: 'Users', value: String(users.length), hint: 'Accounts in the current organization' },
-      { label: 'Admins', value: String(users.filter((user) => user.role === 'admin').length), hint: 'Users with organization admin access' },
-      { label: 'Active', value: String(users.filter((user) => user.is_active).length), hint: 'Accounts currently enabled' },
-      {
-        label: 'Recent logins',
-        value: String(users.filter((user) => !!user.last_login).length),
-        hint: 'Users with recorded sign-ins',
-      },
-    ],
-    [users]
-  );
 
   const openCreateModal = () => {
     setEditingUser(null);
@@ -230,7 +216,6 @@ export const UserManagement = () => {
             Add user
           </Button>
         }
-        metrics={metrics}
       >
         {error ? (
           <Alert color="red" title="User management unavailable" variant="light" icon={<IconAlertTriangle size={16} />}>

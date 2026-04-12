@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { Alert, Badge, Button, Group, Paper, SimpleGrid, Stack, Text } from '@mantine/core';
 import { IconArrowLeft, IconCircleCheck, IconPlayerPause, IconRefresh, IconTicket } from '@tabler/icons-react';
 import { Link, useParams } from 'react-router-dom';
@@ -21,18 +21,6 @@ export const IncidentDetail = () => {
     };
   }, [incident?.title, setCurrentLabel]);
 
-  const metrics = useMemo(() => {
-    if (!incident) {
-      return [];
-    }
-
-    return [
-      { label: 'Status', value: incident.status_label, hint: `Last status change: ${formatDateTime(incident.last_status_change_at)}` },
-      { label: 'Priority', value: incident.priority_label, hint: `Severity: ${incident.severity_label}` },
-      { label: 'SLA state', value: incident.sla_state.replace('_', ' '), hint: `Due at: ${formatDateTime(incident.due_at)}` },
-    ];
-  }, [incident]);
-
   return (
     <DashboardPageLayout
       icon={<IconTicket size={26} />}
@@ -43,7 +31,6 @@ export const IncidentDetail = () => {
           ? 'Detailed operational context and lifecycle tracking for this incident ticket.'
           : 'Loading incident detail.'
       }
-      metrics={metrics}
       actions={
         <Group gap="sm">
           <Button variant="default" component={Link} to="/dashboard/incidents" leftSection={<IconArrowLeft size={16} />}>
