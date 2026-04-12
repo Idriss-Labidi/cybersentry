@@ -51,8 +51,11 @@ def ensure_user_organization(user: User) -> Organization:
 def create_organization_admins_and_notify(organization: Organization, admin_emails: list[str], request: HttpRequest) -> None:
     '''
         Create admin users for the organization
-        and send a notification email to the admins.
+        and send activation email to the admins asynchronously via Celery.
     '''
+    from .tasks import send_activation_email
+    
+    activation_url = request.build_absolute_uri('/')
     
     with transaction.atomic():
         
@@ -70,26 +73,10 @@ def create_organization_admins_and_notify(organization: Organization, admin_emai
             )
             if created:
                 created_users.append(user)
-                
-        transaction.on_commit(lambda: send_mass_mail(generate_activation_emails(created_users, request), fail_silently=True))
         
-def generate_activation_link(user: User, request: HttpRequest) -> str:
-    uid = urlsafe_base64_encode(force_bytes(user.pk))
-    token = token_generator.make_token(user)
-
-    return request.build_absolute_uri(
-        f"/activate/{uid}/{token}/"
-    )
-    
-def generate_activation_emails(users: list[User], request: HttpRequest):
-    email_set = []
-    for user in users:
-        activation_link = generate_activation_link(user, request)
+        # Queue activation emails for newly created users via Celery (async)
+        def queue_activation_emails():
+            for user in created_users:
+                send_activation_email.delay(user.id, activation_url)
         
-        email_set.append((
-            "Activate Your Account",
-            f"Please click the following link to activate your account: {activation_link}",
-            "noreply@cybersentry.com",
-            [user.email],
-        ))
-    return tuple(email_set)
+        transaction.on_commit(queue_activation_emails)
