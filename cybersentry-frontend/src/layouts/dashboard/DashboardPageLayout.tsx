@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Container, Group, Paper, SimpleGrid, Stack, Text } from '@mantine/core';
-import PageHero, { type HeroMetric } from '../../components/PageHero';
+import PageHero from '../../components/PageHero';
 import type { GuidanceItem } from '../../components/guidance/GuidanceHoverCard';
 import { GuidanceGroup } from '../../components/guidance/GuidanceHoverCard';
 
@@ -9,7 +9,6 @@ type DashboardPageLayoutProps = {
   eyebrow?: string;
   title: string;
   description: string;
-  metrics?: HeroMetric[];
   guidance?: GuidanceItem[];
   actions?: ReactNode;
   children: ReactNode;
@@ -20,7 +19,6 @@ export default function DashboardPageLayout({
   eyebrow,
   title,
   description,
-  metrics,
   guidance,
   actions,
   children,
@@ -35,7 +33,6 @@ export default function DashboardPageLayout({
           description={description}
           supplementary={guidance && guidance.length > 0 ? <GuidanceGroup items={guidance} /> : null}
           actions={actions}
-          metrics={metrics}
         />
         {children}
       </Stack>
