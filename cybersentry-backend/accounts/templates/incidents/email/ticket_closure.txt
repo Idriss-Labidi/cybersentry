@@ -1,0 +1,19 @@
+Ticket Closed: {{ ticket_title }}
+
+Hi,
+
+The ticket {{ ticket_title }} has been closed.
+
+Ticket: {{ ticket_title }}
+Closed by: {{ closed_by }}
+
+View Ticket Details: {{ ticket_url }}
+
+If you have any follow-up actions or need to reopen the ticket, please visit the link above.
+
+Best regards,
+CyberSentry Team
+
+---
+This is an automated notification. Please do not reply to this email.
+
