@@ -158,15 +158,6 @@ export const DnsLookup = ({ embedded = false }: DnsLookupProps) => {
       eyebrow="Public tool"
       title="DNS lookup"
       description="Query DNS records for any domain and review the returned values in a cleaner analytical shell."
-      metrics={[
-        { label: 'Selected record types', value: String(selectedTypes.length), hint: selectedTypes.join(', ') },
-        { label: 'Current target', value: domain.trim() || 'None', hint: 'Domain under inspection' },
-        {
-          label: 'Result state',
-          value: result ? 'Loaded' : loading ? 'Running' : 'Ready',
-          hint: result ? `${Object.keys(result.result).length} groups returned` : 'Awaiting query',
-        },
-      ]}
       workflow={[
         'Enter the target domain and choose the record classes you want to inspect.',
         'Run the lookup and compare values by record type.',

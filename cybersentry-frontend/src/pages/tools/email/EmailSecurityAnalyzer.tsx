@@ -486,19 +486,6 @@ export const EmailSecurityAnalyzer = ({ embedded = false }: EmailSecurityAnalyze
       eyebrow="Public tool"
       title="Email security analyzer"
       description="Analyze SPF, DKIM, and DMARC posture, then review a scored breakdown with actionable recommendations."
-      metrics={[
-        { label: 'Target domain', value: domain.trim() || 'None', hint: 'Domain under review' },
-        {
-          label: 'Security score',
-          value: result ? `${result.score}/100` : loading ? 'Running' : 'Ready',
-          hint: result ? `Grade ${result.grade}` : 'Awaiting analysis',
-        },
-        {
-          label: 'Recommendations',
-          value: result ? String(result.recommendations.length) : '0',
-          hint: 'Suggested next actions',
-        },
-      ]}
       workflow={[
         'Submit the domain to inspect SPF, DKIM, and DMARC together.',
         'Use the score card to judge overall posture before drilling into each protocol.',

@@ -77,11 +77,6 @@ export const IpReputation = () => {
       eyebrow="Public tool"
       title="IP reputation and geolocation"
       description="Review risk score, network context, and geographic metadata for any IP from a more structured investigation surface."
-      metrics={[
-        { label: 'Target IP', value: ip.trim() || 'None', hint: 'Address under review' },
-        { label: 'Risk score', value: result ? `${result.score}/100` : 'Pending', hint: result ? result.risk_level : 'No result yet' },
-        { label: 'Risk factors', value: result ? String(result.risk_factors.length) : '0', hint: 'Indicators returned by the API' },
-      ]}
       workflow={[
         'Submit the IP address you need to assess.',
         'Review risk score and flags first, then inspect geolocation and network context.',

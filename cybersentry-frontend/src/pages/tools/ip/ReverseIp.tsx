@@ -236,11 +236,6 @@ export const ReverseIp = ({ embedded = false }: ReverseIpProps) => {
       eyebrow="Public tool"
       title="Reverse IP lookup"
       description="Resolve hosted domains and PTR context from a target IP without changing the underlying lookup logic."
-      metrics={[
-        { label: 'Target IP', value: ip.trim() || 'None', hint: 'Address under review' },
-        { label: 'Domains found', value: result ? String(result.domains_count) : '0', hint: 'Distinct domains returned' },
-        { label: 'PTR record', value: result?.hostname || 'Pending', hint: 'Resolved hostname when available' },
-      ]}
       workflow={[
         'Enter the IP address you want to investigate.',
         'Review PTR and hosted domain counts first.',

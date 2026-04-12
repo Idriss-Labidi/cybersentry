@@ -215,11 +215,6 @@ export const TyposquattingDetection = ({ embedded = false }: TyposquattingDetect
       eyebrow="Public tool"
       title="Typosquatting detection"
       description="Generate likely domain variants, check which ones are registered, and surface suspicious lookalikes in one pass."
-      metrics={[
-        { label: 'Target domain', value: domain.trim() || 'None', hint: 'Brand or property under review' },
-        { label: 'Threats detected', value: result ? String(result.threat_count) : '0', hint: 'Suspicious domains returned' },
-        { label: 'Variants checked', value: result ? String(result.variants_checked) : '0', hint: 'Generated and evaluated candidates' },
-      ]}
       workflow={[
         'Submit the brand domain you want to protect.',
         'Review the threat count before examining individual variants.',
