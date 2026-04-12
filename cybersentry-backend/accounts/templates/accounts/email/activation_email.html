@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activate Your CyberSentry Account</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #1a8917 0%, #2db928 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 30px;
+        }
+        .greeting {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .message {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #1a8917 0%, #2db928 100%);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            margin: 20px 0;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(26, 137, 23, 0.3);
+        }
+        .link-section {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            word-break: break-all;
+        }
+        .link-section label {
+            display: block;
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .link-section a {
+            color: #1a8917;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .footer {
+            background-color: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            border-top: 1px solid #e0e0e0;
+        }
+        .security-note {
+            background-color: #ffffcc;
+            border-left: 4px solid #ffcc00;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 13px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>🔐 CyberSentry</h1>
+            <p>Account Activation</p>
+        </div>
+
+        <div class="content">
+            <div class="greeting">
+                <strong>Welcome to CyberSentry!</strong>
+            </div>
+
+            <div class="message">
+                Your account has been created successfully. To get started, please activate your account and set your password by clicking the button below.
+            </div>
+
+            <div style="text-align: center;">
+                <a href="{{ activation_url }}" class="cta-button">Activate Account & Set Password</a>
+            </div>
+
+            <div class="link-section">
+                <label>Or copy this link in your browser:</label>
+                <a href="{{ activation_url }}">{{ activation_url }}</a>
+            </div>
+
+            <div class="security-note">
+                ⚠️ <strong>Security Note:</strong> This link will expire in 7 days. If you did not create this account, please contact support immediately.
+            </div>
+
+            <div class="message" style="margin-top: 30px; color: #999; font-size: 12px;">
+                Thank you,<br>
+                The CyberSentry Team
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2026 CyberSentry. All rights reserved.</p>
+            <p>If you did not request this email, please ignore it.</p>
+        </div>
+    </div>
+</body>
+</html>
+

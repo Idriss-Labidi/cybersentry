@@ -1,0 +1,18 @@
+Welcome to CyberSentry!
+
+Your account has been created successfully. To get started, please activate your account and set your password by clicking the link below.
+
+Activation Link:
+{{ activation_url }}
+
+This link will expire in 7 days.
+
+Security Note: If you did not create this account, please contact support immediately.
+
+Thank you,
+The CyberSentry Team
+
+---
+© 2026 CyberSentry. All rights reserved.
+If you did not request this email, please ignore it.
+

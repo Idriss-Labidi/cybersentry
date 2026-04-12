@@ -92,7 +92,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'oidc_db'),
+        'NAME': os.getenv('DB_NAME', 'cybersentrydb'),
         'USER': os.getenv('DB_USER', 'postgres'),
         'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
@@ -210,7 +210,6 @@ OAUTH2_PROVIDER = {
 }
 
 # Cache configuration (for JWKS caching)
-'''
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
@@ -220,7 +219,7 @@ CACHES = {
         }
     }
 }
-'''
+
 
 # Session settings
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
@@ -275,9 +274,11 @@ LOGGING = {
 }
 
 # SMTP / email settings
+# For development with MailPit/local SMTP, use SMTP backend
+# MailPit runs on localhost:1025 by default
 EMAIL_BACKEND = os.getenv(
     'EMAIL_BACKEND',
-    'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend',
+    'django.core.mail.backends.smtp.EmailBackend'  # Always use SMTP for local testing
 )
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'localhost')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', '1025'))

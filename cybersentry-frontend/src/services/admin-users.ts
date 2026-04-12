@@ -22,7 +22,7 @@ export interface CreateManagedUserPayload {
   last_name?: string;
   role?: string;
   is_active?: boolean;
-  password: string;
+  password?: string;
 }
 
 export interface UpdateManagedUserPayload {

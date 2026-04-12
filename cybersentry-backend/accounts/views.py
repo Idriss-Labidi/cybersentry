@@ -26,6 +26,7 @@ from .serializers import (
 )
 from .permissions import IsOrganizationAdmin
 from .services import get_client_ip
+from .tasks import send_activation_email
 
 user_model = get_user_model()
 token_generator = PasswordResetTokenGenerator()
@@ -186,7 +187,11 @@ class OrganizationUserViewSet(viewsets.ModelViewSet):
         return self._organization_user_queryset(include_request_user=False)
 
     def perform_create(self, serializer):
-        serializer.save(organization=self.request.user.organization)
+        user = serializer.save(organization=self.request.user.organization)
+
+        # Send activation email asynchronously using Celery
+        activation_url = self.request.build_absolute_uri('/')
+        send_activation_email.delay(user.id, activation_url)
 
     def destroy(self, request, *args, **kwargs):
         user = self.get_object()

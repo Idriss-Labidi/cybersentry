@@ -158,11 +158,6 @@ export const UserManagement = () => {
       return;
     }
 
-    if (!editingUser && !formState.password) {
-      setError('A password is required when creating a new user.');
-      return;
-    }
-
     setSubmitting(true);
 
     try {
@@ -187,7 +182,6 @@ export const UserManagement = () => {
           last_name: formState.last_name,
           role: formState.role,
           is_active: formState.is_active,
-          password: formState.password,
         };
 
         await adminUsersApi.createManagedUser(payload);

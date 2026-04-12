@@ -51,7 +51,7 @@ def ensure_user_organization(user: User) -> Organization:
 def create_organization_admins_and_notify(organization: Organization, admin_emails: list[str], request: HttpRequest) -> None:
     '''
         Create admin users for the organization
-        and send notification email to the admins.
+        and send a notification email to the admins.
     '''
     
     with transaction.atomic():

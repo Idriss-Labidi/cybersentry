@@ -117,11 +117,13 @@ class OrganizationUserSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
 
         if self.instance is None:
-            if not attrs.get('password'):
-                raise serializers.ValidationError({'password': 'Password is required when creating a user.'})
-
+            # For new users created by admins, password is optional
+            # User will set their own password via activation email
             if not attrs.get('username'):
                 attrs['username'] = self._build_unique_username(attrs.get('email', 'user'))
+
+            # Set new users as inactive until they activate their account
+            attrs['is_active'] = False
 
         elif request and request.user == self.instance:
             for field in ('role', 'is_active'):
@@ -142,9 +144,13 @@ class OrganizationUserSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        password = validated_data.pop('password')
+        password = validated_data.pop('password', None)
         user = User(**validated_data)
-        user.set_password(password)
+
+        # Only set password if provided (for admin user creation, password is optional)
+        if password:
+            user.set_password(password)
+
         user.save()
         return user
 
