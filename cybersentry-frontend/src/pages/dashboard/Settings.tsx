@@ -17,6 +17,7 @@ import DashboardPageLayout from '../../layouts/dashboard/DashboardPageLayout';
 import { useTheme } from '../../context/theme/useTheme';
 import { getUserSettings, updateUserSettings } from '../../services/settings';
 import { isPreferredTheme } from '../../styles/theme';
+import { notifyError, notifySuccess } from '../../utils/ui-notify';
 
 export const Settings = () => {
   const { preferredTheme, setPreferredTheme } = useTheme();
@@ -39,7 +40,6 @@ export const Settings = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -117,7 +117,6 @@ export const Settings = () => {
 
   const handleSaveSettings = async () => {
     setErrorMessage(null);
-    setStatusMessage(null);
 
     if (typeof cacheDuration !== 'number' || cacheDuration < 1 || cacheDuration > 1440) {
       setErrorMessage('Cache duration must be between 1 and 1440 minutes.');
@@ -146,9 +145,11 @@ export const Settings = () => {
       setNotificationsWebhookEnabled(response.data.notifications_webhook_enabled);
       setSlackWebhookUrl(response.data.slack_webhook_url ?? '');
       setTeamsWebhookUrl(response.data.teams_webhook_url ?? '');
-      setStatusMessage('Settings saved successfully.');
+      notifySuccess('Settings saved', 'Workspace preferences were updated successfully.');
     } catch {
-      setErrorMessage('Could not save settings. Please try again.');
+      const message = 'Could not save settings. Please try again.';
+      setErrorMessage(message);
+      notifyError('Settings save failed', message);
     } finally {
       setIsSaving(false);
     }
@@ -165,12 +166,6 @@ export const Settings = () => {
       {errorMessage ? (
         <Alert color="red" title="Save error" variant="light">
           {errorMessage}
-        </Alert>
-      ) : null}
-
-      {statusMessage ? (
-        <Alert color="green" title="Saved" variant="light">
-          {statusMessage}
         </Alert>
       ) : null}
 

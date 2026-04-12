@@ -29,6 +29,7 @@ import {
 } from '@tabler/icons-react';
 import type { AxiosError } from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { ReportActionButtons } from '../../../components/reports/ReportActionButtons';
 import GitHubCheckSections from '../../../components/github-health/GitHubCheckSections';
 import { lookupAsset, type Asset, type AssetPayload } from '../../../services/assets';
 import {
@@ -43,6 +44,10 @@ import {
   type CheckResultDetail,
   type HistorySummary,
 } from '../../../utils/githubHealthPage';
+import { downloadReport, type ReportExportFormat } from '../../../utils/assets/assetScanExport';
+import { printReport } from '../../../utils/assets/assetScanPrint';
+import { createStandaloneGitHubScanReport } from '../../../utils/assets/assetScanReport';
+import { notifyError, notifySuccess } from '../../../utils/ui-notify';
 
 type GitHubHealthCheckHistoryProps = {
   refreshToken?: number;
@@ -63,6 +68,7 @@ const GitHubHealthCheckHistory = ({ refreshToken = 0 }: GitHubHealthCheckHistory
   const [selectedResult, setSelectedResult] = useState<CheckResultDetail | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [printingResultId, setPrintingResultId] = useState<number | null>(null);
   const [selectedResultLinkedAsset, setSelectedResultLinkedAsset] = useState<Asset | null>(null);
   const [selectedResultAssetDefaults, setSelectedResultAssetDefaults] = useState<AssetPayload | null>(null);
   const [selectedResultAssetLookupLoading, setSelectedResultAssetLookupLoading] = useState(false);
@@ -132,6 +138,7 @@ const GitHubHealthCheckHistory = ({ refreshToken = 0 }: GitHubHealthCheckHistory
     try {
       await deleteRepositoryCheckResult(resultId);
       setHistory((current) => current.filter((entry) => entry.id !== resultId));
+      notifySuccess('GitHub scan deleted', 'The GitHub check result was removed from history.');
 
       if (selectedResult?.id === resultId) {
         setDetailsOpen(false);
@@ -139,6 +146,35 @@ const GitHubHealthCheckHistory = ({ refreshToken = 0 }: GitHubHealthCheckHistory
       }
     } catch {
       setHistoryError('Failed to delete check result.');
+      notifyError('GitHub deletion failed', 'The GitHub check result could not be deleted.');
+    }
+  };
+
+  const handleReportAction = async (resultId: number, action: 'print' | ReportExportFormat) => {
+    setPrintingResultId(resultId);
+
+    try {
+      const fullResult =
+        selectedResult?.id === resultId ? selectedResult : (await getRepositoryCheckResult<CheckResultDetail>(resultId)).data;
+      const report = createStandaloneGitHubScanReport(fullResult);
+
+      if (action === 'print') {
+        printReport(report);
+        return;
+      }
+
+      downloadReport(report, action);
+    } catch (requestError: unknown) {
+      const axiosError = requestError as AxiosError<{ error?: string }>;
+      const message =
+        axiosError.response?.data?.error ??
+        (action === 'print'
+          ? 'The full GitHub check could not be loaded for printing.'
+          : `The full GitHub check could not be exported as ${action.toUpperCase()}.`);
+
+      notifyError('Report action failed', message);
+    } finally {
+      setPrintingResultId(null);
     }
   };
 
@@ -267,6 +303,11 @@ const GitHubHealthCheckHistory = ({ refreshToken = 0 }: GitHubHealthCheckHistory
                       <Table.Td style={{ textAlign: 'center' }}>
                         <Center>
                           <Group gap="xs" wrap="nowrap">
+                            <ReportActionButtons
+                              onPrint={() => void handleReportAction(entry.id, 'print')}
+                              onExport={(format) => void handleReportAction(entry.id, format)}
+                              loading={printingResultId === entry.id}
+                            />
                             <ActionIcon
                               color="blue"
                               variant="light"

@@ -10,6 +10,7 @@ import {
 } from '../../services/ip-tools';
 import { getApiErrorMessage } from '../../utils/api-error';
 import { HISTORY_PAGE_SIZE } from '../../utils/ip-intelligence';
+import { notifyError, notifySuccess } from '../../utils/ui-notify';
 
 export function useIpIntelligence() {
   const navigate = useNavigate();
@@ -111,14 +112,15 @@ export function useIpIntelligence() {
       const response = await advancedIpReputation({ ip_address: ipInput.trim() });
       setIpResult(response.data);
       await loadHistory(historyLimit);
+      notifySuccess('IP scan completed', `Reputation intelligence was updated for ${response.data.ip}.`);
     } catch (requestError: unknown) {
-      setError(
-        getApiErrorMessage(
-          requestError,
-          ['ip_address'],
-          'An error occurred while checking IP reputation.'
-        )
+      const message = getApiErrorMessage(
+        requestError,
+        ['ip_address'],
+        'An error occurred while checking IP reputation.'
       );
+      setError(message);
+      notifyError('IP scan failed', message);
     } finally {
       setLoading(false);
     }
@@ -136,13 +138,16 @@ export function useIpIntelligence() {
     try {
       await deleteScanHistoryEntry(scanId);
       setScans((current) => current.filter((scan) => scan.id !== scanId));
+      notifySuccess('IP scan deleted', 'The scan entry was removed from history.');
 
       if (selectedScan?.id === scanId) {
         setSelectedScan(null);
         setDetailsModalOpened(false);
       }
     } catch (deleteError: unknown) {
-      setHistoryError(getApiErrorMessage(deleteError, [], 'Failed to delete IP scan.'));
+      const message = getApiErrorMessage(deleteError, [], 'Failed to delete IP scan.');
+      setHistoryError(message);
+      notifyError('IP deletion failed', message);
     } finally {
       setDeletingScanId(null);
     }

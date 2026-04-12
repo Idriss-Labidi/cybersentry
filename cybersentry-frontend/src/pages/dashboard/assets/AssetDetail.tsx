@@ -131,6 +131,7 @@ export const AssetDetail = () => {
 
           {asset.asset_type === 'domain' ? (
             <AssetDnsMonitoringCard
+              asset={asset}
               dnsContext={relatedContext?.dns_monitor ?? null}
               isLoading={isLoading}
               isRunningDns={isRunningDns}
@@ -138,6 +139,7 @@ export const AssetDetail = () => {
             />
           ) : asset.asset_type === 'ip' ? (
             <AssetIpIntelligenceCard
+              asset={asset}
               ipContext={relatedContext?.ip_reputation ?? null}
               isLoading={isLoading}
               isRunningIp={isRunningIp}
@@ -145,6 +147,7 @@ export const AssetDetail = () => {
             />
           ) : asset.asset_type === 'github_repo' ? (
             <AssetGitHubIntelligenceCard
+              asset={asset}
               githubContext={relatedContext?.github_health ?? null}
               isLoading={isLoading}
               isRunningGitHub={isRunningGitHub}

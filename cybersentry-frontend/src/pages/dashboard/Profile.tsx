@@ -15,6 +15,7 @@ import {
 import { IconAlertTriangle, IconCheck, IconLock, IconUser } from '@tabler/icons-react';
 import type { AxiosError } from 'axios';
 import DashboardPageLayout, { DashboardStatCards } from '../../layouts/dashboard/DashboardPageLayout';
+import { notifyError, notifySuccess } from '../../utils/ui-notify';
 import {
   changePassword,
   getLoginHistory,
@@ -52,7 +53,6 @@ export const Profile = () => {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [passwordSubmitting, setPasswordSubmitting] = useState(false);
 
   const fetchProfileData = async () => {
@@ -106,7 +106,6 @@ export const Profile = () => {
 
   const handlePasswordSubmit = async () => {
     setPasswordError(null);
-    setPasswordSuccess(null);
 
     if (!oldPassword || !newPassword) {
       setPasswordError('Please provide both current and new password.');
@@ -117,17 +116,19 @@ export const Profile = () => {
 
     try {
       await changePassword({ old_password: oldPassword, new_password: newPassword });
-      setPasswordSuccess('Password updated successfully.');
       setOldPassword('');
       setNewPassword('');
       setPasswordModalOpen(false);
+      notifySuccess('Password updated', 'Your password was changed successfully.');
     } catch (err: unknown) {
       const axiosError = err as AxiosError<Record<string, string[]>>;
       const responseData = axiosError.response?.data;
       const firstError = responseData
         ? Object.values(responseData)[0]?.[0]
         : 'Unable to change password. Please verify your current password.';
-      setPasswordError(firstError || 'Unable to change password.');
+      const message = firstError || 'Unable to change password.';
+      setPasswordError(message);
+      notifyError('Password update failed', message);
     } finally {
       setPasswordSubmitting(false);
     }
@@ -144,12 +145,6 @@ export const Profile = () => {
         {error ? (
           <Alert color="red" title="Unable to load profile" variant="light">
             {error}
-          </Alert>
-        ) : null}
-
-        {passwordSuccess ? (
-          <Alert color="green" title="Password changed" variant="light" icon={<IconCheck size={16} />}>
-            {passwordSuccess}
           </Alert>
         ) : null}
 

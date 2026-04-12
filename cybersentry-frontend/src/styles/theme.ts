@@ -75,8 +75,8 @@ const baseDefinitions: Record<ThemeMode, BaseThemeDefinition> = {
       '--app-warning': '#ffe033',
       '--app-danger': '#ff3344',
       '--app-info': '#00d4ff',
-      '--app-card-shadow': '0 20px 60px rgba(0, 0, 0, 0.6)',
-      '--app-card-shadow-lg': '0 32px 96px rgba(0, 0, 0, 0.72)',
+      '--app-card-shadow': '0 10px 28px rgba(0, 0, 0, 0.34)',
+      '--app-card-shadow-lg': '0 16px 44px rgba(0, 0, 0, 0.46)',
       '--app-hero-gradient': 'linear-gradient(140deg, rgba(0, 20, 6, 0.96), rgba(0, 12, 2, 0.98))',
       '--app-panel-gradient': 'linear-gradient(180deg, rgba(0, 22, 6, 0.94), rgba(0, 14, 3, 0.96))',
       '--app-overlay-gradient': 'linear-gradient(180deg, rgba(0, 12, 2, 0) 0%, rgba(0, 12, 2, 0.82) 100%)',
@@ -102,8 +102,8 @@ const baseDefinitions: Record<ThemeMode, BaseThemeDefinition> = {
       '--app-warning': '#c47d00',
       '--app-danger': '#cc2233',
       '--app-info': '#0077bb',
-      '--app-card-shadow': '0 16px 44px rgba(5, 24, 11, 0.08)',
-      '--app-card-shadow-lg': '0 28px 70px rgba(5, 24, 11, 0.13)',
+      '--app-card-shadow': '0 8px 22px rgba(5, 24, 11, 0.06)',
+      '--app-card-shadow-lg': '0 14px 34px rgba(5, 24, 11, 0.09)',
       '--app-hero-gradient': 'linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(239, 250, 243, 0.96))',
       '--app-panel-gradient': 'linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(243, 251, 246, 0.97))',
       '--app-overlay-gradient': 'linear-gradient(180deg, rgba(240, 250, 243, 0) 0%, rgba(240, 250, 243, 0.92) 100%)',
@@ -368,7 +368,7 @@ function createComponentTheme(mode: ThemeMode, preferredTheme: PreferredTheme) {
       deg: 135,
     },
     shadows: {
-      xs: '0 8px 18px rgba(0, 12, 2, 0.08)',
+      xs: '0 3px 10px rgba(0, 12, 2, 0.06)',
       sm: 'var(--app-card-shadow)',
       md: 'var(--app-card-shadow)',
       lg: 'var(--app-card-shadow-lg)',
@@ -430,7 +430,7 @@ function createComponentTheme(mode: ThemeMode, preferredTheme: PreferredTheme) {
         styles: {
           root: {
             letterSpacing: '0.04em',
-            boxShadow: '0 12px 28px rgba(0, 12, 2, 0.18)',
+            boxShadow: '0 4px 12px rgba(0, 12, 2, 0.1)',
             textTransform: 'uppercase',
           },
           label: {
@@ -666,7 +666,7 @@ function createComponentTheme(mode: ThemeMode, preferredTheme: PreferredTheme) {
       RingProgress: RingProgress.extend({
         styles: {
           root: {
-            filter: 'drop-shadow(0 6px 16px rgba(0, 12, 2, 0.22))',
+            filter: 'drop-shadow(0 2px 8px rgba(0, 12, 2, 0.12))',
           },
         },
       }),

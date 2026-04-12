@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { closeIncident, getIncident, reopenIncident, type IncidentTicket } from '../../services/incidents';
 import { getApiErrorMessage } from '../../utils/api-error';
+import { notifyError, notifySuccess } from '../../utils/ui-notify';
 
 export const useIncidentDetail = (incidentId: number) => {
   const [incident, setIncident] = useState<IncidentTicket | null>(null);
@@ -42,8 +43,11 @@ export const useIncidentDetail = (incidentId: number) => {
     try {
       const response = await closeIncident(incident.id);
       setIncident(response.data);
+      notifySuccess('Incident closed', `${response.data.title} was closed.`);
     } catch (updateError: unknown) {
-      setError(getApiErrorMessage(updateError, ['status'], 'Failed to close incident.'));
+      const message = getApiErrorMessage(updateError, ['status'], 'Failed to close incident.');
+      setError(message);
+      notifyError('Incident close failed', message);
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -59,8 +63,11 @@ export const useIncidentDetail = (incidentId: number) => {
     try {
       const response = await reopenIncident(incident.id);
       setIncident(response.data);
+      notifySuccess('Incident reopened', `${response.data.title} is active again.`);
     } catch (updateError: unknown) {
-      setError(getApiErrorMessage(updateError, ['status'], 'Failed to reopen incident.'));
+      const message = getApiErrorMessage(updateError, ['status'], 'Failed to reopen incident.');
+      setError(message);
+      notifyError('Incident reopen failed', message);
     } finally {
       setIsUpdatingStatus(false);
     }

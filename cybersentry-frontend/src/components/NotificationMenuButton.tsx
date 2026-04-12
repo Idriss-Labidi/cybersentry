@@ -1,4 +1,4 @@
-import { Badge, Button, Divider, Group, Menu, Stack, Text } from '@mantine/core';
+import { ActionIcon, Badge, Button, Divider, Group, Indicator, Menu, Stack, Text } from '@mantine/core';
 import { IconBell } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { useNotifications } from '../hooks/notifications/useNotifications';
@@ -18,19 +18,47 @@ function getSeverityColor(severity: NotificationSeverity) {
 
 export default function NotificationMenuButton() {
   const { notifications, summary, isLoading, markRead } = useNotifications(4);
+  const unreadLabel = summary.unread > 99 ? '99+' : String(summary.unread);
+  const indicatorSize = summary.unread > 9 ? 22 : 18;
 
   return (
     <Menu shadow="md" width={340} position="bottom-end">
       <Menu.Target>
-        <Button
-          variant="default"
-          leftSection={<IconBell size={16} />}
-          aria-label="Open notifications"
+        <Indicator
+          inline
+          disabled={summary.unread === 0}
+          label={unreadLabel}
+          size={indicatorSize}
+          color="red"
+          position="bottom-end"
+          offset={6}
+          withBorder
+          styles={{
+            indicator: {
+              fontWeight: 800,
+              fontSize: summary.unread > 9 ? 10 : 11,
+              minWidth: indicatorSize,
+              height: indicatorSize,
+              paddingInline: 0,
+            },
+          }}
         >
-          {summary.unread > 0
-            ? `(${summary.unread})`
-            : ''}
-        </Button>
+          <ActionIcon
+            variant="default"
+            radius="xl"
+            size={42}
+            aria-label="Open notifications"
+            styles={{
+              root: {
+                position: 'relative',
+                background: 'var(--app-surface-soft)',
+                borderColor: 'var(--app-border)',
+              },
+            }}
+          >
+            <IconBell size={18} />
+          </ActionIcon>
+        </Indicator>
       </Menu.Target>
 
       <Menu.Dropdown p="md">

@@ -10,6 +10,7 @@ import {
   type AssetPayload,
 } from '../../services/assets';
 import { getApiErrorMessage } from '../../utils/api-error';
+import { notifyError, notifySuccess } from '../../utils/ui-notify';
 import {
   assetTypeMeta,
   buildPayload,
@@ -158,21 +159,23 @@ export function useAssets() {
     try {
       if (editingAssetId) {
         await updateAsset(editingAssetId, payload);
+        notifySuccess('Asset updated', `Changes to ${payload.name} were saved.`);
       } else {
         await createAsset(payload);
+        notifySuccess('Asset created', `${payload.name} was added to the inventory.`);
       }
 
       closeEditorModal();
       setForm(defaultFormState);
       await loadAssets();
     } catch (submitError: unknown) {
-      setError(
-        getApiErrorMessage(
-          submitError,
-          ['name', 'value', 'risk_score', 'organization', 'non_field_errors'],
-          'Failed to save asset.'
-        )
+      const message = getApiErrorMessage(
+        submitError,
+        ['name', 'value', 'risk_score', 'organization', 'non_field_errors'],
+        'Failed to save asset.'
       );
+      setError(message);
+      notifyError('Asset save failed', message);
     } finally {
       setIsSubmitting(false);
     }
@@ -192,10 +195,13 @@ export function useAssets() {
 
     try {
       await deleteAsset(deleteModalAsset.id);
+      notifySuccess('Asset deleted', `${deleteModalAsset.name} was removed from the inventory.`);
       setDeleteModalAsset(null);
       await loadAssets();
     } catch (deleteError: unknown) {
-      setError(getApiErrorMessage(deleteError, [], 'Failed to delete asset.'));
+      const message = getApiErrorMessage(deleteError, [], 'Failed to delete asset.');
+      setError(message);
+      notifyError('Asset deletion failed', message);
     } finally {
       setIsDeleting(false);
     }

@@ -32,6 +32,7 @@ import {
 } from '@tabler/icons-react';
 import type { AxiosError } from 'axios';
 import { GuidanceGroup, type GuidanceItem } from '../../../components/guidance/GuidanceHoverCard';
+import { ReportActionButtons } from '../../../components/reports/ReportActionButtons';
 import DnsHealthResult from '../../../components/dns-intelligence/DnsHealthResult';
 import { DnsHealthCheck } from '../../tools/dns/DnsHealthCheck';
 import { DnsLookup } from '../../tools/dns/DnsLookup';
@@ -44,6 +45,10 @@ import {
   getDnsHealthHistory,
   type DnsHealthHistoryEntry,
 } from '../../../services/dns-tools';
+import { downloadReport, type ReportExportFormat } from '../../../utils/assets/assetScanExport';
+import { printReport } from '../../../utils/assets/assetScanPrint';
+import { createStandaloneDnsHealthReport } from '../../../utils/assets/assetScanReport';
+import { notifyError, notifySuccess } from '../../../utils/ui-notify';
 
 const gradeColor = (grade: string) => {
   switch (grade) {
@@ -130,6 +135,7 @@ export const Dns = () => {
     try {
       await deleteDnsHealthHistoryEntry(scanId);
       setHistory((current) => current.filter((entry) => entry.id !== scanId));
+      notifySuccess('DNS scan deleted', 'The DNS health history entry was removed.');
 
       if (selectedScan?.id === scanId) {
         setSelectedScan(null);
@@ -137,8 +143,27 @@ export const Dns = () => {
       }
     } catch {
       setHistoryError('Failed to delete DNS health scan.');
+      notifyError('DNS deletion failed', 'The DNS health history entry could not be removed.');
     } finally {
       setDeletingScanId(null);
+    }
+  };
+
+  const handleReportAction = (entry: DnsHealthHistoryEntry, action: 'print' | ReportExportFormat) => {
+    try {
+      const report = createStandaloneDnsHealthReport(entry);
+
+      if (action === 'print') {
+        printReport(report);
+        return;
+      }
+
+      downloadReport(report, action);
+    } catch {
+      notifyError(
+        'Report action failed',
+        `The DNS health report could not be ${action === 'print' ? 'opened for printing' : `exported as ${action.toUpperCase()}`}.`
+      );
     }
   };
 
@@ -297,6 +322,10 @@ export const Dns = () => {
                             <Table.Td style={{ textAlign: 'center' }}>
                               <Center>
                                 <Group gap="xs" wrap="nowrap">
+                                  <ReportActionButtons
+                                    onPrint={() => handleReportAction(entry, 'print')}
+                                    onExport={(format) => handleReportAction(entry, format)}
+                                  />
                                   <ActionIcon
                                     color="blue"
                                     variant="light"

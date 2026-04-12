@@ -11,6 +11,7 @@ import {
   type AssetRiskHistoryEntry,
 } from '../../services/assets';
 import { getApiErrorMessage } from '../../utils/api-error';
+import { notifyError, notifySuccess } from '../../utils/ui-notify';
 
 export const useAssetDetail = (assetId: number) => {
   const [asset, setAsset] = useState<Asset | null>(null);
@@ -64,8 +65,11 @@ export const useAssetDetail = (assetId: number) => {
     try {
       await runAssetDnsMonitor(asset.id);
       await loadAssetData();
+      notifySuccess('DNS monitor completed', `DNS monitoring finished for ${asset.name}.`);
     } catch (runError: unknown) {
-      setError(getApiErrorMessage(runError, [], 'Failed to run DNS monitoring.'));
+      const message = getApiErrorMessage(runError, [], 'Failed to run DNS monitoring.');
+      setError(message);
+      notifyError('DNS monitoring failed', message);
     } finally {
       setIsRunningDns(false);
     }
@@ -82,8 +86,11 @@ export const useAssetDetail = (assetId: number) => {
     try {
       await runAssetIpReputation(asset.id);
       await loadAssetData();
+      notifySuccess('IP reputation completed', `IP intelligence was refreshed for ${asset.name}.`);
     } catch (runError: unknown) {
-      setError(getApiErrorMessage(runError, [], 'Failed to run IP reputation check.'));
+      const message = getApiErrorMessage(runError, [], 'Failed to run IP reputation check.');
+      setError(message);
+      notifyError('IP reputation failed', message);
     } finally {
       setIsRunningIp(false);
     }
@@ -100,8 +107,11 @@ export const useAssetDetail = (assetId: number) => {
     try {
       await runAssetGitHubHealth(asset.id);
       await loadAssetData();
+      notifySuccess('GitHub health completed', `Repository health was refreshed for ${asset.name}.`);
     } catch (runError: unknown) {
-      setError(getApiErrorMessage(runError, [], 'Failed to run GitHub health check.'));
+      const message = getApiErrorMessage(runError, [], 'Failed to run GitHub health check.');
+      setError(message);
+      notifyError('GitHub health failed', message);
     } finally {
       setIsRunningGitHub(false);
     }

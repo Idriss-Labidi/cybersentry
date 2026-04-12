@@ -8,6 +8,7 @@ import {
   type NotificationEvent,
   type NotificationSummary,
 } from '../../services/notifications';
+import { notifyError, notifySuccess } from '../../utils/ui-notify';
 
 const emptySummary: NotificationSummary = {
   total: 0,
@@ -51,13 +52,22 @@ export function useNotifications(limit = 20) {
   }, [limit]);
 
   const markRead = useCallback(async (id: number) => {
-    await markNotificationRead(id);
-    await loadNotifications();
+    try {
+      await markNotificationRead(id);
+      await loadNotifications();
+    } catch {
+      notifyError('Notification update failed', 'The notification could not be marked as read.');
+    }
   }, [loadNotifications]);
 
   const markAllRead = useCallback(async () => {
-    await markAllNotificationsRead();
-    await loadNotifications();
+    try {
+      await markAllNotificationsRead();
+      await loadNotifications();
+      notifySuccess('Notifications cleared', 'All notifications were marked as read.');
+    } catch {
+      notifyError('Notification update failed', 'The notifications could not be marked as read.');
+    }
   }, [loadNotifications]);
 
   useEffect(() => {

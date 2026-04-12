@@ -17,10 +17,11 @@ import {
   TextInput,
   PasswordInput,
 } from '@mantine/core';
-import { IconAlertTriangle, IconCheck, IconPencil, IconPlus, IconTrash, IconUsers } from '@tabler/icons-react';
+import { IconAlertTriangle, IconPencil, IconPlus, IconTrash, IconUsers } from '@tabler/icons-react';
 import DashboardPageLayout from '../../../layouts/dashboard/DashboardPageLayout';
 import { getProfileInfo, type UserProfile } from '../../../services/profile';
 import { adminUsersApi, type CreateManagedUserPayload, type ManagedUser, type UpdateManagedUserPayload } from '../../../services/admin-users';
+import { notifyError, notifySuccess } from '../../../utils/ui-notify';
 
 const roleOptions = [
   { value: 'admin', label: 'Admin' },
@@ -66,7 +67,6 @@ export const UserManagement = () => {
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<ManagedUser | null>(null);
@@ -123,7 +123,6 @@ export const UserManagement = () => {
     setEditingUser(null);
     setFormState(emptyFormState);
     setError(null);
-    setSuccess(null);
     setModalOpen(true);
   };
 
@@ -139,7 +138,6 @@ export const UserManagement = () => {
       password: '',
     });
     setError(null);
-    setSuccess(null);
     setModalOpen(true);
   };
 
@@ -151,7 +149,6 @@ export const UserManagement = () => {
 
   const handleSubmit = async () => {
     setError(null);
-    setSuccess(null);
 
     if (!formState.email.trim()) {
       setError('Email is required.');
@@ -173,7 +170,7 @@ export const UserManagement = () => {
         };
 
         await adminUsersApi.updateManagedUser(editingUser.id, payload);
-        setSuccess('User updated successfully.');
+        notifySuccess('User updated', `${formState.email.trim()} was updated successfully.`);
       } else {
         const payload: CreateManagedUserPayload = {
           username: formState.username.trim() || undefined,
@@ -185,7 +182,7 @@ export const UserManagement = () => {
         };
 
         await adminUsersApi.createManagedUser(payload);
-        setSuccess('User created successfully.');
+        notifySuccess('User created', `${formState.email.trim()} was added successfully.`);
       }
 
       closeModal();
@@ -196,7 +193,9 @@ export const UserManagement = () => {
       const firstError = responseData
         ? responseData.detail ?? Object.values(responseData)[0]?.[0]
         : 'Unable to save user details. Please review the fields and try again.';
-      setError(typeof firstError === 'string' ? firstError : 'Unable to save user details.');
+      const message = typeof firstError === 'string' ? firstError : 'Unable to save user details.';
+      setError(message);
+      notifyError('User save failed', message);
     } finally {
       setSubmitting(false);
     }
@@ -209,11 +208,13 @@ export const UserManagement = () => {
 
     try {
       await adminUsersApi.deleteManagedUser(user.id);
-      setSuccess('User deleted successfully.');
+      notifySuccess('User deleted', `${user.full_name || user.email} was removed.`);
       await loadUsers();
     } catch (err: unknown) {
       const axiosError = err as AxiosError<{ detail?: string }>;
-      setError(axiosError.response?.data?.detail ?? 'Unable to delete user right now.');
+      const message = axiosError.response?.data?.detail ?? 'Unable to delete user right now.';
+      setError(message);
+      notifyError('User deletion failed', message);
     }
   };
 
@@ -234,12 +235,6 @@ export const UserManagement = () => {
         {error ? (
           <Alert color="red" title="User management unavailable" variant="light" icon={<IconAlertTriangle size={16} />}>
             {error}
-          </Alert>
-        ) : null}
-
-        {success ? (
-          <Alert color="green" title="Success" variant="light" icon={<IconCheck size={16} />}>
-            {success}
           </Alert>
         ) : null}
 

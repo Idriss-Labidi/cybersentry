@@ -1,6 +1,8 @@
 import { ActionIcon, Alert, Badge, Button, Card, Center, Group, LoadingOverlay, Paper, ScrollArea, SimpleGrid, Stack, Table, Text, ThemeIcon, Title } from '@mantine/core';
 import { IconAlertCircle, IconAlertTriangle, IconEye, IconFingerprint, IconHistory, IconTrash } from '@tabler/icons-react';
+import { ReportActionButtons } from '../reports/ReportActionButtons';
 import type { IPReputationScanHistory } from '../../services/ip-tools';
+import type { ReportExportFormat } from '../../utils/assets/assetScanExport';
 import { formatScanDate, riskColor } from '../../utils/ip-intelligence';
 
 type IpHistorySectionProps = {
@@ -10,6 +12,8 @@ type IpHistorySectionProps = {
   canLoadMore: boolean;
   deletingScanId: number | null;
   onLoadMore: () => void;
+  onPrint: (scan: IPReputationScanHistory) => void;
+  onExport: (scan: IPReputationScanHistory, format: ReportExportFormat) => void;
   onViewDetails: (scan: IPReputationScanHistory) => void;
   onDelete: (scanId: number) => void;
 };
@@ -21,6 +25,8 @@ export default function IpHistorySection({
   canLoadMore,
   deletingScanId,
   onLoadMore,
+  onPrint,
+  onExport,
   onViewDetails,
   onDelete,
 }: IpHistorySectionProps) {
@@ -114,6 +120,10 @@ export default function IpHistorySection({
                       <Table.Td style={{ textAlign: 'center' }}>
                         <Center>
                           <Group gap="xs" wrap="nowrap">
+                            <ReportActionButtons
+                              onPrint={() => onPrint(scan)}
+                              onExport={(format) => onExport(scan, format)}
+                            />
                             <ActionIcon
                               color="blue"
                               variant="light"

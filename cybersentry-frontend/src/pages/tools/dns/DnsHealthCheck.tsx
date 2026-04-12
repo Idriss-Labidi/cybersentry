@@ -20,6 +20,7 @@ import ToolPageLayout from '../../../layouts/tools/ToolPageLayout';
 import { lookupAsset, type Asset, type AssetPayload } from '../../../services/assets';
 import { dnsHealthCheck, type DnsHealthCheckResponse } from '../../../services/dns-tools';
 import { getApiErrorMessage } from '../../../utils/api-error';
+import { notifyError, notifySuccess } from '../../../utils/ui-notify';
 
 type DnsHealthCheckProps = {
   embedded?: boolean;
@@ -72,6 +73,7 @@ export const DnsHealthCheck = ({ embedded = false }: DnsHealthCheckProps) => {
     try {
       const response = await dnsHealthCheck({ domain_name: domain.trim() });
       setResult(response.data);
+      notifySuccess('DNS health check completed', `${response.data.domain} was analyzed successfully.`);
     } catch (error: unknown) {
       const message = getApiErrorMessage(
         error,
@@ -79,6 +81,7 @@ export const DnsHealthCheck = ({ embedded = false }: DnsHealthCheckProps) => {
         'An error occurred while performing the health check.'
       );
       setError(message);
+      notifyError('DNS health check failed', message);
     } finally {
       setLoading(false);
     }
