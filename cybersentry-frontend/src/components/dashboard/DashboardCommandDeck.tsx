@@ -3,50 +3,46 @@ import {
   IconAlertTriangle,
   IconArrowRight,
   IconBolt,
+  IconBrowser,
   IconBrandGithub,
+  IconBellRinging,
   IconFlag3,
-  IconPackages,
   IconRadar2,
-  IconShieldCheck,
   IconWorldWww,
 } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 
 type DashboardCommandDeckProps = {
   criticalIncidents: number;
-  breachedIncidents: number;
   unreadAlerts: number;
   criticalAlerts: number;
   uncoveredAssets: number;
-  dominantSurface: string;
   className?: string;
 };
 
 const primaryActions = [
-  { label: 'Review assets', to: '/dashboard/assets' },
   { label: 'Open alerts', to: '/dashboard/alerts' },
   { label: 'Inspect incidents', to: '/dashboard/incidents' },
+  { label: 'Analytics', to: '/dashboard/analytics' },
 ];
 
 const intelligenceActions = [
   { label: 'DNS', to: '/dashboard/dns-intelligence', icon: IconWorldWww },
   { label: 'IP', to: '/dashboard/ip-intelligence', icon: IconRadar2 },
   { label: 'GitHub', to: '/dashboard/github', icon: IconBrandGithub },
-  { label: 'Websites', to: '/dashboard/assets?type=website', icon: IconShieldCheck },
+  { label: 'Websites', to: '/dashboard/assets', icon: IconBrowser },
 ];
 
 export function DashboardCommandDeck({
   criticalIncidents,
-  breachedIncidents,
   unreadAlerts,
   criticalAlerts,
   uncoveredAssets,
-  dominantSurface,
   className,
 }: DashboardCommandDeckProps) {
   return (
     <Paper p="xl" radius="xl" className={`dashboard-panel ${className ?? ''}`.trim()}>
-      <Stack gap="lg">
+      <Stack gap="lg" h="100%">
         <Group gap="sm">
           <ThemeIcon size={48} radius="xl" variant="light" color="brand">
             <IconBolt size={22} />
@@ -66,7 +62,7 @@ export function DashboardCommandDeck({
             <Group gap="xs" mb={6}>
               <IconFlag3 size={16} />
               <Text size="xs" tt="uppercase" fw={700} c="dimmed" style={{ letterSpacing: '0.08em' }}>
-                Critical incidents
+                Incidents
               </Text>
             </Group>
             <Text size="xl" fw={900} c={criticalIncidents > 0 ? 'red' : undefined}>
@@ -78,7 +74,7 @@ export function DashboardCommandDeck({
             <Group gap="xs" mb={6}>
               <IconAlertTriangle size={16} />
               <Text size="xs" tt="uppercase" fw={700} c="dimmed" style={{ letterSpacing: '0.08em' }}>
-                Alert queue
+                Open alerts
               </Text>
             </Group>
             <Text size="xl" fw={900} c={unreadAlerts > 0 ? 'yellow' : undefined}>
@@ -100,29 +96,20 @@ export function DashboardCommandDeck({
 
           <Paper p="sm" radius="lg" className="dashboard-panel-soft" withBorder>
             <Group gap="xs" mb={6}>
-              <IconPackages size={16} />
+              <IconBellRinging size={16} />
               <Text size="xs" tt="uppercase" fw={700} c="dimmed" style={{ letterSpacing: '0.08em' }}>
-                Dominant surface
+                Critical alerts
               </Text>
             </Group>
-            <Text size="lg" fw={900}>
-              {dominantSurface}
+            <Text size="xl" fw={900} c={criticalAlerts > 0 ? 'red' : undefined}>
+              {criticalAlerts}
             </Text>
           </Paper>
         </SimpleGrid>
 
-        <Stack gap="xs">
-          <Text size="sm" c="dimmed">
-            {breachedIncidents > 0
-              ? `${breachedIncidents} incident${breachedIncidents > 1 ? 's are' : ' is'} already breaching SLA expectations.`
-              : 'No active SLA breaches detected right now.'}
-          </Text>
-          <Text size="sm" c="dimmed">
-            {criticalAlerts > 0
-              ? `${criticalAlerts} critical alert${criticalAlerts > 1 ? 's are' : ' is'} waiting in the notification pipeline.`
-              : 'No critical alert cluster is building at the moment.'}
-          </Text>
-        </Stack>
+        <Text size="sm" c="dimmed" className="dashboard-command-note">
+          Jump straight to inventory, response, or deeper intelligence without leaving the cockpit.
+        </Text>
 
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
           {primaryActions.map((action) => (
@@ -144,7 +131,7 @@ export function DashboardCommandDeck({
           <Text size="xs" tt="uppercase" fw={700} c="dimmed" style={{ letterSpacing: '0.08em' }}>
             Intelligence hubs
           </Text>
-          <SimpleGrid cols={{ base: 2, sm: 2 }} spacing="sm">
+          <SimpleGrid cols={2} spacing="sm">
             {intelligenceActions.map((action) => (
               <Button
                 key={action.to}

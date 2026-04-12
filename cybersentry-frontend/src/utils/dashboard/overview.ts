@@ -278,7 +278,6 @@ export function buildPulse(
   const incidentPenalty = Math.min(activeIncidents.length * 5 + criticalIncidents.length * 6, 24);
   const alertPenalty = Math.min(notificationSummary.critical * 4 + notificationSummary.unread * 1.5, 20);
   const averageRisk = Math.round(summary.average_risk_score);
-  const externalSurfaces = summary.by_type.domain + summary.by_type.website;
 
   const score = Math.round(clamp(100 - highRiskPenalty - coveragePenalty - incidentPenalty - alertPenalty, 8, 98));
 
@@ -304,12 +303,12 @@ export function buildPulse(
     tone,
     summary:
       score >= 80
-        ? 'The workspace is relatively stable. Most pressure is concentrated in a small number of assets and incidents.'
+        ? 'Coverage is holding and immediate pressure is limited.'
         : score >= 60
-          ? 'The workspace is under moderate pressure. A few high-risk assets or unresolved alerts are starting to accumulate.'
-          : score >= 40
-            ? 'The workspace needs attention now. Risk, alert volume, or incident load are high enough to slow response quality.'
-            : 'The workspace is under heavy pressure. Operators should focus on the priority queue and critical asset coverage first.',
+          ? 'A small cluster of risky assets or unresolved alerts needs attention.'
+        : score >= 40
+            ? 'Risk and response load are high enough to slow normal handling.'
+            : 'Critical risk or unresolved workload is overwhelming normal response.',
     highlights: [
       {
         label: 'Scan coverage',
@@ -320,11 +319,6 @@ export function buildPulse(
         label: 'Average risk',
         value: `${averageRisk}/100`,
         tone: getAssetRiskTone(averageRisk),
-      },
-      {
-        label: 'External surfaces',
-        value: String(externalSurfaces),
-        tone: externalSurfaces > 0 ? 'blue' : 'gray',
       },
       {
         label: 'High-risk assets',

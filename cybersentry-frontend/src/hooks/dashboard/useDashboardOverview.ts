@@ -8,16 +8,11 @@ import {
   type NotificationSummary,
 } from '../../services/notifications';
 import {
-  buildActionQueue,
-  buildActivityFeed,
-  buildAlertFeed,
   buildAssetTypeDistribution,
   buildCategoryDistribution,
   buildIncidentSnapshot,
   buildPulse,
   buildRiskBandDistribution,
-  buildStaleAssets,
-  buildTopRiskAssets,
   emptySummary,
   normalizeNotificationsPayload,
 } from '../../utils/dashboard/overview';
@@ -91,24 +86,16 @@ export function useDashboardOverview() {
   const derived = useMemo(() => {
     const pulse = buildPulse(assets, summary, incidents, notificationSummary);
     const incidentSnapshot = buildIncidentSnapshot(incidents);
-    const alertFeed = buildAlertFeed(notifications);
-    const staleAssets = buildStaleAssets(assets);
-    const topRiskAssets = buildTopRiskAssets(assets);
 
     return {
       pulse,
       incidentSnapshot,
-      alertFeed,
-      staleAssets,
-      topRiskAssets,
       assetTypeDistribution: buildAssetTypeDistribution(summary),
       categoryDistribution: buildCategoryDistribution(summary),
       riskBandDistribution: buildRiskBandDistribution(assets),
-      actionQueue: buildActionQueue(incidentSnapshot.top, notifications, staleAssets),
-      activityFeed: buildActivityFeed(notifications, incidentSnapshot.top),
       scannedAssetsCount: assets.filter((asset) => !!asset.last_scanned_at).length,
     };
-  }, [assets, incidents, notificationSummary, notifications, summary]);
+  }, [assets, incidents, notificationSummary, summary]);
 
   return {
     assets,
@@ -124,4 +111,3 @@ export function useDashboardOverview() {
     ...derived,
   };
 }
-
