@@ -376,7 +376,7 @@ export const IncidentDetail = () => {
               <Stack gap="md">
                 {incident.comments && incident.comments.length > 0 ? (
                   incident.comments.map((comment) => (
-                    <Paper key={comment.id} p="md" radius="md" bg="gray.0">
+                    <Paper key={comment.id} p="md" radius="md">
                       <Group justify="space-between" mb="xs">
                         <Group gap="sm">
                           <Avatar name={comment.author.full_name} size="sm" />
@@ -501,7 +501,7 @@ export const IncidentDetail = () => {
             </Paper>
 
             {/* SLA INFO */}
-            <Paper p="lg" radius="xl" withBorder bg="blue.0">
+            <Paper p="lg" radius="xl" withBorder>
               <Text fw={600} mb="md">
                 SLA Information
               </Text>
