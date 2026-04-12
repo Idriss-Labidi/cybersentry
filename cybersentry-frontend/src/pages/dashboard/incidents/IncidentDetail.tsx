@@ -46,6 +46,7 @@ export const IncidentDetail = () => {
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
   const [teamMembers, setTeamMembers] = useState<Array<{ value: string; label: string }>>([]);
   const [loadingTeamMembers, setLoadingTeamMembers] = useState(false);
+  const [teamMembersError, setTeamMembersError] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
@@ -57,24 +58,33 @@ export const IncidentDetail = () => {
 
     const loadTeamMembers = async () => {
       setLoadingTeamMembers(true);
+      setTeamMembersError(null);
       try {
         const response = await getOrganizationUsers();
-        const members = response.data
-          .filter((user) => user.role !== 'admin' || incident?.created_by?.id === user.id) // Show all users, filter as needed
-          .map((user) => ({
-            value: String(user.id),
-            label: user.full_name || user.email,
-          }));
+        console.log('Organization users response:', response.data);
+        
+        // Map users to dropdown options
+        const members = response.data.map((user) => ({
+          value: String(user.id),
+          label: `${user.full_name || user.email}${user.role ? ` (${user.role})` : ''}`,
+        }));
+        
+        console.log('Mapped team members:', members);
         setTeamMembers(members);
+        
+        if (members.length === 0) {
+          setTeamMembersError('No active users found in your organization.');
+        }
       } catch (err) {
         console.error('Failed to load team members:', err);
+        setTeamMembersError('Failed to load team members. Please try again.');
       } finally {
         setLoadingTeamMembers(false);
       }
     };
 
     loadTeamMembers();
-  }, [assignModalOpen, incident?.created_by?.id]);
+  }, [assignModalOpen]);
 
   useEffect(() => {
     setCurrentLabel(incident?.title ?? null);
@@ -529,8 +539,17 @@ export const IncidentDetail = () => {
         <Stack>
           {loadingTeamMembers ? (
             <Group justify="center" py="lg">
-              <Loader />
+              <Loader size="sm" />
+              <Text size="sm" c="dimmed">Loading team members...</Text>
             </Group>
+          ) : teamMembersError ? (
+            <Alert color="yellow" variant="light">
+              {teamMembersError}
+            </Alert>
+          ) : teamMembers.length === 0 ? (
+            <Alert color="blue" variant="light">
+              No team members available to assign.
+            </Alert>
           ) : (
             <>
               <Select
@@ -541,6 +560,7 @@ export const IncidentDetail = () => {
                 onChange={setSelectedAssignee}
                 searchable
                 clearable
+                maxDropdownHeight={300}
               />
               <Group justify="flex-end">
                 <Button variant="default" onClick={() => setAssignModalOpen(false)}>

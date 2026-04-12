@@ -166,6 +166,24 @@ def user_settings(request):
     )
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def organization_users_list(request):
+    """List all users in the current user's organization for assignment dropdowns"""
+    organization = request.user.organization
+
+    if not organization:
+        return Response([], status=status.HTTP_200_OK)
+
+    users = user_model.objects.filter(
+        organization=organization,
+        is_active=True  # Only show active users for assignment
+    ).order_by('email')
+
+    serializer = OrganizationUserSerializer(users, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class OrganizationUserViewSet(viewsets.ModelViewSet):
     serializer_class = OrganizationUserSerializer
     permission_classes = [IsAuthenticated, IsOrganizationAdmin]

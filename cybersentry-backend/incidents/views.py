@@ -4,11 +4,14 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.contrib.auth import get_user_model
 
 from accounts.services import ensure_user_organization
 
-from .models import IncidentTicket
+from .models import IncidentTicket, IncidentComment
 from .serializers import IncidentTicketSerializer
+
+user_model = get_user_model()
 
 
 class IncidentTicketViewSet(viewsets.ModelViewSet):
@@ -100,3 +103,49 @@ class IncidentTicketViewSet(viewsets.ModelViewSet):
         serializer.save(updated_by=request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['post'])
+    def add_comment(self, request, pk=None):
+        """Add a comment to the ticket"""
+        ticket = self.get_object()
+        content = request.data.get('content', '').strip()
+        
+        if not content:
+            return Response(
+                {'content': 'Comment cannot be empty.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        comment = IncidentComment.objects.create(
+            ticket=ticket,
+            author=request.user,
+            content=content,
+        )
+        
+        from .serializers import IncidentCommentSerializer
+        serializer = IncidentCommentSerializer(comment)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def assign(self, request, pk=None):
+        """Assign ticket to a user"""
+        ticket = self.get_object()
+        assigned_to_id = request.data.get('assigned_to_id')
+        
+        if assigned_to_id is None:
+            ticket.assigned_to = None
+        else:
+            try:
+                assigned_user = user_model.objects.get(
+                    id=assigned_to_id,
+                    organization=ticket.organization,
+                )
+                ticket.assigned_to = assigned_user
+            except user_model.DoesNotExist:
+                return Response(
+                    {'detail': 'User not found in this organization.'},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+        
+        ticket.save(update_fields=['assigned_to'])
+        serializer = self.get_serializer(ticket)
+        return Response(serializer.data, status=status.HTTP_200_OK)

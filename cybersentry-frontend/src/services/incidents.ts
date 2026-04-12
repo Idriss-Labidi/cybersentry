@@ -164,5 +164,5 @@ export const getOrganizationUsers = () =>
     email: string;
     full_name: string;
     role: string;
-  }>>('/api/accounts/organization-users/');
+  }>>('/api/organization-users/');
 
