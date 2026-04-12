@@ -10,7 +10,7 @@ class OrganizationAdmin(admin.ModelAdmin):
     form = OrganizationForm
     list_display = ('name', 'contact_email', 'license_type', 'license_expiry')
     search_fields = ('name', 'contact_email')
-    
+
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
         admin_emails_field = form.cleaned_data.get('admin_emails')
@@ -19,26 +19,13 @@ class OrganizationAdmin(admin.ModelAdmin):
             admin_emails = [email.strip() for email in admin_emails_field.split(',')]
             
             create_organization_admins_and_notify(obj, admin_emails, request)
-            
+
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'role', 'organization')
     search_fields = ('username', 'email')
     list_filter = ('role', 'organization')
 
-
-@admin.register(LoginHistory)
-class LoginHistoryAdmin(admin.ModelAdmin):
-    list_display = ('user', 'timestamp', 'ip_address')
-    search_fields = ('user__email', 'ip_address', 'user_agent')
-    readonly_fields = ('user', 'timestamp', 'ip_address', 'user_agent')
-
-
-@admin.register(UserSettings)
-class UserSettingsAdmin(admin.ModelAdmin):
-    list_display = ('user', 'use_cache', 'cache_duration', 'preferred_theme')
-    search_fields = ('user__email',)
-            
 
             
         
