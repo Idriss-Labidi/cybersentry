@@ -1,0 +1,38 @@
+.kanbanBoard {
+  width: 100%;
+  padding-bottom: 1rem;
+  gap: 1rem;
+}
+
+.kanbanColumn {
+  flex: 0 0 320px;
+  max-height: calc(100vh - 300px);
+  border-color: var(--app-border);
+  background-color: var(--app-surface-soft);
+}
+
+.kanbanCard {
+  cursor: pointer;
+  border-color: var(--app-border);
+  background-color: var(--app-surface);
+  transition: all 0.2s ease;
+  border-width: 1px;
+  border-style: solid;
+
+  &:hover {
+    box-shadow: 0 2px 8px rgba(var(--app-primary-rgb), 0.12);
+    transform: translateY(-2px);
+    border-color: var(--app-primary);
+  }
+}
+
+.cardsContainer {
+  min-height: 100px;
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--app-border);
+  margin: 0.5rem 0;
+}
+

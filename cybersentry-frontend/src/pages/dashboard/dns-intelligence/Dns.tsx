@@ -1,38 +1,24 @@
 import { useEffect, useState } from 'react';
 import {
-  ActionIcon,
-  Alert,
-  Badge,
-  Button,
-  Center,
   Container,
-  Group,
-  Loader,
   Modal,
-  Paper,
-  SimpleGrid,
   Stack,
-  Table,
   Text,
   Title,
   Tabs,
 } from '@mantine/core';
 import {
-  IconAlertCircle,
-  IconEye,
   IconFileText,
   IconFingerprint,
   IconHistory,
   IconMailCheck,
-  IconRefresh,
   IconSearch,
   IconShieldCheck,
-  IconTrash,
   IconWorldWww,
 } from '@tabler/icons-react';
 import type { AxiosError } from 'axios';
+import DnsHealthHistorySection from '../../../components/dns-intelligence/DnsHealthHistorySection';
 import { GuidanceGroup, type GuidanceItem } from '../../../components/guidance/GuidanceHoverCard';
-import { ReportActionButtons } from '../../../components/reports/ReportActionButtons';
 import DnsHealthResult from '../../../components/dns-intelligence/DnsHealthResult';
 import { DnsHealthCheck } from '../../tools/dns/DnsHealthCheck';
 import { DnsLookup } from '../../tools/dns/DnsLookup';
@@ -49,32 +35,6 @@ import { downloadReport, type ReportExportFormat } from '../../../utils/assets/a
 import { printReport } from '../../../utils/assets/assetScanPrint';
 import { createStandaloneDnsHealthReport } from '../../../utils/assets/assetScanReport';
 import { notifyError, notifySuccess } from '../../../utils/ui-notify';
-
-const gradeColor = (grade: string) => {
-  switch (grade) {
-    case 'A':
-      return 'green';
-    case 'B':
-      return 'teal';
-    case 'C':
-      return 'yellow';
-    case 'D':
-      return 'orange';
-    case 'F':
-      return 'red';
-    default:
-      return 'gray';
-  }
-};
-
-const formatDate = (value?: string | null) => {
-  if (!value) {
-    return 'Not available';
-  }
-
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? 'Not available' : date.toLocaleString();
-};
 
 export const Dns = () => {
   const guidanceItems: GuidanceItem[] = [
@@ -231,144 +191,19 @@ export const Dns = () => {
           </Tabs.Panel>
 
           <Tabs.Panel value="history" pt="xl">
-            <Stack gap="lg">
-              <Group justify="space-between">
-                <div>
-                  <Title order={4}>DNS Health History</Title>
-                  <Text size="sm" c="dimmed">
-                    Review saved DNS health scans for authenticated runs.
-                  </Text>
-                </div>
-                <Button variant="light" leftSection={<IconRefresh size={16} />} onClick={() => void loadHistory()}>
-                  Refresh history
-                </Button>
-              </Group>
-
-              {historyError ? (
-                <Alert icon={<IconAlertCircle size={16} />} color="red">
-                  {historyError}
-                </Alert>
-              ) : null}
-
-              {historyLoading ? (
-                <Center py="xl">
-                  <Loader />
-                </Center>
-              ) : history.length > 0 ? (
-                <>
-                  <SimpleGrid cols={{ base: 1, sm: 2, xl: 4 }} spacing="md">
-                    <Paper p="md" radius="md" withBorder>
-                      <Text size="xs" c="dimmed" fw={700}>
-                        Total Scans
-                      </Text>
-                      <Text size="xl" fw={700}>
-                        {history.length}
-                      </Text>
-                    </Paper>
-                    <Paper p="md" radius="md" withBorder>
-                      <Text size="xs" c="dimmed" fw={700}>
-                        High Risk Domains
-                      </Text>
-                      <Text size="xl" fw={700} c="red">
-                        {history.filter((entry) => entry.score < 60).length}
-                      </Text>
-                    </Paper>
-                    <Paper p="md" radius="md" withBorder>
-                      <Text size="xs" c="dimmed" fw={700}>
-                        Best Grade
-                      </Text>
-                      <Text size="xl" fw={700}>
-                        {history.find((entry) => entry.grade === 'A') ? 'A' : history[0]?.grade ?? '--'}
-                      </Text>
-                    </Paper>
-                    <Paper p="md" radius="md" withBorder>
-                      <Text size="xs" c="dimmed" fw={700}>
-                        Latest Scan
-                      </Text>
-                      <Text size="sm" fw={700}>
-                        {formatDate(history[0]?.scanned_at)}
-                      </Text>
-                    </Paper>
-                  </SimpleGrid>
-
-                  <Paper p="md" radius="md" withBorder>
-                    <Table striped highlightOnHover>
-                      <Table.Thead>
-                        <Table.Tr>
-                          <Table.Th>Domain</Table.Th>
-                          <Table.Th>Score</Table.Th>
-                          <Table.Th>Grade</Table.Th>
-                          <Table.Th>Scanned</Table.Th>
-                          <Table.Th style={{ textAlign: 'center' }}>Actions</Table.Th>
-                        </Table.Tr>
-                      </Table.Thead>
-                      <Table.Tbody>
-                        {history.map((entry) => (
-                          <Table.Tr key={entry.id}>
-                            <Table.Td>
-                              <Text fw={700}>{entry.domain_name}</Text>
-                            </Table.Td>
-                            <Table.Td>
-                              <Badge color={gradeColor(entry.grade)}>{entry.score}/100</Badge>
-                            </Table.Td>
-                            <Table.Td>
-                              <Badge variant="light" color={gradeColor(entry.grade)}>
-                                {entry.grade}
-                              </Badge>
-                            </Table.Td>
-                            <Table.Td>
-                              <Text size="sm">{formatDate(entry.scanned_at)}</Text>
-                            </Table.Td>
-                            <Table.Td style={{ textAlign: 'center' }}>
-                              <Center>
-                                <Group gap="xs" wrap="nowrap">
-                                  <ReportActionButtons
-                                    onPrint={() => handleReportAction(entry, 'print')}
-                                    onExport={(format) => handleReportAction(entry, format)}
-                                  />
-                                  <ActionIcon
-                                    color="blue"
-                                    variant="light"
-                                    title="View details"
-                                    onClick={() => {
-                                      setSelectedScan(entry);
-                                      setDetailsOpen(true);
-                                    }}
-                                  >
-                                    <IconEye size={16} />
-                                  </ActionIcon>
-                                  <ActionIcon
-                                    color="red"
-                                    variant="light"
-                                    title="Delete"
-                                    loading={deletingScanId === entry.id}
-                                    onClick={() => void handleDeleteHistoryEntry(entry.id)}
-                                  >
-                                    <IconTrash size={16} />
-                                  </ActionIcon>
-                                </Group>
-                              </Center>
-                            </Table.Td>
-                          </Table.Tr>
-                        ))}
-                      </Table.Tbody>
-                    </Table>
-                  </Paper>
-                </>
-              ) : (
-                <Paper p="xl" radius="md" withBorder>
-                  <Center>
-                    <Stack gap="sm" align="center">
-                      <IconHistory size={42} />
-                      <Text fw={700}>No DNS history yet</Text>
-                      <Text size="sm" c="dimmed" ta="center">
-                        Run a DNS health check while authenticated to build history.
-                      </Text>
-                    </Stack>
-                  </Center>
-                </Paper>
-              )}
-            </Stack>
+            <DnsHealthHistorySection
+              history={history}
+              historyLoading={historyLoading}
+              historyError={historyError}
+              deletingScanId={deletingScanId}
+              onRefresh={() => void loadHistory()}
+              onReportAction={handleReportAction}
+              onViewDetails={(entry) => {
+                setSelectedScan(entry);
+                setDetailsOpen(true);
+              }}
+              onDelete={(scanId) => void handleDeleteHistoryEntry(scanId)}
+            />
           </Tabs.Panel>
         </Tabs>
       </Stack>

@@ -11,6 +11,7 @@ import {
 } from '../../services/incidents';
 import { getApiErrorMessage } from '../../utils/api-error';
 import { notifyError, notifySuccess } from '../../utils/ui-notify';
+import { useAuth } from '../../context/auth/useAuth';
 import {
   buildIncidentPayload,
   defaultIncidentForm,
@@ -21,6 +22,7 @@ import {
 } from '../../utils/incidents/incidentForm';
 
 export const useIncidents = () => {
+  const { user } = useAuth();
   const [incidents, setIncidents] = useState<IncidentTicket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,6 +33,7 @@ export const useIncidents = () => {
   const [statusFilter, setStatusFilter] = useState<IncidentStatus | 'all'>('all');
   const [priorityFilter, setPriorityFilter] = useState<IncidentPriority | 'all'>('all');
   const [slaFilter, setSlaFilter] = useState<IncidentSlaState | 'all'>('all');
+  const [filterByCurrentUser, setFilterByCurrentUser] = useState(true);
 
   const [form, setForm] = useState<IncidentFormState>(defaultIncidentForm);
   const [formErrors, setFormErrors] = useState<IncidentFormErrors>({});
@@ -70,6 +73,7 @@ export const useIncidents = () => {
 
   const filteredIncidents = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
+    const currentUserId = user?.profile?.sub;
 
     return incidents.filter((incident) => {
       const matchesStatus = statusFilter === 'all' || incident.status === statusFilter;
@@ -82,9 +86,15 @@ export const useIncidents = () => {
         incident.category.toLowerCase().includes(normalizedSearch) ||
         incident.affected_asset.toLowerCase().includes(normalizedSearch);
 
-      return matchesStatus && matchesPriority && matchesSla && matchesSearch;
+      // Filter by current user if enabled
+      const matchesUserFilter = !filterByCurrentUser || (
+        (incident.created_by?.id != null && String(incident.created_by.id) === currentUserId) ||
+        (incident.assigned_to?.id != null && String(incident.assigned_to.id) === currentUserId)
+      );
+
+      return matchesStatus && matchesPriority && matchesSla && matchesSearch && matchesUserFilter;
     });
-  }, [incidents, priorityFilter, searchTerm, slaFilter, statusFilter]);
+  }, [filterByCurrentUser, incidents, priorityFilter, searchTerm, slaFilter, statusFilter, user?.profile?.sub]);
 
   const updateForm = <K extends keyof IncidentFormState>(field: K, value: IncidentFormState[K]) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -204,10 +214,12 @@ export const useIncidents = () => {
     statusFilter,
     priorityFilter,
     slaFilter,
+    filterByCurrentUser,
     setSearchTerm,
     setStatusFilter,
     setPriorityFilter,
     setSlaFilter,
+    setFilterByCurrentUser,
     form,
     formErrors,
     modalOpened,

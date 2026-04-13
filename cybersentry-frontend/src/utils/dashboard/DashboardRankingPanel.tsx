@@ -6,9 +6,9 @@ import { formatRelativeTime, getAssetRiskTone, getAssetTypeLabel } from '../../u
 
 type DashboardRankingPanelProps = {
   topRiskAssets: Asset[];
-  staleAssets: Asset[];
-  className?: string;
+  staleAssets?: Asset[];
   showCoverageGaps?: boolean;
+  className?: string;
 };
 
 function toneColor(tone: ReturnType<typeof getAssetRiskTone>) {
@@ -26,9 +26,9 @@ function toneColor(tone: ReturnType<typeof getAssetRiskTone>) {
 
 export function DashboardRankingPanel({
   topRiskAssets,
-  staleAssets,
-  className,
+  staleAssets = [],
   showCoverageGaps = true,
+  className,
 }: DashboardRankingPanelProps) {
   return (
     <Paper p="xl" radius="xl" className={`dashboard-panel ${className ?? ''}`.trim()}>
@@ -114,4 +114,3 @@ export function DashboardRankingPanel({
     </Paper>
   );
 }
-

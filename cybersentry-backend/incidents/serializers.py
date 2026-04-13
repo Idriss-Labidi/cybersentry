@@ -1,7 +1,32 @@
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import IncidentTicket
+from .models import IncidentTicket, IncidentComment
+from accounts.models import User
+
+
+class UserMinimalSerializer(serializers.ModelSerializer):
+    """Minimal user serializer for displaying user info"""
+    full_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'full_name', 'role']
+        read_only_fields = ['id', 'email', 'full_name', 'role']
+
+    def get_full_name(self, obj: User) -> str:
+        full_name = obj.get_full_name().strip()
+        return full_name if full_name else obj.username
+
+
+class IncidentCommentSerializer(serializers.ModelSerializer):
+    author = UserMinimalSerializer(read_only=True)
+    created_at = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        model = IncidentComment
+        fields = ['id', 'content', 'author', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
 
 
 class IncidentTicketSerializer(serializers.ModelSerializer):
@@ -12,6 +37,10 @@ class IncidentTicketSerializer(serializers.ModelSerializer):
     urgency_label = serializers.CharField(source='get_urgency_display', read_only=True)
     sla_policy_label = serializers.CharField(source='get_sla_policy_display', read_only=True)
     sla_state = serializers.SerializerMethodField()
+    comments = IncidentCommentSerializer(many=True, read_only=True)
+    assigned_to = UserMinimalSerializer(read_only=True)
+    created_by = UserMinimalSerializer(read_only=True)
+    updated_by = UserMinimalSerializer(read_only=True)
 
     class Meta:
         model = IncidentTicket
@@ -61,6 +90,7 @@ class IncidentTicketSerializer(serializers.ModelSerializer):
             'assigned_to',
             'created_by',
             'updated_by',
+            'comments',
             'created_at',
             'updated_at',
         ]
@@ -70,6 +100,7 @@ class IncidentTicketSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'last_status_change_at',
+            'comments',
         ]
 
     def get_sla_state(self, obj: IncidentTicket) -> str:

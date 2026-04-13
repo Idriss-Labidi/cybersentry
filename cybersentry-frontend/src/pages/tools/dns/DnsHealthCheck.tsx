@@ -151,19 +151,6 @@ export const DnsHealthCheck = ({ embedded = false }: DnsHealthCheckProps) => {
       eyebrow="Public tool"
       title="DNS health check"
       description="Analyze DNS posture, score the configuration, and review high-priority remediation guidance."
-      metrics={[
-        { label: 'Target', value: domain.trim() || 'None', hint: 'Domain under review' },
-        {
-          label: 'Score',
-          value: result ? `${result.score}/100` : loading ? 'Running' : 'Ready',
-          hint: result ? `Grade ${result.grade}` : 'No assessment yet',
-        },
-        {
-          label: 'Recommendations',
-          value: result ? String(result.recommendations.length) : '0',
-          hint: 'Improvement opportunities surfaced by the check',
-        },
-      ]}
       workflow={[
         'Submit the domain to run a full DNS hygiene pass.',
         'Review the score and grade before drilling into individual checks.',
