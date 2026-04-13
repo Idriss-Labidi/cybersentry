@@ -1,5 +1,5 @@
 import { Group, Stack, Text, ThemeIcon } from '@mantine/core';
-import { IconShieldCheck } from '@tabler/icons-react';
+import cybersentryLogo from '../../Cybersentry-logo.png';
 
 type BrandMarkProps = {
   compact?: boolean;
@@ -9,15 +9,24 @@ export default function BrandMark({ compact = false }: BrandMarkProps) {
   return (
     <Group gap="sm" wrap="nowrap">
       <ThemeIcon
-        size={compact ? 40 : 46}
+        size={compact ? 46 : 52}
         radius="xl"
-        variant="gradient"
-        gradient={{ from: 'brand.6', to: 'brand.3', deg: 135 }}
+        variant="transparent"
         style={{
-          boxShadow: '0 12px 28px rgba(22, 193, 160, 0.22)',
+          border: '2px solid var(--mantine-color-brand-6)',
+          backgroundColor: 'transparent',
         }}
       >
-        <IconShieldCheck size={compact ? 20 : 24} />
+        <img
+          src={cybersentryLogo}
+          alt=""
+          aria-hidden="true"
+          style={{
+            width: compact ? 28 : 32,
+            height: compact ? 28 : 32,
+            objectFit: 'contain',
+          }}
+        />
       </ThemeIcon>
 
       <Stack gap={0}>
