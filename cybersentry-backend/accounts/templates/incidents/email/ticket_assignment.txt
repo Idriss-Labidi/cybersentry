@@ -1,0 +1,20 @@
+Ticket Assigned: {{ ticket_title }}
+
+Hi,
+
+A new incident ticket has been assigned to you.
+
+Ticket: {{ ticket_title }}
+Priority: {{ priority }}
+Assigned by: {{ assigned_by }}
+
+View Ticket: {{ ticket_url }}
+
+Please review the ticket details and take necessary action.
+
+Best regards,
+CyberSentry Team
+
+---
+This is an automated notification. Please do not reply to this email.
+

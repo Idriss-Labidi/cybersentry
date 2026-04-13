@@ -13,12 +13,15 @@ import type { TablerIcon } from '@tabler/icons-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import BrandMark from '../../components/BrandMark';
-import { getProfileInfo } from '../../services/profile';
+import { getProfileInfo, type UserProfile } from '../../services/profile';
+
+type UserRole = 'admin' | 'analyst' | 'viewer';
 
 type NavChild = {
   id: string;
   label: string;
   href: string;
+  roles?: UserRole[];
 };
 
 type NavItem = {
@@ -26,57 +29,61 @@ type NavItem = {
   icon?: TablerIcon;
   label: string;
   href?: string;
+  roles?: UserRole[];
   children?: NavChild[];
 };
 
 const navItems: NavItem[] = [
-  { id: 'dashboard', icon: IconDashboard, label: 'Dashboard', href: '/dashboard' },
-  { id: 'assets', icon: IconServer2, label: 'Assets', href: '/dashboard/assets' },
-  { id: 'security', icon: IconShield, label: 'Security', href: '/dashboard/security' },
-  { id: 'alerts', icon: IconAlertTriangle, label: 'Alerts', href: '/dashboard/alerts' },
-  { id: 'incidents', icon: IconTicket, label: 'Incidents', href: '/dashboard/incidents' },
-  { id: 'analytics', icon: IconAnalyze, label: 'Analytics', href: '/dashboard/analytics' },
+  { id: 'dashboard', icon: IconDashboard, label: 'Dashboard', href: '/dashboard', roles: ['admin', 'analyst', 'viewer'] },
+  { id: 'assets', icon: IconServer2, label: 'Assets', href: '/dashboard/assets', roles: ['admin', 'analyst'] },
+  { id: 'security', icon: IconShield, label: 'Security', href: '/dashboard/security', roles: ['admin'] },
+  { id: 'alerts', icon: IconAlertTriangle, label: 'Alerts', href: '/dashboard/alerts', roles: ['admin', 'analyst'] },
+  { id: 'incidents', icon: IconTicket, label: 'Incidents', href: '/dashboard/incidents', roles: ['admin', 'analyst'] },
+  { id: 'analytics', icon: IconAnalyze, label: 'Analytics', href: '/dashboard/analytics', roles: ['admin', 'analyst', 'viewer'] },
   {
     id: 'tools',
     icon: IconShieldCheck,
     label: 'Tools',
+    roles: ['admin', 'analyst', 'viewer'],
     children: [
-      { id: 'github', label: 'GitHub', href: '/dashboard/github' },
-      { id: 'dns-intelligence', label: 'DNS Intelligence', href: '/dashboard/dns-intelligence' },
-      { id: 'ip-intelligence', label: 'IP Intelligence', href: '/dashboard/ip-intelligence' },
+      { id: 'github', label: 'GitHub', href: '/dashboard/github', roles: ['admin', 'analyst', 'viewer'] },
+      { id: 'dns-intelligence', label: 'DNS Intelligence', href: '/dashboard/dns-intelligence', roles: ['admin', 'analyst', 'viewer'] },
+      { id: 'ip-intelligence', label: 'IP Intelligence', href: '/dashboard/ip-intelligence', roles: ['admin', 'analyst', 'viewer'] },
     ],
   },
 ];
 
 const DashboardNavBar = () => {
   const location = useLocation();
+  const [userRole, setUserRole] = useState<UserRole>('viewer');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+
   const isChildActive = (child: NavChild) =>
     location.pathname === child.href ||
     location.pathname.startsWith(`${child.href}/`) ||
     (child.id === 'ip-intelligence' && location.pathname === '/dashboard/advanced-scanner');
 
-  const [isOrganizationAdmin, setIsOrganizationAdmin] = useState(false);
-  const [openedSections, setOpenedSections] = useState<Record<string, boolean>>(() => {
-    const initial: Record<string, boolean> = {};
+  const [openedSections, setOpenedSections] = useState<Record<string, boolean>>({});
 
-    navItems.forEach((item) => {
-      if (!item.children) {
-        return;
-      }
+  // Check if user has access to an item
+  const canAccessItem = (item: NavItem | NavChild): boolean => {
+    if (!item.roles) return true; // If no roles specified, allow access for all
+    return item.roles.includes(userRole);
+  };
 
-      initial[item.id] = item.children.some((child) => isChildActive(child));
-    });
-
-    return initial;
-  });
+  // Filter visible nav items based on role
+  const visibleNavItems = navItems.filter((item) => canAccessItem(item));
 
   useEffect(() => {
     const loadRole = async () => {
       try {
         const response = await getProfileInfo();
-        setIsOrganizationAdmin(response.data.role.toLowerCase() === 'admin');
+        setProfile(response.data);
+        const role = response.data.role.toLowerCase() as UserRole;
+        setUserRole(role);
       } catch {
-        setIsOrganizationAdmin(false);
+        setUserRole('viewer');
       }
     };
 
@@ -99,7 +106,9 @@ const DashboardNavBar = () => {
           Active
         </Text>
         <Text size="sm" c="dimmed" mt={4}>
-          Routes, auth, and tool workflows stay intact while this branch upgrades the visual layer.
+          {userRole === 'analyst' && 'You have read-only access to Incidents and Assets'}
+          {userRole === 'viewer' && 'You have limited access to dashboard, analytics, and tools'}
+          {userRole === 'admin' && 'Routes, auth, and tool workflows stay intact while this branch upgrades the visual layer.'}
         </Text>
       </Paper>
 
@@ -107,7 +116,7 @@ const DashboardNavBar = () => {
 
       <ScrollArea style={{ flex: 1 }}>
         <Stack gap="xs">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             const matchesItemHref =
               !!item.href &&
@@ -115,10 +124,13 @@ const DashboardNavBar = () => {
                 (item.href !== '/dashboard' && location.pathname.startsWith(`${item.href}/`)));
             const isActiveParent = item.href
               ? matchesItemHref
-              : item.children?.some((child) => isChildActive(child));
+              : item.children?.some((child) => isChildActive(child) && canAccessItem(child));
             const isOpen = item.children
-              ? openedSections[item.id] ?? item.children.some((child) => isChildActive(child))
+              ? openedSections[item.id] ?? item.children.some((child) => isChildActive(child) && canAccessItem(child))
               : false;
+
+            // Filter children based on role
+            const visibleChildren = item.children?.filter((child) => canAccessItem(child));
 
             if (item.children) {
               return (
@@ -137,7 +149,7 @@ const DashboardNavBar = () => {
                     },
                   }}
                 >
-                  {item.children.map((child) => (
+                  {visibleChildren?.map((child) => (
                     <NavLink
                       key={child.id}
                       component={Link}
@@ -180,7 +192,7 @@ const DashboardNavBar = () => {
             );
           })}
 
-          {isOrganizationAdmin ? (
+          {userRole === 'admin' ? (
             <>
               <Divider my="sm" />
 

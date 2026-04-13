@@ -549,11 +549,6 @@ export const DnsPropagation = ({ embedded = false }: DnsPropagationProps) => {
       eyebrow="Public tool"
       title="DNS propagation checker"
       description="Check record propagation across public resolver regions and inspect the result on an interactive map."
-      metrics={[
-        { label: 'Record types', value: String(selectedTypes.length), hint: selectedTypes.join(', ') },
-        { label: 'Regions', value: selectedRegions.length > 0 ? String(selectedRegions.length) : 'All', hint: 'Resolver groups in scope' },
-        { label: 'Healthy resolvers', value: result ? `${okCount}/${totalServers}` : 'Pending', hint: ipVersion },
-      ]}
       workflow={[
         'Select the domain, record types, and optional region subset.',
         'Run the propagation check to populate the map and regional tables.',

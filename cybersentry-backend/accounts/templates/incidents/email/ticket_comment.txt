@@ -1,0 +1,16 @@
+New Comment on Ticket: {{ ticket_title }}
+
+Hi,
+
+{{ author }} has added a new comment to the ticket:
+
+Ticket: {{ ticket_title }}
+
+View Ticket & Comments: {{ ticket_url }}
+
+Best regards,
+CyberSentry Team
+
+---
+This is an automated notification. Please do not reply to this email.
+

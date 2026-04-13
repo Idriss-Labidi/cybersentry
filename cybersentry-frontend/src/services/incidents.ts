@@ -52,9 +52,23 @@ export interface IncidentTicket {
   resolution_summary: string;
   tags: string[];
   metadata: Record<string, unknown>;
-  assigned_to: number | null;
-  created_by: number | null;
-  updated_by: number | null;
+  assigned_to: {
+    id: number;
+    email: string;
+    full_name: string;
+    role: string;
+  } | null;
+  created_by: {
+    id: number;
+    email: string;
+    full_name: string;
+  } | null;
+  updated_by: {
+    id: number;
+    email: string;
+    full_name: string;
+  } | null;
+  comments?: IncidentComment[];
   created_at: string;
   updated_at: string;
 }
@@ -121,4 +135,34 @@ export const deleteIncident = (id: number) => axiosInstance.delete(`/api/inciden
 export const closeIncident = (id: number) => axiosInstance.post<IncidentTicket>(`/api/incidents/${id}/close/`);
 
 export const reopenIncident = (id: number) => axiosInstance.post<IncidentTicket>(`/api/incidents/${id}/reopen/`);
+
+export interface IncidentComment {
+  id: number;
+  content: string;
+  author: {
+    id: number;
+    email: string;
+    full_name: string;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IncidentCommentPayload {
+  content: string;
+}
+
+export const addComment = (id: number, payload: IncidentCommentPayload) =>
+  axiosInstance.post<IncidentComment>(`/api/incidents/${id}/add_comment/`, payload);
+
+export const assignTicket = (id: number, assignedToId: number | null) =>
+  axiosInstance.post<IncidentTicket>(`/api/incidents/${id}/assign/`, { assigned_to_id: assignedToId });
+
+export const getOrganizationUsers = () =>
+  axiosInstance.get<Array<{
+    id: number;
+    email: string;
+    full_name: string;
+    role: string;
+  }>>('/api/organization-users/');
 

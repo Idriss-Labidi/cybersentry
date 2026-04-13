@@ -172,11 +172,6 @@ export const WhoisLookup = ({ embedded = false }: WhoisLookupProps) => {
       eyebrow="Public tool"
       title="WHOIS lookup"
       description="Inspect registration, ownership, and registrar metadata for domains and IP addresses from a focused reporting surface."
-      metrics={[
-        { label: 'Current query', value: query.trim() || 'None', hint: 'Domain or IP target' },
-        { label: 'Rows returned', value: result ? String(rows.length) : '0', hint: 'Structured WHOIS fields' },
-        { label: 'Priority fields', value: String(IMPORTANT_FIELDS.length), hint: 'Fields surfaced first when present' },
-      ]}
       workflow={[
         'Submit the domain or IP you need to inspect.',
         'Review registrar, lifecycle, and nameserver data before deeper analysis.',

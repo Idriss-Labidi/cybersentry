@@ -57,7 +57,6 @@ export default function ToolPageLayout({
   eyebrow,
   title,
   description,
-  metrics = [],
   guidance = [],
   workflow = [],
   notes = [],
@@ -106,7 +105,6 @@ export default function ToolPageLayout({
           title={title}
           description={description}
           supplementary={<GuidanceGroup items={guidanceItems} />}
-          metrics={metrics}
           actions={actions}
         />
 
