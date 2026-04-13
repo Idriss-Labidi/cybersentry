@@ -77,6 +77,7 @@ class ProfileApiTests(APITestCase):
 
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assertEqual(response.data['github_token'], 'ghp********890')
+		self.assertEqual(response.data['notification_alert_threshold'], 30)
 
 	def test_user_settings_put_updates_fields(self):
 		response = self.client.put(
@@ -86,6 +87,7 @@ class ProfileApiTests(APITestCase):
 				'use_cache': False,
 				'cache_duration': 15,
 				'preferred_theme': 'blue',
+				'notification_alert_threshold': 78,
 			},
 			format='json',
 		)
@@ -96,12 +98,20 @@ class ProfileApiTests(APITestCase):
 		self.assertFalse(settings_obj.use_cache)
 		self.assertEqual(settings_obj.cache_duration, 15)
 		self.assertEqual(settings_obj.preferred_theme, 'blue')
+		self.organization.refresh_from_db()
+		self.assertEqual(self.organization.notification_alert_threshold, 18)
 
 	def test_user_settings_cache_duration_validation(self):
 		response = self.client.put('/api/settings/', {'cache_duration': 0}, format='json')
 
 		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 		self.assertIn('cache_duration', response.data)
+
+	def test_user_settings_notification_threshold_validation(self):
+		response = self.client.put('/api/settings/', {'notification_alert_threshold': 101}, format='json')
+
+		self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+		self.assertIn('notification_alert_threshold', response.data)
 
 
 class OrganizationUserManagementApiTests(APITestCase):

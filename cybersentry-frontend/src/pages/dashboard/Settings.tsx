@@ -37,6 +37,7 @@ export const Settings = () => {
   const [notificationsWebhookEnabled, setNotificationsWebhookEnabled] = useState(false);
   const [slackWebhookUrl, setSlackWebhookUrl] = useState('');
   const [teamsWebhookUrl, setTeamsWebhookUrl] = useState('');
+  const [notificationAlertThreshold, setNotificationAlertThreshold] = useState<number | string>(30);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -60,6 +61,7 @@ export const Settings = () => {
         setNotificationsWebhookEnabled(data.notifications_webhook_enabled);
         setSlackWebhookUrl(data.slack_webhook_url ?? '');
         setTeamsWebhookUrl(data.teams_webhook_url ?? '');
+        setNotificationAlertThreshold(data.notification_alert_threshold ?? 70);
       } catch {
         setErrorMessage('Failed to load settings. Please refresh and try again.');
       } finally {
@@ -87,6 +89,15 @@ export const Settings = () => {
       return;
     }
 
+    if (
+      typeof notificationAlertThreshold !== 'number' ||
+      notificationAlertThreshold < 0 ||
+      notificationAlertThreshold > 100
+    ) {
+      setErrorMessage('Notification threshold must be between 0 and 100.');
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -97,6 +108,7 @@ export const Settings = () => {
         notifications_webhook_enabled: notificationsWebhookEnabled,
         slack_webhook_url: slackWebhookUrl || '',
         teams_webhook_url: teamsWebhookUrl || '',
+        notification_alert_threshold: notificationAlertThreshold,
         preferred_theme: themeChoice,
         ...(githubToken ? { github_token: githubToken } : {}),
       };
@@ -109,6 +121,7 @@ export const Settings = () => {
       setNotificationsWebhookEnabled(response.data.notifications_webhook_enabled);
       setSlackWebhookUrl(response.data.slack_webhook_url ?? '');
       setTeamsWebhookUrl(response.data.teams_webhook_url ?? '');
+      setNotificationAlertThreshold(response.data.notification_alert_threshold ?? 70);
       notifySuccess('Settings saved', 'Workspace preferences were updated successfully.');
     } catch {
       const message = 'Could not save settings. Please try again.';
@@ -235,8 +248,16 @@ export const Settings = () => {
                   value={teamsWebhookUrl}
                   onChange={(event) => setTeamsWebhookUrl(event.currentTarget.value)}
                 />
+                <NumberInput
+                  label="Alert threshold"
+                  description="Notification is created when a test score is less than or equal to this value."
+                  min={0}
+                  max={100}
+                  value={notificationAlertThreshold}
+                  onChange={setNotificationAlertThreshold}
+                />
                 <Text c="dimmed" size="sm">
-                  Notifications are sent only when an asset test score is 30/100 or lower.
+                  Notifications are sent only when an asset test score is 70/100 or higher.
                 </Text>
               </Stack>
             </Card>

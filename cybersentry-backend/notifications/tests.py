@@ -102,6 +102,33 @@ class NotificationDispatchTests(APITestCase):
         self.assertEqual(NotificationEvent.objects.count(), 0)
         send_mail_mock.assert_not_called()
 
+    @patch('notifications.services.send_mail')
+    def test_dispatch_uses_organization_threshold(self, send_mail_mock):
+        self.organization.notification_alert_threshold = 75
+        self.organization.save(update_fields=['notification_alert_threshold'])
+
+        skipped_notification = dispatch_asset_test_notification(
+            user=self.user,
+            asset=self.asset,
+            test_type=NotificationEvent.TestTypes.IP_REPUTATION,
+            score=72,
+            detail='No alert should be created for score above org threshold.',
+        )
+        self.assertIsNone(skipped_notification)
+
+        created_notification = dispatch_asset_test_notification(
+            user=self.user,
+            asset=self.asset,
+            test_type=NotificationEvent.TestTypes.IP_REPUTATION,
+            score=80,
+            detail='Alert should be created at org threshold boundary.',
+        )
+
+        self.assertIsNotNone(created_notification)
+        self.assertEqual(created_notification.threshold, 15)
+        self.assertEqual(NotificationEvent.objects.count(), 1)
+        send_mail_mock.assert_called_once()
+
 
 class NotificationApiTests(APITestCase):
     def setUp(self):
