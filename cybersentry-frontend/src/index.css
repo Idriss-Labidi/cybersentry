@@ -545,3 +545,57 @@ a {
   border-top: 0;
   padding-top: 0;
 }
+
+.analytics-page-grid {
+  align-items: start;
+}
+
+.analytics-section-card {
+  min-height: 100%;
+}
+
+.analytics-inline-stat {
+  min-width: 11rem;
+}
+
+.analytics-legend-row {
+  min-width: 0;
+}
+
+.analytics-tab-panel {
+  min-width: 0;
+}
+
+.analytics-tabs-list {
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+.analytics-topology-layout {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+  align-items: center;
+}
+
+.analytics-topology-donut {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.analytics-topology-cards {
+  min-width: 0;
+}
+
+.analytics-topology-card {
+  min-height: 5.5rem;
+}
+
+@media (max-width: 74em) {
+  .analytics-topology-layout {
+    grid-template-columns: 1fr;
+  }
+}

@@ -391,7 +391,7 @@ export function buildActionQueue(
       tone: toneFromIncident(incident),
       title: incident.title,
       detail: `${incident.priority_label} priority incident in ${incident.environment || 'workspace'} environment.`,
-      meta: `${incident.status_label} • ${formatRelativeTime(incident.reported_at)}`,
+      meta: `${incident.status_label} - ${formatRelativeTime(incident.reported_at)}`,
       href: `/dashboard/incidents/${incident.id}`,
       actionLabel: 'Open incident',
       score: priorityWeight(incident.priority) * 20 + incidentSeverityWeight(incident.severity) * 15,
@@ -406,7 +406,7 @@ export function buildActionQueue(
       tone: toneFromNotificationSeverity(notification.severity),
       title: notification.title,
       detail: notification.detail,
-      meta: `${notification.test_type_label} • ${formatRelativeTime(notification.created_at)}`,
+      meta: `${notification.test_type_label} - ${formatRelativeTime(notification.created_at)}`,
       href: notification.asset ? `/dashboard/assets/${notification.asset}` : '/dashboard/alerts',
       actionLabel: notification.asset ? 'Open asset' : 'Open alerts',
       score: notificationSeverityWeight(notification.severity) * 14 + (notification.is_read ? 0 : 6),
@@ -420,7 +420,7 @@ export function buildActionQueue(
     detail: asset.last_scanned_at
       ? `This asset has not been scanned recently and may be drifting out of visibility.`
       : `This asset has never been scanned from the dashboard intelligence surface.`,
-    meta: `${getAssetTypeLabel(asset.asset_type)} • ${asset.last_scanned_at ? formatRelativeTime(asset.last_scanned_at) : 'No scan yet'}`,
+    meta: `${getAssetTypeLabel(asset.asset_type)} - ${asset.last_scanned_at ? formatRelativeTime(asset.last_scanned_at) : 'No scan yet'}`,
     href: `/dashboard/assets/${asset.id}`,
     actionLabel: 'Review asset',
     score: asset.last_scanned_at ? 28 : 34,
@@ -440,7 +440,7 @@ export function buildActivityFeed(
     tone: toneFromNotificationSeverity(notification.severity),
     title: notification.title,
     detail: notification.detail,
-    meta: `${notification.test_type_label} • ${formatRelativeTime(notification.created_at)}`,
+    meta: `${notification.test_type_label} - ${formatRelativeTime(notification.created_at)}`,
     href: notification.asset ? `/dashboard/assets/${notification.asset}` : '/dashboard/alerts',
   }));
 
@@ -451,8 +451,8 @@ export function buildActivityFeed(
       id: `incident-feed-${incident.id}`,
       tone: toneFromIncident(incident),
       title: incident.title,
-      detail: `${incident.priority_label} priority • ${incident.status_label}`,
-      meta: `${incident.short_code || incident.environment || 'Incident'} • ${formatRelativeTime(incident.last_status_change_at)}`,
+      detail: `${incident.priority_label} priority - ${incident.status_label}`,
+      meta: `${incident.short_code || incident.environment || 'Incident'} - ${formatRelativeTime(incident.last_status_change_at)}`,
       href: `/dashboard/incidents/${incident.id}`,
     }));
 
