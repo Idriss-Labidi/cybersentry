@@ -256,9 +256,6 @@ export const Settings = () => {
                   value={notificationAlertThreshold}
                   onChange={setNotificationAlertThreshold}
                 />
-                <Text c="dimmed" size="sm">
-                  Notifications are sent only when an asset test score is 70/100 or higher.
-                </Text>
               </Stack>
             </Card>
           </SimpleGrid>
