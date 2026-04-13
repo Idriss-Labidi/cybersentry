@@ -8,6 +8,7 @@ type DashboardRankingPanelProps = {
   topRiskAssets: Asset[];
   staleAssets: Asset[];
   className?: string;
+  showCoverageGaps?: boolean;
 };
 
 function toneColor(tone: ReturnType<typeof getAssetRiskTone>) {
@@ -27,6 +28,7 @@ export function DashboardRankingPanel({
   topRiskAssets,
   staleAssets,
   className,
+  showCoverageGaps = true,
 }: DashboardRankingPanelProps) {
   return (
     <Paper p="xl" radius="xl" className={`dashboard-panel ${className ?? ''}`.trim()}>
@@ -36,7 +38,7 @@ export function DashboardRankingPanel({
             Priority Assets
           </Text>
           <Text fw={900} size="xl">
-            Risk ranking and visibility gaps
+            {showCoverageGaps ? 'Risk ranking and visibility gaps' : 'Risk ranking'}
           </Text>
         </div>
 
@@ -81,31 +83,33 @@ export function DashboardRankingPanel({
           )}
         </Stack>
 
-        <Stack gap="xs">
-          <Group gap="sm">
-            <IconClockHour4 size={16} />
-            <Text fw={800}>Coverage gaps</Text>
-          </Group>
-          {staleAssets.length > 0 ? (
-            staleAssets.map((asset) => (
-              <Group key={asset.id} justify="space-between" className="dashboard-inline-row">
-                <div>
-                  <Text fw={700}>{asset.name}</Text>
-                  <Text size="sm" c="dimmed">
-                    {asset.last_scanned_at ? `Last signal ${formatRelativeTime(asset.last_scanned_at)}` : 'No scan recorded yet'}
-                  </Text>
-                </div>
-                <Button component={Link} to={`/dashboard/assets/${asset.id}`} size="compact-sm" variant="subtle">
-                  Review
-                </Button>
-              </Group>
-            ))
-          ) : (
-            <Text size="sm" c="dimmed">
-              All tracked assets have recent visibility.
-            </Text>
-          )}
-        </Stack>
+        {showCoverageGaps ? (
+          <Stack gap="xs">
+            <Group gap="sm">
+              <IconClockHour4 size={16} />
+              <Text fw={800}>Coverage gaps</Text>
+            </Group>
+            {staleAssets.length > 0 ? (
+              staleAssets.map((asset) => (
+                <Group key={asset.id} justify="space-between" className="dashboard-inline-row">
+                  <div>
+                    <Text fw={700}>{asset.name}</Text>
+                    <Text size="sm" c="dimmed">
+                      {asset.last_scanned_at ? `Last signal ${formatRelativeTime(asset.last_scanned_at)}` : 'No scan recorded yet'}
+                    </Text>
+                  </div>
+                  <Button component={Link} to={`/dashboard/assets/${asset.id}`} size="compact-sm" variant="subtle">
+                    Review
+                  </Button>
+                </Group>
+              ))
+            ) : (
+              <Text size="sm" c="dimmed">
+                All tracked assets have recent visibility.
+              </Text>
+            )}
+          </Stack>
+        ) : null}
       </Stack>
     </Paper>
   );

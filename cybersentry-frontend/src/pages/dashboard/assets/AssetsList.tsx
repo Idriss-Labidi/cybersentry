@@ -1,15 +1,19 @@
-import { Alert, Box, Button, Paper, Text } from '@mantine/core';
-import { IconPlus, IconServer2 } from '@tabler/icons-react';
+import { useState } from 'react';
+import { Alert, Button, Paper, Stack, Text } from '@mantine/core';
+import { IconLayoutKanban, IconList, IconPlus, IconServer2 } from '@tabler/icons-react';
+import AssetsBoardView from '../../../components/assets/AssetsBoardView';
 import AssetDeleteModal from '../../../components/assets/AssetDeleteModal';
 import AssetFormModal from '../../../components/assets/AssetFormModal';
 import AssetsFilters from '../../../components/assets/AssetsFilters';
 import AssetsMobileList from '../../../components/assets/AssetsMobileList';
 import AssetsTable from '../../../components/assets/AssetsTable';
+import { DashboardViewModeToggle } from '../../../components/dashboard/DashboardViewModeToggle';
 import type { GuidanceItem } from '../../../components/guidance/GuidanceHoverCard';
 import { useAssets } from '../../../hooks/assets/useAssets';
 import DashboardPageLayout, { DashboardStatCards } from '../../../layouts/dashboard/DashboardPageLayout';
 
 export const AssetsList = () => {
+  const [viewMode, setViewMode] = useState<'table' | 'list' | 'board'>('table');
   const guidanceItems: GuidanceItem[] = [
     {
       label: 'What this page does',
@@ -114,19 +118,31 @@ export const AssetsList = () => {
         />
 
         <Paper p="lg" radius="xl" pos="relative">
-          <Box visibleFrom="md">
-            <AssetsTable assets={filteredAssets} onEdit={openEditModal} onDelete={requestDeleteAsset} />
-          </Box>
+          <Stack gap="md">
+            <DashboardViewModeToggle
+              value={viewMode}
+              onChange={(value) => setViewMode(value as 'table' | 'list' | 'board')}
+              options={[
+                { label: 'Table', value: 'table', leftSection: <IconList size={14} /> },
+                { label: 'List', value: 'list', leftSection: <IconServer2 size={14} /> },
+                { label: 'Board', value: 'board', leftSection: <IconLayoutKanban size={14} /> },
+              ]}
+            />
 
-          <Box hiddenFrom="md">
-            <AssetsMobileList assets={filteredAssets} onEdit={openEditModal} onDelete={requestDeleteAsset} />
-          </Box>
+            {viewMode === 'table' ? (
+              <AssetsTable assets={filteredAssets} onEdit={openEditModal} onDelete={requestDeleteAsset} />
+            ) : null}
+            {viewMode === 'list' ? (
+              <AssetsMobileList assets={filteredAssets} onEdit={openEditModal} onDelete={requestDeleteAsset} />
+            ) : null}
+            {viewMode === 'board' ? (
+              <AssetsBoardView assets={filteredAssets} onEdit={openEditModal} onDelete={requestDeleteAsset} />
+            ) : null}
 
-          {isLoading ? (
-            <Text c="dimmed" mt="md">
-              Loading assets...
-            </Text>
-          ) : null}
+            {isLoading ? (
+              <Text c="dimmed">Loading assets...</Text>
+            ) : null}
+          </Stack>
         </Paper>
       </DashboardPageLayout>
 

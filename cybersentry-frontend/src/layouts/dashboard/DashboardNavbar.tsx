@@ -13,7 +13,7 @@ import type { TablerIcon } from '@tabler/icons-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import BrandMark from '../../components/BrandMark';
-import { getProfileInfo, type UserProfile } from '../../services/profile';
+import { getProfileInfo } from '../../services/profile';
 
 type UserRole = 'admin' | 'analyst' | 'viewer';
 
@@ -56,8 +56,6 @@ const navItems: NavItem[] = [
 const DashboardNavBar = () => {
   const location = useLocation();
   const [userRole, setUserRole] = useState<UserRole>('viewer');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [profile, setProfile] = useState<UserProfile | null>(null);
 
   const isChildActive = (child: NavChild) =>
     location.pathname === child.href ||
@@ -79,7 +77,6 @@ const DashboardNavBar = () => {
     const loadRole = async () => {
       try {
         const response = await getProfileInfo();
-        setProfile(response.data);
         const role = response.data.role.toLowerCase() as UserRole;
         setUserRole(role);
       } catch {

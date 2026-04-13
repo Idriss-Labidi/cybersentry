@@ -73,6 +73,7 @@ export const useIncidents = () => {
 
   const filteredIncidents = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
+    const currentUserId = user?.profile?.sub;
 
     return incidents.filter((incident) => {
       const matchesStatus = statusFilter === 'all' || incident.status === statusFilter;
@@ -87,13 +88,13 @@ export const useIncidents = () => {
 
       // Filter by current user if enabled
       const matchesUserFilter = !filterByCurrentUser || (
-        (user && incident.created_by?.id === user.profile?.sub) ||
-        (user && incident.assigned_to?.id === user.profile?.sub)
+        (incident.created_by?.id != null && String(incident.created_by.id) === currentUserId) ||
+        (incident.assigned_to?.id != null && String(incident.assigned_to.id) === currentUserId)
       );
 
       return matchesStatus && matchesPriority && matchesSla && matchesSearch && matchesUserFilter;
     });
-  }, [incidents, priorityFilter, searchTerm, slaFilter, statusFilter, filterByCurrentUser, user]);
+  }, [filterByCurrentUser, incidents, priorityFilter, searchTerm, slaFilter, statusFilter, user?.profile?.sub]);
 
   const updateForm = <K extends keyof IncidentFormState>(field: K, value: IncidentFormState[K]) => {
     setForm((current) => ({ ...current, [field]: value }));

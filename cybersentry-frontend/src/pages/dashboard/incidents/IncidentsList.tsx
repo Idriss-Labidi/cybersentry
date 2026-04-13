@@ -1,6 +1,7 @@
 import { Alert, Box, Button, Paper, Text, SegmentedControl, Group, Stack } from '@mantine/core';
 import { IconPlus, IconTicket, IconList, IconLayoutKanban } from '@tabler/icons-react';
 import { useState } from 'react';
+import { DashboardViewModeToggle } from '../../../components/dashboard/DashboardViewModeToggle';
 import IncidentDeleteModal from '../../../components/incidents/IncidentDeleteModal';
 import IncidentFormModal from '../../../components/incidents/IncidentFormModal';
 import IncidentsFilters from '../../../components/incidents/IncidentsFilters';
@@ -80,18 +81,15 @@ export const IncidentsList = () => {
           <Stack gap="md">
             {/* View Toggle */}
             <Group justify="space-between" align="center">
-              <Group>
-                <Text size="sm" fw={500}>View:</Text>
-                <SegmentedControl
-                  value={viewMode}
-                  onChange={(value) => setViewMode(value as 'table' | 'list' | 'kanban')}
-                  data={[
-                    { label: 'Table', value: 'table', leftSection: <IconList size={14} /> },
-                    { label: 'List', value: 'list', leftSection: <IconTicket size={14} /> },
-                    { label: 'Board', value: 'kanban', leftSection: <IconLayoutKanban size={14} /> },
-                  ]}
-                />
-              </Group>
+              <DashboardViewModeToggle
+                value={viewMode}
+                onChange={(value) => setViewMode(value as 'table' | 'list' | 'kanban')}
+                options={[
+                  { label: 'Table', value: 'table', leftSection: <IconList size={14} /> },
+                  { label: 'List', value: 'list', leftSection: <IconTicket size={14} /> },
+                  { label: 'Board', value: 'kanban', leftSection: <IconLayoutKanban size={14} /> },
+                ]}
+              />
 
               {/* Filter Toggle */}
               <Group>
