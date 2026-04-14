@@ -31,6 +31,7 @@ import { useAuth } from './context/auth/useAuth';
 import LandingLayout from './layouts/landing/LandingLayout';
 import { IncidentsList } from './pages/dashboard/incidents/IncidentsList';
 import { IncidentDetail } from './pages/dashboard/incidents/IncidentDetail';
+import NotFound from './pages/dashboard/NotFound';
 
 // other css files are required only if
 // you are using components from the corresponding package
@@ -55,6 +56,7 @@ function AppContent() {
           <Route path="/tools/reverse-ip" element={<ReverseIp />} />
           <Route path="/tools/email-security" element={<EmailSecurityAnalyzer />} />
           <Route path="/tools/typosquatting" element={<TyposquattingDetection />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
@@ -76,6 +78,7 @@ function AppContent() {
             <Route path="/dashboard/github/history" element={<GitHub initialTab="history" />} />
             <Route path="/dashboard/advanced-scanner" element={<AdvancedSecurityScanner />} />
             <Route path="/dashboard/ip-intelligence" element={<AdvancedSecurityScanner />} />
+            <Route path="/dashboard/*" element={<NotFound />} />
           </Route>
         </Route>
         {/* Add other routes here */}
