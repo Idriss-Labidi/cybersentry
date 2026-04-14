@@ -144,6 +144,7 @@ def security_status(request):
 @permission_classes([IsAuthenticated])
 def user_settings(request):
     settings_obj, _ = UserSettings.objects.get_or_create(user=request.user)
+    organization = request.user.organization
 
     if request.method == 'PUT':
         serializer = UserSettingsUpdateSerializer(settings_obj, data=request.data, partial=True)
@@ -161,6 +162,9 @@ def user_settings(request):
             'slack_webhook_url': settings_obj.slack_webhook_url,
             'teams_webhook_url': settings_obj.teams_webhook_url,
             'preferred_theme': settings_obj.preferred_theme,
+            'notification_alert_threshold': (
+                organization.notification_alert_threshold if organization else None
+            ),
         },
         status=status.HTTP_200_OK,
     )

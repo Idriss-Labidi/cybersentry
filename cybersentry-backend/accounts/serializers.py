@@ -51,6 +51,7 @@ class UserSettingsUpdateSerializer(serializers.ModelSerializer):
         choices=list(UserSettings.PreferredThemes.choices),
         required=False,
     )
+    notification_alert_threshold = serializers.IntegerField(required=False, min_value=0, max_value=100)
 
     class Meta:
         model = UserSettings
@@ -63,7 +64,19 @@ class UserSettingsUpdateSerializer(serializers.ModelSerializer):
             'slack_webhook_url',
             'teams_webhook_url',
             'preferred_theme',
+            'notification_alert_threshold',
         ]
+
+    def update(self, instance, validated_data):
+        threshold = validated_data.pop('notification_alert_threshold', None)
+        instance = super().update(instance, validated_data)
+
+        if threshold is not None and instance.user.organization_id:
+            organization = instance.user.organization
+            organization.notification_alert_threshold = threshold
+            organization.save(update_fields=['notification_alert_threshold'])
+
+        return instance
 
 
 class OrganizationUserSerializer(serializers.ModelSerializer):

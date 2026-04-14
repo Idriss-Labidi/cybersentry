@@ -9,6 +9,7 @@ export interface UserSettingsResponse {
   notifications_webhook_enabled: boolean;
   slack_webhook_url: string;
   teams_webhook_url: string;
+  notification_alert_threshold: number | null;
   preferred_theme: PreferredTheme;
 }
 
@@ -20,6 +21,7 @@ export interface UpdateUserSettingsPayload {
   notifications_webhook_enabled?: boolean;
   slack_webhook_url?: string | null;
   teams_webhook_url?: string | null;
+  notification_alert_threshold?: number;
   preferred_theme?: PreferredTheme;
 }
 

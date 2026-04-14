@@ -10,7 +10,7 @@ from accounts.models import UserSettings
 from .models import NotificationEvent
 
 logger = logging.getLogger(__name__)
-ASSET_TEST_ALERT_THRESHOLD = 30
+DEFAULT_ASSET_TEST_ALERT_THRESHOLD = 70
 WEBHOOK_TIMEOUT_SECONDS = 5
 
 
@@ -100,8 +100,14 @@ def _send_webhooks_if_enabled(notification: NotificationEvent, user_settings: Us
 
 def dispatch_asset_test_notification(*, user, asset, test_type: str, score: int, detail: str, metadata=None):
     normalized_score = max(0, min(100, int(score)))
+    organization = getattr(asset, 'organization', None) or getattr(user, 'organization', None)
+    threshold = (
+        int(organization.notification_alert_threshold)
+        if organization is not None
+        else DEFAULT_ASSET_TEST_ALERT_THRESHOLD
+    )
 
-    if normalized_score > ASSET_TEST_ALERT_THRESHOLD:
+    if normalized_score < threshold:
         return None
 
     severity = NotificationEvent.Severities.HIGH
@@ -114,7 +120,7 @@ def dispatch_asset_test_notification(*, user, asset, test_type: str, score: int,
         test_type=test_type,
         severity=severity,
         score=normalized_score,
-        threshold=ASSET_TEST_ALERT_THRESHOLD,
+        threshold=threshold,
         title=title,
         detail=detail,
         metadata=metadata or {},

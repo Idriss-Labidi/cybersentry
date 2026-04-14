@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import validate_email
+from django.core.validators import MaxValueValidator, MinValueValidator, validate_email
 
 class User(AbstractUser):
     class Roles(models.TextChoices):
@@ -29,7 +29,12 @@ class Organization(models.Model):
     allowed_domains = models.TextField(help_text='Comma-separated list of allowed email domains for user registration')
     license_type = models.CharField(max_length=20, choices=LicenseTypes.choices, default=LicenseTypes.Tier1)
     license_expiry = models.DateField(null=True, blank=True)
-    
+    notification_alert_threshold = models.PositiveSmallIntegerField(
+        default=30,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text='Notify when a test score is less than or equal to this threshold.',
+    )
+
     REQUIRED_FIELDS = ['name', 'contact_email', 'allowed_domains']
     
     def __str__(self):
