@@ -4,7 +4,6 @@ import {
   IconAnalyze,
   IconDashboard,
   IconServer2,
-  IconShield,
   IconShieldCheck,
   IconUsers,
   IconTicket,
@@ -36,7 +35,6 @@ type NavItem = {
 const navItems: NavItem[] = [
   { id: 'dashboard', icon: IconDashboard, label: 'Dashboard', href: '/dashboard', roles: ['admin', 'analyst', 'viewer'] },
   { id: 'assets', icon: IconServer2, label: 'Assets', href: '/dashboard/assets', roles: ['admin', 'analyst'] },
-  { id: 'security', icon: IconShield, label: 'Security', href: '/dashboard/security', roles: ['admin'] },
   { id: 'alerts', icon: IconAlertTriangle, label: 'Alerts', href: '/dashboard/alerts', roles: ['admin', 'analyst'] },
   { id: 'incidents', icon: IconTicket, label: 'Incidents', href: '/dashboard/incidents', roles: ['admin', 'analyst'] },
   { id: 'analytics', icon: IconAnalyze, label: 'Analytics', href: '/dashboard/analytics', roles: ['admin', 'analyst', 'viewer'] },

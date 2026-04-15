@@ -10,7 +10,6 @@ import { Landing } from './pages/landing/Landing';
 import { Dashboard } from './pages/dashboard/Dashboard';
 import { AssetsList } from './pages/dashboard/assets/AssetsList';
 import { AssetDetail } from './pages/dashboard/assets/AssetDetail';
-import { Security } from './pages/dashboard/Security';
 import { Profile } from './pages/dashboard/Profile';
 import { Alerts } from './pages/dashboard/Alerts';
 import { Analytics } from './pages/dashboard/Analytics';
@@ -65,7 +64,6 @@ function AppContent() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/assets" element={<AssetsList />} />
             <Route path="/dashboard/assets/:id" element={<AssetDetail />} />
-            <Route path="/dashboard/security" element={<Security />} />
             <Route path="/dashboard/profile" element={<Profile />} />
             <Route path="/dashboard/alerts" element={<Alerts />} />
             <Route path="/dashboard/incidents" element={<IncidentsList />} />
