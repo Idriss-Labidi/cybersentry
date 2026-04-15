@@ -4,6 +4,7 @@ import { Outlet } from 'react-router-dom';
 import { LandingHeader } from './LandingHeader';
 import { LandingFooter } from './LandingFooter';
 import LandingNavbar from './LandingNavbar';
+import { buildContactTarget } from '../../data/contact-offers';
 
 export interface LandingNavLink {
   label: string;
@@ -29,7 +30,7 @@ const navLinks: LandingNavLink[] = [
   },
   { label: 'Pricing', href: '/#pricing' },
   { label: 'About', href: '/#about' },
-  { label: 'Contact', href: '/#contact' },
+  { label: 'Contact', href: buildContactTarget('general', 'nav-link') },
 ];
 
 const LandingLayout: FC = () => {

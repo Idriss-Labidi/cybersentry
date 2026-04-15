@@ -7,6 +7,7 @@ import ProtectedRoute from './pages/auth/ProtectedRoute';
 import DashboardLayout from './layouts/dashboard/DashboardLayout';
 import { OAuthCallback } from './pages/auth/OAuthCallback';
 import { Landing } from './pages/landing/Landing';
+import { Contact } from './pages/landing/Contact';
 import { Dashboard } from './pages/dashboard/Dashboard';
 import { AssetsList } from './pages/dashboard/assets/AssetsList';
 import { AssetDetail } from './pages/dashboard/assets/AssetDetail';
@@ -47,6 +48,7 @@ function AppContent() {
       <Routes>
         <Route element={<LandingLayout />} >
           <Route path='/' element={<Landing/>}></Route>
+          <Route path="/contact" element={<Contact />} />
           <Route path="/tools/dns-lookup" element={<DnsLookup />} />
           <Route path="/tools/dns-propagation" element={<DnsPropagation />} />
           <Route path="/tools/dns-health-check" element={<DnsHealthCheck />} />

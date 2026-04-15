@@ -28,6 +28,7 @@ import {
   IconWorldSearch,
 } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
+import { buildContactTarget, type ContactOfferId } from '../../data/contact-offers';
 
 const featureCards = [
   {
@@ -59,18 +60,21 @@ const toolCards = [
 const planCards = [
   {
     name: 'Starter',
+    offer: 'starter' as ContactOfferId,
     price: '$49 / month',
     points: ['Core public tools', 'Basic posture checks', 'Email support'],
     variant: 'light' as const,
   },
   {
     name: 'Growth',
+    offer: 'growth' as ContactOfferId,
     price: '$149 / month',
     points: ['Shared dashboard workspace', 'Advanced GitHub and IP analysis', 'Investigation-ready reporting'],
     variant: 'filled' as const,
   },
   {
     name: 'Enterprise',
+    offer: 'enterprise' as ContactOfferId,
     price: 'Custom',
     points: ['Private workflows', 'Priority support', 'Custom rollout and enablement'],
     variant: 'light' as const,
@@ -290,7 +294,14 @@ export const Landing: FC = () => {
                   <List.Item key={point}>{point}</List.Item>
                 ))}
               </List>
-              <Button mt="xl" fullWidth variant={plan.variant === 'filled' ? 'filled' : 'light'}>
+              <Button
+                component={Link}
+                to={buildContactTarget(plan.offer, `pricing-${plan.name.toLowerCase()}`)}
+                state={{ offer: plan.offer, source: `pricing-${plan.name.toLowerCase()}` }}
+                mt="xl"
+                fullWidth
+                variant={plan.variant === 'filled' ? 'filled' : 'light'}
+              >
                 {plan.name === 'Enterprise' ? 'Talk to us' : `Choose ${plan.name}`}
               </Button>
             </Card>
@@ -342,12 +353,17 @@ export const Landing: FC = () => {
                 Walk through the current tools, the protected dashboard, and the redesigned theme system with your own priorities and workflows in mind.
               </Text>
             </div>
-            <Group>
-              <Button component={Link} to="/login">
+              <Group>
+                <Button component={Link} to="/login">
                 Sign in
               </Button>
-              <Button component="a" href="mailto:security@cybersentry.local" variant="light">
-                Contact team
+                <Button
+                  component={Link}
+                  to={buildContactTarget('general', 'landing-contact-section')}
+                  state={{ offer: 'general', source: 'landing-contact-section' }}
+                  variant="light"
+                >
+                  Contact team
               </Button>
             </Group>
           </Group>

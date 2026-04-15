@@ -16,6 +16,7 @@ import BrandMark from '../../components/BrandMark';
 import ThemeToggleButton from '../../components/ThemeToggleButton';
 import {useAuth} from "../../context/auth/useAuth.ts";
 import {IconArrowRight} from "@tabler/icons-react";
+import { buildContactTarget } from '../../data/contact-offers';
 
 interface LandingHeaderProps {
   mobileOpened: boolean;
@@ -93,7 +94,7 @@ export const LandingHeader: FC<LandingHeaderProps> = ({
               Sign In
             </Button> }
 
-            <Button component="a" href="/#contact">
+            <Button component={Link} to={buildContactTarget('general', 'header-cta')}>
               Talk to sales
             </Button>
           </Group>

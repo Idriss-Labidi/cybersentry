@@ -1,6 +1,7 @@
 import type { FC } from 'react';
 import { Anchor, Box, Container, Group, Text } from '@mantine/core';
 import BrandMark from '../../components/BrandMark';
+import { buildContactTarget } from '../../data/contact-offers';
 
 export const LandingFooter: FC = () => {
   const year = new Date().getFullYear();
@@ -18,7 +19,7 @@ export const LandingFooter: FC = () => {
             <Anchor href="/#pricing" c="dimmed" fz="sm" fw={700}>
               Pricing
             </Anchor>
-            <Anchor href="/#contact" c="dimmed" fz="sm" fw={700}>
+            <Anchor href={buildContactTarget('general', 'footer-link')} c="dimmed" fz="sm" fw={700}>
               Contact
             </Anchor>
           </Group>

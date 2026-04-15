@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import type { LandingNavLink } from './LandingLayout';
 import BrandMark from '../../components/BrandMark';
 import ThemeToggleButton from '../../components/ThemeToggleButton';
+import { buildContactTarget } from '../../data/contact-offers';
 
 const LandingNavbar: FC<{ links: LandingNavLink[] }> = ({ links }) => {
   return (
@@ -41,7 +42,7 @@ const LandingNavbar: FC<{ links: LandingNavLink[] }> = ({ links }) => {
             <Button component={Link} to="/login" variant="light" size="xs">
               Sign in
             </Button>
-            <Button component="a" href="/#contact" size="xs">
+            <Button component={Link} to={buildContactTarget('general', 'navbar-cta')} size="xs">
               Contact
             </Button>
           </Group>
