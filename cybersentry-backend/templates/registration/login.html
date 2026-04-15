@@ -1,255 +1,59 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - CyberSentry</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #4c6ef5 0%, #5c5adb 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 16px;
-        }
-        
-        .login-container {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            width: 100%;
-            max-width: 400px;
-            padding: 48px 32px;
-        }
-        
-        .login-header {
-            text-align: center;
-            margin-bottom: 32px;
-        }
-        
-        .login-header h1 {
-            font-size: 32px;
-            font-weight: 700;
-            color: #1a1b1e;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-        }
-        
-        .login-header p {
-            color: #868e96;
-            font-size: 14px;
-            font-weight: 400;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #1a1b1e;
-            font-weight: 500;
-            font-size: 14px;
-            line-height: 1.55;
-        }
-        
-        input[type="text"],
-        input[type="password"] {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            font-size: 14px;
-            line-height: 1.55;
-            color: #1a1b1e;
-            background-color: #fff;
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-            font-family: inherit;
-        }
-        
-        input[type="text"]:focus,
-        input[type="password"]:focus {
-            outline: none;
-            border-color: #4c6ef5;
-            box-shadow: 0 0 0 3px rgba(76, 110, 245, 0.1);
-        }
+{% extends "registration/auth_shell.html" %}
 
-        input[type="text"]::placeholder,
-        input[type="password"]::placeholder {
-            color: #adb5bd;
-        }
-        
-        .form-group.error input {
-            border-color: #fa5252;
-        }
+{% block title %}Login - CyberSentry{% endblock %}
 
-        .form-group.error input:focus {
-            box-shadow: 0 0 0 3px rgba(250, 82, 82, 0.1);
-        }
-        
-        .error-message {
-            background-color: #ffe0e0;
-            color: #7d3737;
-            padding: 12px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            border: 1px solid #ffdbdb;
-            line-height: 1.55;
-        }
+{% block hero_title %}Secure access.{% endblock %}
 
-        .error-message strong {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
+{% block hero_copy %}Sign in to continue to the CyberSentry workspace.{% endblock %}
 
-        .error-message ul {
-            list-style: none;
-            padding-left: 0;
-        }
+{% block auth_card %}
+    <header class="auth-header">
+        <span class="eyebrow">
+            <span class="eyebrow-dot"></span>
+            Authentication
+        </span>
+        <h2 class="auth-title">Sign in to CyberSentry</h2>
+        <p class="auth-copy">Use your account credentials to access the platform.</p>
+    </header>
 
-        .error-message li {
-            margin-bottom: 4px;
-        }
-
-        .error-message li:last-child {
-            margin-bottom: 0;
-        }
-        
-        .success-message {
-            background-color: #d3f9d8;
-            color: #2b6137;
-            padding: 12px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            border: 1px solid #b2f2bb;
-            line-height: 1.55;
-        }
-        
-        button {
-            width: 100%;
-            padding: 10px 16px;
-            background: linear-gradient(135deg, #4c6ef5 0%, #5c5adb 100%);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            line-height: 1.6;
-            font-family: inherit;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(76, 110, 245, 0.3);
-            background: linear-gradient(135deg, #3d5af5 0%, #4c4adb 100%);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .form-footer {
-            text-align: center;
-            margin-top: 24px;
-            color: #868e96;
-            font-size: 14px;
-            line-height: 1.55;
-        }
-        
-        .form-footer a {
-            color: #4c6ef5;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.15s ease;
-        }
-        
-        .form-footer a:hover {
-            color: #3d5af5;
-            text-decoration: underline;
-        }
-
-        @media (max-width: 480px) {
-            .login-container {
-                padding: 32px 24px;
-            }
-
-            .login-header h1 {
-                font-size: 24px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="login-container">
-        <div class="login-header">
-            <h1>CyberSentry</h1>
-            <p>Sign in to your account</p>
+    {% if form.non_field_errors %}
+        <div class="status-message status-error">
+            <strong>Login failed</strong>
+            <ul>
+            {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+            </ul>
         </div>
-        
-        {% if form.non_field_errors %}
-            <div class="error-message">
-                <strong>Login Failed</strong>
-                <ul>
-                {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
-        
-        <form method="post" action="{% url 'login' %}">
-            {% csrf_token %}
-            
-            <div class="form-group{% if form.username.errors %} error{% endif %}">
-                <label for="{{ form.username.id_for_label }}">Email</label>
-                {{ form.username }}
-                {% if form.username.errors %}
-                    <div style="color: #dc3545; font-size: 12px; margin-top: 5px;">
-                        {{ form.username.errors.0 }}
-                    </div>
-                {% endif %}
-            </div>
-            
-            <div class="form-group{% if form.password.errors %} error{% endif %}">
-                <label for="{{ form.password.id_for_label }}">Password</label>
-                {{ form.password }}
-                {% if form.password.errors %}
-                    <div style="color: #dc3545; font-size: 12px; margin-top: 5px;">
-                        {{ form.password.errors.0 }}
-                    </div>
-                {% endif %}
-            </div>
-            
-            <button type="submit">Sign In</button>
-            
-            {% if next %}
-                <input type="hidden" name="next" value="{{ next }}">
+    {% endif %}
+
+    <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="{{ form.username.id_for_label }}">Email</label>
+            {{ form.username }}
+            {% if form.username.errors %}
+                <div class="field-error">{{ form.username.errors.0 }}</div>
             {% endif %}
-        </form>
-        
-        <div class="form-footer">
-            <p>Don't have an account? <a href="#">Contact your administrator</a></p>
         </div>
+
+        <div class="form-group">
+            <label for="{{ form.password.id_for_label }}">Password</label>
+            {{ form.password }}
+            {% if form.password.errors %}
+                <div class="field-error">{{ form.password.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <button class="submit-button" type="submit">Open secure workspace</button>
+
+        {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+        {% endif %}
+    </form>
+
+    <div class="auth-footer">
+        Contact your administrator if you need access.
     </div>
-</body>
-</html>
+{% endblock %}
