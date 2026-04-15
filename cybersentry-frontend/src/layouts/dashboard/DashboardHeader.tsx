@@ -1,9 +1,8 @@
-import { Avatar, Badge, Breadcrumbs, Burger, Group, Menu, Paper, Text } from '@mantine/core';
+import { Avatar, Badge, Breadcrumbs, Burger, Group, Menu, Text } from '@mantine/core';
 import {
   IconChevronRight,
   IconLogout,
   IconSettings,
-  IconShieldLock,
   IconUser,
 } from '@tabler/icons-react';
 import { Link, useLocation } from 'react-router-dom';
@@ -11,6 +10,7 @@ import { useAuth } from '../../context/auth/useAuth';
 import NotificationMenuButton from '../../components/NotificationMenuButton';
 import ThemeToggleButton from '../../components/ThemeToggleButton';
 import { useDashboardBreadcrumb } from './DashboardBreadcrumbContext';
+import BrandMark from "../../components/BrandMark.tsx";
 
 interface DashboardHeaderProps {
   mobileOpened: boolean;
@@ -97,19 +97,9 @@ const DashboardHeader = ({
           aria-label="Toggle sidebar"
         />
 
-        <Paper
-          px="sm"
-          py={8}
-          radius="xl"
-          style={{ background: 'var(--app-surface-soft)', borderColor: 'var(--app-border)' }}
-        >
-          <Group gap="xs">
-            <IconShieldLock size={18} />
-            <Text fw={800} size="sm">
-              Mission control
-            </Text>
-          </Group>
-        </Paper>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '6rem' }}>
+          <BrandMark compact></BrandMark>
+        </div>
 
         {breadcrumbItems.length > 0 ? (
           <Breadcrumbs separator={<IconChevronRight size={14} />}>{breadcrumbItems}</Breadcrumbs>

@@ -11,7 +11,6 @@ import {
 import type { TablerIcon } from '@tabler/icons-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import BrandMark from '../../components/BrandMark';
 import { getProfileInfo } from '../../services/profile';
 
 type UserRole = 'admin' | 'analyst' | 'viewer';
@@ -91,8 +90,6 @@ const DashboardNavBar = () => {
 
   return (
     <Stack h="100%" gap="md">
-      <BrandMark compact />
-
       <Paper p="md" radius="xl" style={{ background: 'var(--app-surface-soft)' }}>
         <Text size="xs" tt="uppercase" fw={800} c="dimmed" style={{ letterSpacing: '0.08em' }}>
           Workspace status
