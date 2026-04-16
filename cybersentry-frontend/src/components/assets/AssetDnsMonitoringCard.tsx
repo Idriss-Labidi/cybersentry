@@ -16,6 +16,7 @@ import {
 import { IconExternalLink, IconWorld } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { ReportActionButtons } from '../reports/ReportActionButtons';
+import { AssetScoreHistoryView } from './AssetScoreHistoryView';
 import DnsHealthResult from '../dns-intelligence/DnsHealthResult';
 import { DashboardStatCards } from '../../layouts/dashboard/DashboardPageLayout';
 import type { Asset, AssetRelatedContextResponse } from '../../services/assets';
@@ -312,41 +313,50 @@ export const AssetDnsMonitoringCard = ({
 
               <Divider my="md" />
 
-              <Text fw={700} mb="md">
-                Health check history
-              </Text>
-              <Table striped highlightOnHover withTableBorder>
-                <Table.Thead>
-                  <Table.Tr>
-                    <Table.Th>Score</Table.Th>
-                    <Table.Th>Grade</Table.Th>
-                    <Table.Th>Scanned at</Table.Th>
-                    <Table.Th style={{ textAlign: 'center' }}>Actions</Table.Th>
-                  </Table.Tr>
-                </Table.Thead>
-                <Table.Tbody>
-                  {dnsContext.health_history.map((entry) => (
-                    <Table.Tr key={entry.id}>
-                      <Table.Td>
-                        <Badge color={getRiskColor(entry.score)}>{entry.score}/100</Badge>
-                      </Table.Td>
-                      <Table.Td>
-                        <Badge variant="light">{entry.grade}</Badge>
-                      </Table.Td>
-                      <Table.Td>{formatDateTime(entry.scanned_at)}</Table.Td>                     
-                      <Table.Td style={{ textAlign: 'center' }}>
-                        <Group justify="center">
-                          <ReportActionButtons
-                            onPrint={() => handleHealthReportAction(entry, 'print')}
-                            onExport={(format) => handleHealthReportAction(entry, format)}
-                            printTitle="Print health report"
-                          />
-                        </Group>
-                      </Table.Td>
+              <AssetScoreHistoryView
+                title="Health check history"
+                countLabel={`${dnsContext.health_history.length} entries`}
+                points={dnsContext.health_history.map((entry) => ({
+                  id: entry.id,
+                  score: entry.score,
+                  timestamp: entry.scanned_at,
+                }))}
+                chartColor="green"
+                chartSeriesLabel="DNS health score"
+              >
+                <Table striped highlightOnHover withTableBorder>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Score</Table.Th>
+                      <Table.Th>Grade</Table.Th>
+                      <Table.Th>Scanned at</Table.Th>
+                      <Table.Th style={{ textAlign: 'center' }}>Actions</Table.Th>
                     </Table.Tr>
-                  ))}
-                </Table.Tbody>
-              </Table>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {dnsContext.health_history.map((entry) => (
+                      <Table.Tr key={entry.id}>
+                        <Table.Td>
+                          <Badge color={getRiskColor(entry.score)}>{entry.score}/100</Badge>
+                        </Table.Td>
+                        <Table.Td>
+                          <Badge variant="light">{entry.grade}</Badge>
+                        </Table.Td>
+                        <Table.Td>{formatDateTime(entry.scanned_at)}</Table.Td>
+                        <Table.Td style={{ textAlign: 'center' }}>
+                          <Group justify="center">
+                            <ReportActionButtons
+                              onPrint={() => handleHealthReportAction(entry, 'print')}
+                              onExport={(format) => handleHealthReportAction(entry, format)}
+                              printTitle="Print health report"
+                            />
+                          </Group>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </AssetScoreHistoryView>
             </Paper>
           </SimpleGrid>
         </Stack>

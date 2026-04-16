@@ -2,6 +2,7 @@ import { Alert, Badge, Button, Code, Group, List, LoadingOverlay, Paper, SimpleG
 import { IconAlertTriangle, IconExternalLink, IconRadar2 } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { ReportActionButtons } from '../reports/ReportActionButtons';
+import { AssetScoreHistoryView } from './AssetScoreHistoryView';
 import { DashboardStatCards } from '../../layouts/dashboard/DashboardPageLayout';
 import type { Asset, AssetRelatedContextResponse } from '../../services/assets';
 import { downloadReport, type ReportExportFormat } from '../../utils/assets/assetScanExport';
@@ -150,47 +151,55 @@ export const AssetIpIntelligenceCard = ({
           </Paper>
         </SimpleGrid>
 
-        <Paper p="md" radius="lg" withBorder>
-          <Group justify="space-between" mb="md">
-            <Text fw={700}>Recent IP scan history</Text>
-            <Badge variant="light">{ipContext.history.length} entries</Badge>
-          </Group>
-          <Table striped highlightOnHover withTableBorder>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Score</Table.Th>
-                <Table.Th>Risk</Table.Th>
-                <Table.Th>Scanned at</Table.Th>
-                <Table.Th style={{ textAlign: 'center' }}>Actions</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {ipContext.history.map((entry) => (
-                <Table.Tr key={entry.id}>
-                  <Table.Td>
-                    <Badge color={getRiskColor(entry.reputation_score)}>
-                      {entry.reputation_score}/100
-                    </Badge>
-                  </Table.Td>
-                  <Table.Td>
-                    <Badge variant="light" tt="capitalize">
-                      {entry.risk_level}
-                    </Badge>
-                  </Table.Td>
-                  <Table.Td>{formatDateTime(entry.scanned_at)}</Table.Td>
-                  <Table.Td style={{ textAlign: 'center' }}>
-                    <Group justify="center">
-                      <ReportActionButtons
-                        onPrint={() => handleReportAction(entry, 'print')}
-                        onExport={(format) => handleReportAction(entry, format)}
-                      />
-                    </Group>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Paper>
+          <Paper p="md" radius="lg" withBorder>
+            <AssetScoreHistoryView
+              title="Recent IP scan history"
+              countLabel={`${ipContext.history.length} entries`}
+              points={ipContext.history.map((entry) => ({
+                id: entry.id,
+                score: entry.reputation_score,
+                timestamp: entry.scanned_at,
+              }))}
+              chartColor="blue"
+              chartSeriesLabel="Reputation score"
+            >
+              <Table striped highlightOnHover withTableBorder>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Score</Table.Th>
+                    <Table.Th>Risk</Table.Th>
+                    <Table.Th>Scanned at</Table.Th>
+                    <Table.Th style={{ textAlign: 'center' }}>Actions</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {ipContext.history.map((entry) => (
+                    <Table.Tr key={entry.id}>
+                      <Table.Td>
+                        <Badge color={getRiskColor(entry.reputation_score)}>
+                          {entry.reputation_score}/100
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td>
+                        <Badge variant="light" tt="capitalize">
+                          {entry.risk_level}
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td>{formatDateTime(entry.scanned_at)}</Table.Td>
+                      <Table.Td style={{ textAlign: 'center' }}>
+                        <Group justify="center">
+                          <ReportActionButtons
+                            onPrint={() => handleReportAction(entry, 'print')}
+                            onExport={(format) => handleReportAction(entry, format)}
+                          />
+                        </Group>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </AssetScoreHistoryView>
+          </Paper>
       </Stack>
     ) : (
       <Alert color="blue" variant="light" title="No IP intelligence yet">
