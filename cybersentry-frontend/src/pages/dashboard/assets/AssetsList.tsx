@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Button, Paper, Stack, Text } from '@mantine/core';
 import { IconLayoutKanban, IconList, IconPlus, IconServer2 } from '@tabler/icons-react';
 import AssetsBoardView from '../../../components/assets/AssetsBoardView';
@@ -11,9 +11,13 @@ import { DashboardViewModeToggle } from '../../../components/dashboard/Dashboard
 import type { GuidanceItem } from '../../../components/guidance/GuidanceHoverCard';
 import { useAssets } from '../../../hooks/assets/useAssets';
 import DashboardPageLayout, { DashboardStatCards } from '../../../layouts/dashboard/DashboardPageLayout';
+import { getProfileInfo } from '../../../services/profile';
+
+type UserRole = 'admin' | 'analyst' | 'viewer';
 
 export const AssetsList = () => {
   const [viewMode, setViewMode] = useState<'table' | 'list' | 'board'>('table');
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const guidanceItems: GuidanceItem[] = [
     {
       label: 'What this page does',
@@ -37,6 +41,31 @@ export const AssetsList = () => {
       ],
     },
   ];
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadRole = async () => {
+      try {
+        const response = await getProfileInfo();
+
+        if (isActive) {
+          setUserRole(response.data.role.toLowerCase() as UserRole);
+        }
+      } catch {
+        if (isActive) {
+          setUserRole('viewer');
+        }
+      }
+    };
+
+    void loadRole();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
   const {
     summary,
     filteredAssets,
@@ -67,6 +96,7 @@ export const AssetsList = () => {
     confirmDeleteAsset,
     setDeleteModalAsset,
   } = useAssets();
+  const canCreateAssets = userRole === 'admin';
 
   return (
     <>
@@ -77,9 +107,11 @@ export const AssetsList = () => {
         description="Add, classify, and maintain the attack surface inventory, then open each asset as the central entry point for linked IP and GitHub intelligence."
         guidance={guidanceItems}
         actions={
-          <Button leftSection={<IconPlus size={16} />} onClick={() => openCreateModal()}>
-            Add asset
-          </Button>
+          canCreateAssets ? (
+            <Button leftSection={<IconPlus size={16} />} onClick={() => openCreateModal()}>
+              Add asset
+            </Button>
+          ) : null
         }
       >
         {error ? (

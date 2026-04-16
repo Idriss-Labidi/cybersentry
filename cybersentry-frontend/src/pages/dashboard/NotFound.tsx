@@ -28,8 +28,6 @@ export default function NotFound() {
   const isDashboardRoute = location.pathname.startsWith('/dashboard');
   const primaryHref = isDashboardRoute && isAuthenticated ? '/dashboard' : '/';
   const primaryLabel = isDashboardRoute && isAuthenticated ? 'Back to dashboard' : 'Back to homepage';
-  const secondaryHref = isDashboardRoute ? '/dashboard/assets' : '/tools/dns-lookup';
-  const secondaryLabel = isDashboardRoute ? 'Open assets' : 'Open a tool';
 
   return (
     <Container size="lg" py={{ base: 'xl', md: 72 }} className="app-page">
@@ -89,9 +87,6 @@ export default function NotFound() {
           <Group gap="sm">
             <Button component={Link} to={primaryHref} leftSection={<IconHome2 size={16} />}>
               {primaryLabel}
-            </Button>
-            <Button component={Link} to={secondaryHref} variant="light">
-              {secondaryLabel}
             </Button>
             <Button variant="subtle" color="gray" leftSection={<IconArrowLeft size={16} />} onClick={() => navigate(-1)}>
               Go back
