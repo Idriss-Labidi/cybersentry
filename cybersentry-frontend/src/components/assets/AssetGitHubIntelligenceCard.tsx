@@ -16,6 +16,7 @@ import {
 import { IconAlertTriangle, IconBrandGithub, IconExternalLink } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { ReportActionButtons } from '../reports/ReportActionButtons';
+import { AssetScoreHistoryView } from './AssetScoreHistoryView';
 import { DashboardStatCards } from '../../layouts/dashboard/DashboardPageLayout';
 import { getRepositoryCheckResult } from '../../services/github-tools';
 import type { Asset, AssetRelatedContextResponse, GitHubCheckResultDetail } from '../../services/assets';
@@ -176,41 +177,49 @@ export const AssetGitHubIntelligenceCard = ({
           </SimpleGrid>
 
           <Paper p="md" radius="lg" withBorder>
-            <Group justify="space-between" mb="md">
-              <Text fw={700}>Recent GitHub health history</Text>
-              <Badge variant="light">{githubContext?.history.length ?? 0} entries</Badge>
-            </Group>
-            <Table striped highlightOnHover withTableBorder>
-              <Table.Thead>
-              <Table.Tr>
-                <Table.Th>Risk</Table.Th>
-                <Table.Th>Summary</Table.Th>
-                <Table.Th>Checked at</Table.Th>
-                <Table.Th style={{ textAlign: 'center' }}>Actions</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {(githubContext?.history ?? []).map((entry) => (
-                <Table.Tr key={entry.id}>
-                    <Table.Td>
-                      <Badge color={getRiskColor(entry.risk_score)}>{entry.risk_score}/100</Badge>
-                  </Table.Td>
-                  <Table.Td>{entry.summary}</Table.Td>
-                  <Table.Td>{formatDateTime(entry.check_timestamp)}</Table.Td>
-                  <Table.Td style={{ textAlign: 'center' }}>
-                    <Group justify="center">
-                      <ReportActionButtons
-                        onPrint={() => void handleReportAction(entry.id, 'print')}
-                        onExport={(format) => void handleReportAction(entry.id, format)}
-                        loading={activeResultId === entry.id}
-                      />
-                    </Group>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Paper>
+            <AssetScoreHistoryView
+              title="Recent GitHub health history"
+              countLabel={`${githubContext?.history.length ?? 0} entries`}
+              points={(githubContext?.history ?? []).map((entry) => ({
+                id: entry.id,
+                score: entry.risk_score,
+                timestamp: entry.check_timestamp,
+              }))}
+              chartColor="orange"
+              chartSeriesLabel="Risk score"
+            >
+              <Table striped highlightOnHover withTableBorder>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Risk</Table.Th>
+                    <Table.Th>Summary</Table.Th>
+                    <Table.Th>Checked at</Table.Th>
+                    <Table.Th style={{ textAlign: 'center' }}>Actions</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {(githubContext?.history ?? []).map((entry) => (
+                    <Table.Tr key={entry.id}>
+                      <Table.Td>
+                        <Badge color={getRiskColor(entry.risk_score)}>{entry.risk_score}/100</Badge>
+                      </Table.Td>
+                      <Table.Td>{entry.summary}</Table.Td>
+                      <Table.Td>{formatDateTime(entry.check_timestamp)}</Table.Td>
+                      <Table.Td style={{ textAlign: 'center' }}>
+                        <Group justify="center">
+                          <ReportActionButtons
+                            onPrint={() => void handleReportAction(entry.id, 'print')}
+                            onExport={(format) => void handleReportAction(entry.id, format)}
+                            loading={activeResultId === entry.id}
+                          />
+                        </Group>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </AssetScoreHistoryView>
+          </Paper>
         </Stack>
       ) : (
         <Alert color="blue" variant="light" title="No GitHub health data yet">
