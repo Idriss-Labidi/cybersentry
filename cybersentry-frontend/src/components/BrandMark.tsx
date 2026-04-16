@@ -3,11 +3,12 @@ import cybersentryLogo from '../../Cybersentry-logo.png';
 
 type BrandMarkProps = {
   compact?: boolean;
+  hideTitle?: boolean;
 };
 
-export default function BrandMark({ compact = false }: BrandMarkProps) {
+export default function BrandMark({ compact = false, hideTitle = false }: BrandMarkProps) {
   return (
-    <Group gap="sm" wrap="nowrap">
+    <Group gap={hideTitle ? 0 : 'sm'} wrap="nowrap">
       <ThemeIcon
         size={compact ? 46 : 52}
         radius="xl"
@@ -29,20 +30,22 @@ export default function BrandMark({ compact = false }: BrandMarkProps) {
         />
       </ThemeIcon>
 
-      <Stack gap={0}>
-        <Text
-          fw={800}
-          size={compact ? 'md' : 'lg'}
-          style={{ letterSpacing: '-0.04em', lineHeight: 1 }}
-        >
-          CyberSentry
-        </Text>
-        {!compact && (
-          <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.12em' }}>
-            Threat visibility platform
+      {!hideTitle ? (
+        <Stack gap={0}>
+          <Text
+            fw={800}
+            size={compact ? 'md' : 'lg'}
+            style={{ letterSpacing: '-0.04em', lineHeight: 1 }}
+          >
+            CyberSentry
           </Text>
-        )}
-      </Stack>
+          {!compact && (
+            <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: '0.12em' }}>
+              Threat visibility platform
+            </Text>
+          )}
+        </Stack>
+      ) : null}
     </Group>
   );
 }

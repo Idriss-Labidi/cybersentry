@@ -10,7 +10,7 @@ import { useAuth } from '../../context/auth/useAuth';
 import NotificationMenuButton from '../../components/NotificationMenuButton';
 import ThemeToggleButton from '../../components/ThemeToggleButton';
 import { useDashboardBreadcrumb } from './DashboardBreadcrumbContext';
-import BrandMark from "../../components/BrandMark.tsx";
+import BrandMark from '../../components/BrandMark';
 
 interface DashboardHeaderProps {
   mobileOpened: boolean;
@@ -79,9 +79,11 @@ const DashboardHeader = ({
         .toUpperCase()
     : user?.profile?.preferred_username?.substring(0, 2).toUpperCase() || 'U';
 
+  const hideBrandTitle = !desktopOpened;
+
   return (
     <Group justify="space-between" h="100%" py="md">
-      <Group gap="sm">
+      <Group gap="sm" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
         <Burger
           opened={mobileOpened}
           onClick={() => setMobileOpened(!mobileOpened)}
@@ -97,16 +99,26 @@ const DashboardHeader = ({
           aria-label="Toggle sidebar"
         />
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '6rem' }}>
-          <BrandMark compact></BrandMark>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flex: '0 0 auto',
+            transition: 'margin 160ms ease, opacity 160ms ease',
+          }}
+        >
+          <BrandMark compact hideTitle={hideBrandTitle} />
         </div>
 
         {breadcrumbItems.length > 0 ? (
-          <Breadcrumbs separator={<IconChevronRight size={14} />}>{breadcrumbItems}</Breadcrumbs>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <Breadcrumbs separator={<IconChevronRight size={14} />}>{breadcrumbItems}</Breadcrumbs>
+          </div>
         ) : null}
       </Group>
 
-      <Group gap="md">
+      <Group gap="md" wrap="nowrap">
         <Badge size="lg" variant="light" color="brand">
           System secure
         </Badge>
