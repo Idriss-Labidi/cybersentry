@@ -1,4 +1,5 @@
-# Cybersentry
+# Cybersentry <img width="90" height="90" alt="Cybersentry-logo" src="https://github.com/user-attachments/assets/5eceb60f-0699-4c3f-b5bc-ba779e435eb9" />
+
 
 Plateforme full-stack de cyber-vigilance combinee a des outils d'analyse de securite (DNS, IP, email, GitHub), avec authentification OAuth2/OIDC et tableau de bord web.
 
@@ -121,15 +122,4 @@ celery -A backend beat -l info
 2. Se connecter (OIDC)
 3. Consulter le tableau de bord
 4. Utiliser les modules selon le besoin : actifs, incidents, DNS/IP/Email, GitHub
-
-## Lien GitHub
-
-- Depot : **[A COMPLETER - URL GitHub du groupe]**
-
-## Bonnes pratiques pour le rendu final
-
-- Ne pas versionner de secrets (`.env`, tokens API, cles privees)
-- Verifier que le depot est propre et lisible
-- Conserver seulement les fichiers utiles au projet
-- Documenter clairement les prerequis et etapes de lancement
 
