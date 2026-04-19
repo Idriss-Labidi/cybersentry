@@ -41,6 +41,8 @@ export const Settings = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUpdatingEmailToggle, setIsUpdatingEmailToggle] = useState(false);
+  const [isUpdatingWebhookToggle, setIsUpdatingWebhookToggle] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -129,6 +131,54 @@ export const Settings = () => {
       notifyError('Settings save failed', message);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleEmailNotificationsToggle = async (checked: boolean) => {
+    if (isUpdatingEmailToggle || isSaving) {
+      return;
+    }
+
+    const previousValue = notificationsEmailEnabled;
+    setErrorMessage(null);
+    setNotificationsEmailEnabled(checked);
+    setIsUpdatingEmailToggle(true);
+
+    try {
+      const response = await updateUserSettings({ notifications_email_enabled: checked });
+      setNotificationsEmailEnabled(response.data.notifications_email_enabled);
+      setNotificationsWebhookEnabled(response.data.notifications_webhook_enabled);
+    } catch {
+      setNotificationsEmailEnabled(previousValue);
+      const message = 'Could not update email notification preference. Please try again.';
+      setErrorMessage(message);
+      notifyError('Notification preference update failed', message);
+    } finally {
+      setIsUpdatingEmailToggle(false);
+    }
+  };
+
+  const handleWebhookNotificationsToggle = async (checked: boolean) => {
+    if (isUpdatingWebhookToggle || isSaving) {
+      return;
+    }
+
+    const previousValue = notificationsWebhookEnabled;
+    setErrorMessage(null);
+    setNotificationsWebhookEnabled(checked);
+    setIsUpdatingWebhookToggle(true);
+
+    try {
+      const response = await updateUserSettings({ notifications_webhook_enabled: checked });
+      setNotificationsEmailEnabled(response.data.notifications_email_enabled);
+      setNotificationsWebhookEnabled(response.data.notifications_webhook_enabled);
+    } catch {
+      setNotificationsWebhookEnabled(previousValue);
+      const message = 'Could not update webhook notification preference. Please try again.';
+      setErrorMessage(message);
+      notifyError('Notification preference update failed', message);
+    } finally {
+      setIsUpdatingWebhookToggle(false);
     }
   };
 
@@ -230,12 +280,27 @@ export const Settings = () => {
                 <Text fw={800}>Notifications</Text>
                 <Group justify="space-between">
                   <Text>Enable email notifications</Text>
-                  <Switch checked={notificationsEmailEnabled} onChange={(event) => setNotificationsEmailEnabled(event.currentTarget.checked)} />
+                  <Switch
+                    checked={notificationsEmailEnabled}
+                    disabled={isLoading || isSaving || isUpdatingEmailToggle}
+                    onChange={(event) => {
+                      void handleEmailNotificationsToggle(event.currentTarget.checked);
+                    }}
+                  />
                 </Group>
                 <Group justify="space-between">
                   <Text>Enable webhook notifications</Text>
-                  <Switch checked={notificationsWebhookEnabled} onChange={(event) => setNotificationsWebhookEnabled(event.currentTarget.checked)} />
+                  <Switch
+                    checked={notificationsWebhookEnabled}
+                    disabled={isLoading || isSaving || isUpdatingWebhookToggle}
+                    onChange={(event) => {
+                      void handleWebhookNotificationsToggle(event.currentTarget.checked);
+                    }}
+                  />
                 </Group>
+                <Text size="sm" c="dimmed">
+                  Toggle updates are saved instantly. Webhook URLs and threshold are saved when you click save.
+                </Text>
                 <TextInput
                   label="Slack webhook URL"
                   placeholder="https://hooks.slack.com/services/..."
@@ -256,6 +321,11 @@ export const Settings = () => {
                   value={notificationAlertThreshold}
                   onChange={setNotificationAlertThreshold}
                 />
+                <Group justify="flex-end">
+                  <Button onClick={handleSaveSettings} loading={isSaving} variant="light">
+                    Save notification settings
+                  </Button>
+                </Group>
               </Stack>
             </Card>
           </SimpleGrid>

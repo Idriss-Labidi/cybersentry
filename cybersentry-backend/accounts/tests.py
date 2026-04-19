@@ -71,12 +71,18 @@ class ProfileApiTests(APITestCase):
 	def test_user_settings_endpoint_returns_masked_token(self):
 		settings_obj = UserSettings.objects.get(user=self.user)
 		settings_obj.github_token = 'ghp_1234567890'
-		settings_obj.save(update_fields=['github_token'])
+		settings_obj.notifications_webhook_enabled = True
+		settings_obj.slack_webhook_url = 'https://hooks.slack.test/services/abc'
+		settings_obj.teams_webhook_url = 'https://example.com/webhook/teams'
+		settings_obj.save(update_fields=['github_token', 'notifications_webhook_enabled', 'slack_webhook_url', 'teams_webhook_url'])
 
 		response = self.client.get('/api/settings/')
 
 		self.assertEqual(response.status_code, status.HTTP_200_OK)
 		self.assertEqual(response.data['github_token'], 'ghp********890')
+		self.assertTrue(response.data['notifications_webhook_enabled'])
+		self.assertEqual(response.data['slack_webhook_url'], 'https://hooks.slack.test/services/abc')
+		self.assertEqual(response.data['teams_webhook_url'], 'https://example.com/webhook/teams')
 		self.assertEqual(response.data['notification_alert_threshold'], 30)
 
 	def test_user_settings_put_updates_fields(self):
@@ -86,6 +92,9 @@ class ProfileApiTests(APITestCase):
 				'github_token': 'ghp_newtoken123',
 				'use_cache': False,
 				'cache_duration': 15,
+				'notifications_webhook_enabled': True,
+				'slack_webhook_url': 'https://hooks.slack.test/services/updated',
+				'teams_webhook_url': 'https://example.com/webhook/updated',
 				'preferred_theme': 'blue',
 				'notification_alert_threshold': 78,
 			},
@@ -97,9 +106,12 @@ class ProfileApiTests(APITestCase):
 		self.assertEqual(settings_obj.github_token, 'ghp_newtoken123')
 		self.assertFalse(settings_obj.use_cache)
 		self.assertEqual(settings_obj.cache_duration, 15)
+		self.assertTrue(settings_obj.notifications_webhook_enabled)
+		self.assertEqual(settings_obj.slack_webhook_url, 'https://hooks.slack.test/services/updated')
+		self.assertEqual(settings_obj.teams_webhook_url, 'https://example.com/webhook/updated')
 		self.assertEqual(settings_obj.preferred_theme, 'blue')
 		self.organization.refresh_from_db()
-		self.assertEqual(self.organization.notification_alert_threshold, 18)
+		self.assertEqual(self.organization.notification_alert_threshold, 78)
 
 	def test_user_settings_cache_duration_validation(self):
 		response = self.client.put('/api/settings/', {'cache_duration': 0}, format='json')
