@@ -66,7 +66,7 @@ type ContactContentProps = {
   source: string;
 };
 
-const ContactContent = ({ initialOffer, source }: ContactContentProps) => {
+const ContactContent = ({ initialOffer/*, source*/ }: ContactContentProps) => {
   const [form, setForm] = useState<ContactFormState>(() => initialFormState(initialOffer));
 
   const selectedOffer =
@@ -118,14 +118,14 @@ const ContactContent = ({ initialOffer, source }: ContactContentProps) => {
 
             <Paper className="app-surface-soft" p="lg" radius="xl" withBorder>
               <Group justify="space-between" align="flex-start" mb="md">
-                <div>
+                {/*<div>
                   <Text size="sm" c="dimmed">
                     Current source
                   </Text>
                   <Title order={3} mt={4}>
                     {source}
                   </Title>
-                </div>
+                </div>*/}
                 <Badge color="brand" variant="light">
                   {selectedOffer.value}
                 </Badge>
