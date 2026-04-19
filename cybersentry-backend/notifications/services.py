@@ -68,6 +68,36 @@ def _post_webhook(url: str, payload: dict):
     response.raise_for_status()
 
 
+def _build_teams_message_card(notification: NotificationEvent) -> dict:
+    """Build a Teams-compatible Message Card payload."""
+    asset_label = notification.asset.value if notification.asset else 'Unknown asset'
+    severity_color = {
+        NotificationEvent.Severities.LOW: '0078D4',      # Blue
+        NotificationEvent.Severities.MEDIUM: 'FFB900',   # Amber
+        NotificationEvent.Severities.HIGH: 'C50F1F',     # Red
+    }.get(notification.severity, '0078D4')
+
+    return {
+        '@type': 'MessageCard',
+        '@context': 'https://schema.org/extensions',
+        'summary': notification.title,
+        'themeColor': severity_color,
+        'title': notification.title,
+        'sections': [
+            {
+                'activityTitle': f'Asset: {asset_label}',
+                'facts': [
+                    {'name': 'Test Type', 'value': _build_test_label(notification.test_type)},
+                    {'name': 'Score', 'value': f'{notification.score}/100'},
+                    {'name': 'Threshold', 'value': str(notification.threshold)},
+                    {'name': 'Severity', 'value': notification.severity},
+                ],
+                'text': notification.detail,
+            }
+        ],
+    }
+
+
 def _send_webhooks_if_enabled(notification: NotificationEvent, user_settings: UserSettings):
     if not user_settings.notifications_webhook_enabled:
         notification.webhook_status = NotificationEvent.DeliveryStatuses.DISABLED
@@ -83,14 +113,8 @@ def _send_webhooks_if_enabled(notification: NotificationEvent, user_settings: Us
         notification.webhook_status = NotificationEvent.DeliveryStatuses.FAILED
         return
 
-    message = _build_notification_message(notification)
-    payload = {
-        'text': message,
-        'notification_id': notification.id,
-        'score': notification.score,
-        'threshold': notification.threshold,
-        'severity': notification.severity,
-    }
+    # Build Teams Message Card format (compatible with Teams workflow webhooks)
+    payload = _build_teams_message_card(notification)
 
     for webhook_url in webhook_urls:
         _post_webhook(webhook_url, payload)

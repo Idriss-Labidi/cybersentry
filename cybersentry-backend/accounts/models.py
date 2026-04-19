@@ -67,7 +67,7 @@ class UserSettings(models.Model):
     notifications_email_enabled = models.BooleanField(default=True)
     notifications_webhook_enabled = models.BooleanField(default=False)
     slack_webhook_url = models.URLField(blank=True)
-    teams_webhook_url = models.URLField(blank=True)
+    teams_webhook_url = models.URLField(blank=True, max_length=2000)
     preferred_theme = models.CharField(
         max_length=20,
         choices=PreferredThemes.choices,
